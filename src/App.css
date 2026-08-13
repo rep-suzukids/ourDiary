@@ -55,6 +55,26 @@
   font-weight: 700;
 }
 
+.role-badge {
+  margin-bottom: 16px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background-color: #eceff1;
+  color: #455a64;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.role-badge--parent {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.role-badge--admin {
+  background-color: #fce4ec;
+  color: #ad1457;
+}
+
 .info-text {
   margin: 0 0 24px;
   color: #777;
@@ -68,7 +88,7 @@
   padding: 32px 16px;
   border: 2px dashed #ddd;
   border-radius: 8px;
-  color: #aaa;
+  color: #888;
   text-align: center;
   box-sizing: border-box;
 }
@@ -91,6 +111,12 @@
 .logout-button:focus-visible {
   outline: 3px solid rgb(244 67 54 / 35%);
   outline-offset: 2px;
+}
+
+.status-message {
+  margin: 20px 0 0;
+  color: #666;
+  font-size: 0.9rem;
 }
 
 .error-box {
