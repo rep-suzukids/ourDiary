@@ -1,34 +1,34 @@
 import { useState } from 'react'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { jwtDecode } from 'jwt-decode'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import { createSession } from './services/authApi.js'
 import './App.css'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
-const ALLOWED_USERS = import.meta.env.VITE_ALLOWED_USERS
-  ? import.meta.env.VITE_ALLOWED_USERS.split(',').map((email) => email.trim())
-  : []
-
 function App() {
-  const [user, setUser] = useState(null)
+  const [session, setSession] = useState(null)
   const [error, setError] = useState('')
+  const [isAuthenticating, setIsAuthenticating] = useState(false)
 
-  const handleLoginSuccess = (credentialResponse) => {
+  const handleLoginSuccess = async (credentialResponse) => {
+    if (!credentialResponse.credential) {
+      setError('Google認証情報を取得できませんでした。')
+      return
+    }
+
+    setIsAuthenticating(true)
+    setError('')
+
     try {
-      const decoded = jwtDecode(credentialResponse.credential)
-
-      if (ALLOWED_USERS.includes(decoded.email)) {
-        setUser(decoded)
-        setError('')
-        return
-      }
-
-      setUser(null)
-      setError('アクセス権限がありません。このアプリは限定されたユーザー専用です。')
-    } catch {
-      setError('認証エラーが発生しました。')
+      const authenticatedSession = await createSession(credentialResponse.credential)
+      setSession(authenticatedSession)
+    } catch (authenticationError) {
+      setSession(null)
+      setError(authenticationError.message)
+    } finally {
+      setIsAuthenticating(false)
     }
   }
 
@@ -37,18 +37,19 @@ function App() {
   }
 
   const handleLogout = () => {
-    setUser(null)
+    setSession(null)
     setError('')
   }
 
-  if (user) {
-    return <HomePage user={user} onLogout={handleLogout} />
+  if (session) {
+    return <HomePage session={session} onLogout={handleLogout} />
   }
 
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <LoginPage
         error={error}
+        isAuthenticating={isAuthenticating}
         onLoginSuccess={handleLoginSuccess}
         onLoginFailure={handleLoginFailure}
       />

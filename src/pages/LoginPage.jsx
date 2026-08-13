@@ -1,6 +1,6 @@
 import { GoogleLogin } from '@react-oauth/google'
 
-function LoginPage({ error, onLoginSuccess, onLoginFailure }) {
+function LoginPage({ error, isAuthenticating, onLoginSuccess, onLoginFailure }) {
   return (
     <main className="page">
       <h1 className="page__title">Our Diary</h1>
@@ -16,6 +16,12 @@ function LoginPage({ error, onLoginSuccess, onLoginFailure }) {
           onError={onLoginFailure}
           useOneTap={false}
         />
+
+        {isAuthenticating && (
+          <p className="status-message" role="status">
+            アカウントと権限を確認しています…
+          </p>
+        )}
 
         {error && (
           <div className="error-box" role="alert">

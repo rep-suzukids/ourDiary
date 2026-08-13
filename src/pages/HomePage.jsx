@@ -1,19 +1,37 @@
-function HomePage({ user, onLogout }) {
+const ROLE_LABELS = {
+  member: 'メンバー',
+  parent: '両親',
+  admin: '管理者',
+}
+
+function HomePage({ session, onLogout }) {
+  const activeFamily = session.families[0]
+
   return (
     <main className="page">
       <h1 className="page__title">Our Diary</h1>
 
       <section className="card" aria-labelledby="welcome-heading">
-        <img className="profile-avatar" src={user.picture} alt="プロフィール" />
+        {session.user.picture && (
+          <img
+            className="profile-avatar"
+            src={session.user.picture}
+            alt="プロフィール"
+            referrerPolicy="no-referrer"
+          />
+        )}
         <p id="welcome-heading" className="welcome-text">
-          ようこそ、{user.name} さん
+          ようこそ、{session.user.name} さん
         </p>
+        <div className={`role-badge role-badge--${activeFamily.role}`}>
+          {ROLE_LABELS[activeFamily.role] ?? activeFamily.role}
+        </div>
         <p className="info-text">
-          家族のプライベート空間に安全に接続されています。
+          {activeFamily.name}のプライベート空間に安全に接続されています。
         </p>
 
         <div className="placeholder-box">
-          ここに次回の「日記投稿・閲覧機能」を作っていきます！
+          権限に応じた日記投稿・閲覧機能をここに追加していきます。
         </div>
 
         <button className="logout-button" type="button" onClick={onLogout}>
