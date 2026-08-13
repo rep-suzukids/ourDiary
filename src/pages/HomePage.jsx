@@ -9,7 +9,7 @@ function HomePage({ user, onLogout }) {
           ようこそ、{user.name} さん
         </p>
         <p className="info-text">
-          お二人のプライベート空間に安全に接続されています。
+          家族のプライベート空間に安全に接続されています。
         </p>
 
         <div className="placeholder-box">
