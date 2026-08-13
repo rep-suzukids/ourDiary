@@ -1,7 +1,7 @@
 function HomePage({ user, onLogout }) {
   return (
     <main className="page">
-      <h1 className="page__title">Our Diary ❤️</h1>
+      <h1 className="page__title">Our Diary</h1>
 
       <section className="card" aria-labelledby="welcome-heading">
         <img className="profile-avatar" src={user.picture} alt="プロフィール" />
