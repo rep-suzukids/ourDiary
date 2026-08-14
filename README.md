@@ -1,14 +1,14 @@
 # Our Diary
 
-家族内で子どもの写真や記録を共有するReact + Viteアプリです。Vercel FunctionsでGoogle IDトークンを検証し、Neon Postgresに保存した家族所属とロールから権限を決定します。
+家族内で子どもの写真や記録を共有するReact + Viteアプリです。Vercel FunctionsでGoogleログインを検証し、Postgresに保存した家族所属とロールから権限を決定します。
 
 ## 権限
 
-- `member`（メンバー）: 投稿者が共有した内容の閲覧
-- `parent`（両親）: 全投稿の閲覧、投稿、編集、削除
-- `admin`（管理者）: 両親の全権限、子どもとメンバーの管理
+- `member`: 共有された内容の閲覧
+- `parent`: 閲覧、投稿、編集、削除
+- `admin`: 両親の全権限、子ども・メンバー・Google Driveアルバムの管理
 
-実際の権限は [api/_lib/permissions.js](api/_lib/permissions.js) で管理します。将来コメント機能を追加するときは、`member` に `comment:create` を加えられます。
+実際の権限は `api/_lib/permissions.js` で管理します。画面表示だけに依存せず、各APIでも所属と権限を再検証します。
 
 ## セットアップ
 
@@ -16,36 +16,61 @@
 npm install
 ```
 
-`.env.example` を参考に `.env.local` を作成します。`GOOGLE_CLIENT_ID` と `VITE_GOOGLE_CLIENT_ID` には同じGoogle OAuthクライアントIDを設定してください。
+`.env.example`を参考に`.env.local`を作成します。ローカルDBには`POSTGRES_*`だけを使用し、Neonホストへの接続は拒否します。Vercel Preview / ProductionだけがNeonの`DATABASE_URL`を使用します。
 
-ローカル開発では `POSTGRES_HOST`、`POSTGRES_PORT`、`POSTGRES_DATABASE`、`POSTGRES_USER`、`POSTGRES_PASSWORD` を使用します。安全対策として、ローカル設定のホストがNeonの場合は接続を拒否します。
+DBは`database/README.md`の順にSQLを実行してください。
 
-VercelのPreview／Productionだけが `DATABASE_URL` を使用します。この値はVercel Marketplaceで接続したNeonから注入し、ローカル設定には使用しません。
+## Google Driveアルバム
 
-DBの初期構築は [database/README.md](database/README.md) の手順に従います。
+Google Drive APIを利用して、指定したオーナーのGoogle DriveにOur Diary専用フォルダを作成します。
+
+1. Google CloudでGoogle Drive APIを有効にします。
+2. OAuth同意画面に`https://www.googleapis.com/auth/drive.file`スコープを追加します。
+3. OAuthクライアントの承認済みリダイレクトURIに、ローカルと本番のコールバックURLを登録します。
+   - `http://localhost:3000/api/google-drive-callback`
+   - `https://<本番ドメイン>/api/google-drive-callback`
+4. 承認済みJavaScript生成元にローカルと本番のオリジンを登録します。
+5. `.env.local`とVercel Environment Variablesに環境別の値を設定します。
+
+```dotenv
+GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+GOOGLE_DRIVE_REDIRECT_URI=http://localhost:3000/api/google-drive-callback
+GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEY=32-byte-base64-value
+APP_BASE_URL=http://localhost:3000
+```
+
+暗号化キーは一度だけ生成し、環境ごとに別の値を設定します。
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+管理者は「Google Driveアルバム設定」でオーナーのメールアドレスとフォルダ名を入力し、24時間有効な招待URLを発行します。メール・LINE送信機能は持たず、URLだけを表示します。
+
+オーナーが招待URLから承認すると、そのアカウント内にフォルダを作成します。家族メンバーには閲覧権限、両親と管理者には編集権限を設定します。リフレッシュトークンはAES-256-GCMで暗号化してDBに保存します。
+
+写真本体の経路は次のとおりです。
+
+- アップロード: ブラウザ → Google Drive
+- 閲覧: Google Drive → ブラウザ
+- Vercel Function: フォルダ作成、共有設定、ファイル一覧などの小さなメタデータだけ
+
+Vercel Functionは写真・動画のバイト列を中継しません。非公開ファイルを表示するため、各利用者はアルバム画面でOur Diaryが管理するDriveファイルへのアクセスを承認します。`drive.file`スコープだけを使い、利用者自身のDrive全体にはアクセスしません。閲覧・編集の違いはDrive側のreader/writer権限で制御します。
 
 ## 開発と検証
 
-ローカルPostgreSQLとAPIを含めて起動します。`.env.local` の `POSTGRES_*` だけを使用し、VercelやNeonのDevelopment環境変数は取得しません。
-
 ```bash
 npm run dev
-```
-
-起動時にローカルDBへ接続できなければサーバーは開始しません。成功時は `Local database connected: ourdiary` と表示されます。
-
-静的検証と本番ビルド:
-
-```bash
 npm run lint
 npm run build
 ```
 
-## 構成
+## 主な構成
 
 - `src/`: Reactフロントエンド
-- `api/auth-session.js`: Google認証とDB上の所属・ロール確認
-- `api/_lib/`: サーバー専用の認証、DB、権限定義、API認可ヘルパー
-- `database/`: Postgresスキーマ、初回管理者登録、セットアップ手順
-
-画面上の表示・非表示は利便性のための制御にすぎません。今後追加する投稿・削除・管理APIでも、サーバー側で所属と権限を必ず再検証します。
+- `api/auth-session.js`: GoogleログインとDB上の所属・ロール確認
+- `api/drive-owner-invitations.js`: 管理者専用の招待URL発行
+- `api/google-drive-callback.js`: オーナーのOAuth承認とDriveフォルダ作成
+- `api/album-files.js`: 認証済みユーザー向けの写真メタデータ一覧
+- `src/services/albumApi.js`: ブラウザとGoogle Drive間の直接アップロード・取得
+- `database/`: Postgresスキーマとセットアップ手順

@@ -1,29 +1,83 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import AlbumPage from './pages/AlbumPage.jsx'
+import AlbumSetupPage from './pages/AlbumSetupPage.jsx'
+import AlbumUploadPage from './pages/AlbumUploadPage.jsx'
+import DriveOwnerCompletePage from './pages/DriveOwnerCompletePage.jsx'
+import DriveOwnerConnectPage from './pages/DriveOwnerConnectPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
-import { createSession } from './services/authApi.js'
+import NotFoundPage from './pages/NotFoundPage.jsx'
+import {
+  clearSessionCredential,
+  createSession,
+  loadSessionCredential,
+  saveSessionCredential,
+} from './services/authApi.js'
 import './App.css'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
 
-function App() {
+function SessionLoadingPage() {
+  return (
+    <main className="page">
+      <h1 className="page__title page__title--small">Our Diary</h1>
+      <section className="card">
+        <p className="info-text">ログイン状態を確認しています…</p>
+      </section>
+    </main>
+  )
+}
+
+function AppContent() {
   const [session, setSession] = useState(null)
+  const [pathname, setPathname] = useState(window.location.pathname)
   const [error, setError] = useState('')
   const [isAuthenticating, setIsAuthenticating] = useState(false)
+  const [isRestoringSession, setIsRestoringSession] = useState(() => Boolean(loadSessionCredential()))
+
+  useEffect(() => {
+    const credential = loadSessionCredential()
+    if (!credential) return
+
+    let isActive = true
+    createSession(credential)
+      .then((authenticatedSession) => {
+        if (isActive) setSession({ ...authenticatedSession, credential })
+      })
+      .catch(() => {
+        clearSessionCredential()
+      })
+      .finally(() => {
+        if (isActive) setIsRestoringSession(false)
+      })
+
+    return () => { isActive = false }
+  }, [])
+
+  useEffect(() => {
+    const handlePopState = () => setPathname(window.location.pathname)
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [])
+
+  const navigate = (path) => {
+    window.history.pushState({}, '', path)
+    setPathname(new URL(path, window.location.origin).pathname)
+  }
 
   const handleLoginSuccess = async (credentialResponse) => {
     if (!credentialResponse.credential) {
       setError('Google認証情報を取得できませんでした。')
       return
     }
-
     setIsAuthenticating(true)
     setError('')
-
     try {
       const authenticatedSession = await createSession(credentialResponse.credential)
-      setSession(authenticatedSession)
+      saveSessionCredential(credentialResponse.credential)
+      setSession({ ...authenticatedSession, credential: credentialResponse.credential })
+      navigate('/')
     } catch (authenticationError) {
       setSession(null)
       setError(authenticationError.message)
@@ -32,27 +86,55 @@ function App() {
     }
   }
 
-  const handleLoginFailure = () => {
-    setError('Googleログインに失敗しました。再試行してください。')
-  }
-
   const handleLogout = () => {
+    clearSessionCredential()
     setSession(null)
     setError('')
+    navigate('/')
   }
+
+  if (pathname === '/drive-owner-connect') return <DriveOwnerConnectPage />
+  if (pathname === '/drive-owner-connect/complete') return <DriveOwnerCompletePage />
+
+  if (isRestoringSession) return <SessionLoadingPage />
+
+  if (pathname === '/album') {
+    if (!session) return <NotFoundPage onNavigate={navigate} />
+    return <AlbumPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/album/setup') {
+    if (!session || session.families[0]?.role !== 'admin') {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <AlbumSetupPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/album/upload') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <AlbumUploadPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname !== '/') return <NotFoundPage onNavigate={navigate} />
 
   if (session) {
-    return <HomePage session={session} onLogout={handleLogout} />
+    return <HomePage session={session} onLogout={handleLogout} onNavigate={navigate} />
   }
 
+  return <LoginPage
+    error={error}
+    isAuthenticating={isAuthenticating}
+    onLoginSuccess={handleLoginSuccess}
+    onLoginFailure={() => setError('Googleログインに失敗しました。再試行してください。')}
+  />
+}
+
+function App() {
   return (
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-      <LoginPage
-        error={error}
-        isAuthenticating={isAuthenticating}
-        onLoginSuccess={handleLoginSuccess}
-        onLoginFailure={handleLoginFailure}
-      />
+      <AppContent />
     </GoogleOAuthProvider>
   )
 }

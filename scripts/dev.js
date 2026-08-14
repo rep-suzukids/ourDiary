@@ -8,9 +8,31 @@ Object.assign(process.env, localEnvironment, {
   VERCEL_ENV: 'development',
 })
 
-const [{ default: authSessionHandler }, { getDatabase }] = await Promise.all([
+const [
+  { default: authSessionHandler },
+  { default: albumFilesHandler },
+  { default: driveOwnerInvitationsHandler },
+  { default: driveOwnerInvitationHandler },
+  { default: driveOwnerOauthStartHandler },
+  { default: googleDriveCallbackHandler },
+  { getDatabase },
+] = await Promise.all([
   import('../api/auth-session.js'),
+  import('../api/album-files.js'),
+  import('../api/drive-owner-invitations.js'),
+  import('../api/drive-owner-invitation.js'),
+  import('../api/drive-owner-oauth-start.js'),
+  import('../api/google-drive-callback.js'),
   import('../api/_lib/db.js'),
+])
+
+const apiRoutes = new Map([
+  ['/api/auth-session', authSessionHandler],
+  ['/api/album-files', albumFilesHandler],
+  ['/api/drive-owner-invitations', driveOwnerInvitationsHandler],
+  ['/api/drive-owner-invitation', driveOwnerInvitationHandler],
+  ['/api/drive-owner-oauth-start', driveOwnerOauthStartHandler],
+  ['/api/google-drive-callback', googleDriveCallbackHandler],
 ])
 
 const sql = getDatabase()
@@ -43,10 +65,13 @@ async function readJsonBody(request) {
 }
 
 const server = createHttpServer(async (request, response) => {
-  if (request.url === '/api/auth-session') {
+  const pathname = new URL(request.url, 'http://localhost').pathname
+  const apiHandler = apiRoutes.get(pathname)
+
+  if (apiHandler) {
     try {
-      request.body = await readJsonBody(request)
-      await authSessionHandler(request, createApiResponse(response))
+      if (request.method === 'POST') request.body = await readJsonBody(request)
+      await apiHandler(request, createApiResponse(response))
     } catch (error) {
       console.error('Local API request failed', error)
       if (!response.headersSent) {
