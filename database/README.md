@@ -6,8 +6,11 @@
 2. データベースをプロジェクトへ接続し、`DATABASE_URL` が追加されたことを確認します。
 3. NeonのSQL Editorで `001_initial_schema.sql` を実行します。
 4. `002_seed_admin.example.sql` の家族名と管理者メールアドレスを書き換えて、一度だけ実行します。
-5. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-6. 再デプロイし、登録した管理者Googleアカウントでログインします。
+5. Google Driveアルバム機能を利用する場合は `004_google_drive_albums.sql` を実行します。
+   - 既に `003_google_photos_albums.sql` を実行済みでも、ロールバックは不要です。
+   - 新規環境では `003` を飛ばして `004` を実行できます。
+6. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+7. 再デプロイし、登録した管理者Googleアカウントでログインします。
 
 `google_subject` は最初の正常なログイン時に、Googleが発行する変更されないユーザーIDへ自動的に紐づきます。以降はメールアドレスだけでは別アカウントへ置き換えられません。
 
