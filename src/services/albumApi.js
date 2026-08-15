@@ -21,6 +21,44 @@ export async function getAlbumPhotos(credential, familyId) {
   return readApiResponse(response)
 }
 
+export async function listDrivePhotosDirectly(accessToken, folderId) {
+  const parameters = new URLSearchParams({
+    q: `'${folderId.replaceAll("'", "\\'")}' in parents and trashed = false`,
+    pageSize: '100',
+    orderBy: 'createdTime desc',
+    fields: 'files(id,name,mimeType,createdTime,size,imageMediaMetadata(width,height))',
+  })
+  const response = await fetch(`https://www.googleapis.com/drive/v3/files?${parameters}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!response.ok) throw new Error(`Google Driveの写真一覧を取得できませんでした（HTTP ${response.status}）`)
+  const body = await response.json()
+  return (body.files ?? [])
+    .filter((file) => file.mimeType?.startsWith('image/'))
+    .map((file) => ({
+      id: file.id,
+      name: file.name,
+      mimeType: file.mimeType,
+      createdTime: file.createdTime ?? null,
+      size: file.size ?? null,
+      width: file.imageMediaMetadata?.width ?? null,
+      height: file.imageMediaMetadata?.height ?? null,
+    }))
+}
+
+export async function registerDriveAlbumFiles(credential, familyId, files) {
+  const response = await fetch('/api/album-files', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${credential}`,
+      'Content-Type': 'application/json',
+      'x-family-id': familyId,
+    },
+    body: JSON.stringify({ files }),
+  })
+  return readApiResponse(response)
+}
+
 export async function getDrivePhotoUrl(accessToken, photo, signal) {
   let response
   try {

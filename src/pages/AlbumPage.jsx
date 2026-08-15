@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGoogleLogin } from '@react-oauth/google'
 import InfiniteAlbumCanvas from '../components/InfiniteAlbumCanvas.jsx'
 import {
   DRIVE_READ_SCOPES,
   getAlbumPhotos,
+  listDrivePhotosDirectly,
   loadDriveAccessToken,
+  registerDriveAlbumFiles,
   saveDriveAccessToken,
   verifyDriveAccount,
 } from '../services/albumApi.js'
@@ -12,11 +14,13 @@ import '../Album.css'
 
 function AlbumPage({ session, onNavigate }) {
   const [albumTitle, setAlbumTitle] = useState('Album')
+  const [folderId, setFolderId] = useState('')
   const [photos, setPhotos] = useState([])
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [errorCode, setErrorCode] = useState('')
   const [driveAccessToken, setDriveAccessToken] = useState(() => loadDriveAccessToken('read', session.user.email))
+  const syncAttempted = useRef(false)
   const activeFamily = session.families[0]
 
   const connectDrive = useGoogleLogin({
@@ -41,6 +45,7 @@ function AlbumPage({ session, onNavigate }) {
       .then((album) => {
         if (!isActive) return
         setAlbumTitle(album.title)
+        setFolderId(album.folderId)
         setPhotos(album.photos)
         setStatus('ready')
       })
@@ -52,6 +57,20 @@ function AlbumPage({ session, onNavigate }) {
       })
     return () => { isActive = false }
   }, [activeFamily.id, session.credential])
+
+  useEffect(() => {
+    if (status !== 'ready' || photos.length > 0 || !folderId || !driveAccessToken || syncAttempted.current) return
+    syncAttempted.current = true
+    listDrivePhotosDirectly(driveAccessToken, folderId)
+      .then((drivePhotos) => {
+        if (drivePhotos.length === 0) return null
+        return registerDriveAlbumFiles(session.credential, activeFamily.id, drivePhotos)
+      })
+      .then((result) => {
+        if (result?.photos) setPhotos(result.photos)
+      })
+      .catch((syncError) => setError(syncError.message))
+  }, [activeFamily.id, driveAccessToken, folderId, photos.length, session.credential, status])
 
   const navigateLink = (path) => (event) => {
     event.preventDefault()
@@ -84,17 +103,18 @@ function AlbumPage({ session, onNavigate }) {
           )}
         </div>
       )}
-      {status === 'ready' && photos.length === 0 && (
+      {status === 'ready' && photos.length === 0 && driveAccessToken && (
         <div className="album-state">
           <p>Google Driveアルバムには写真がまだありません。</p>
+          {error && <p className="upload-error">{error}</p>}
           {['parent', 'admin'].includes(activeFamily.role) && (
             <a href="/album/upload" onClick={navigateLink('/album/upload')}>最初の写真を追加する</a>
           )}
         </div>
       )}
-      {status === 'ready' && photos.length > 0 && !driveAccessToken && (
+      {status === 'ready' && !driveAccessToken && (
         <div className="album-state">
-          <p>非公開の写真をGoogle Driveから直接表示するため、Google Driveへの読み取りアクセスを許可してください。</p>
+          <p>Google Driveの写真を直接確認・表示するため、Google Driveへの読み取りアクセスを許可してください。</p>
           {error && <p className="upload-error">{error}</p>}
           <button className="album-link album-link--button" type="button" onClick={() => connectDrive()}>
             Google Driveに接続

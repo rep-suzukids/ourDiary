@@ -4,6 +4,7 @@ import {
   DRIVE_WRITE_SCOPES,
   getAlbumPhotos,
   loadDriveAccessToken,
+  registerDriveAlbumFiles,
   saveDriveAccessToken,
   uploadFileDirectlyToDrive,
   verifyDriveAccount,
@@ -93,12 +94,12 @@ function AlbumUploadPage({ session, onNavigate }) {
       if (item.status === 'success') continue
       try {
         updateItem(index, { status: 'uploading', message: 'Google Driveへ直接送信中' })
-        await uploadFileDirectlyToDrive(
-          driveAccessToken,
-          folderId,
-          item.file,
+        const uploadedFile = item.uploadedFile ?? await uploadFileDirectlyToDrive(
+          driveAccessToken, folderId, item.file,
           (progress) => updateItem(index, { progress }),
         )
+        updateItem(index, { uploadedFile, message: 'アルバムへ登録中' })
+        await registerDriveAlbumFiles(session.credential, activeFamily.id, [uploadedFile])
         updateItem(index, { status: 'success', progress: 100, message: '完了' })
       } catch (uploadError) {
         failedCount += 1

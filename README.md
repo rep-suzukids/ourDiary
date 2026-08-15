@@ -53,9 +53,9 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 - アップロード: ブラウザ → Google Drive
 - 閲覧: Google Drive → ブラウザ
-- Vercel Function: フォルダ作成、共有設定、ファイル一覧などの小さなメタデータだけ
+- Vercel Function: フォルダ作成、共有設定、DriveファイルIDなどの小さなメタデータだけ
 
-Vercel Functionは写真・動画のバイト列を中継しません。非公開ファイルを表示するため、各利用者はアルバム画面でOur Diaryが管理するDriveファイルへのアクセスを承認します。`drive.file`スコープだけを使い、利用者自身のDrive全体にはアクセスしません。閲覧・編集の違いはDrive側のreader/writer権限で制御します。
+アップロード完了時にファイルID・名前・サイズ等だけをPostgresへ登録し、アルバム一覧はそのメタデータから生成します。Vercel Functionは写真・動画のバイト列を中継しません。非公開ファイルを表示するため、各利用者はアルバム画面でOur Diaryが管理するDriveファイルへのアクセスを承認します。`drive.file`スコープだけを使い、利用者自身のDrive全体にはアクセスしません。閲覧・編集の違いはDrive側のreader/writer権限で制御します。
 
 ## 開発と検証
 
