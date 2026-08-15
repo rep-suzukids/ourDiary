@@ -1,4 +1,5 @@
 const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+const DRIVE_ACCESS_TOKEN_KEY = 'ourdiary-drive-access'
 
 export const DRIVE_READ_SCOPES = `openid email ${DRIVE_FILE_SCOPE}`
 export const DRIVE_WRITE_SCOPES = `openid email ${DRIVE_FILE_SCOPE}`
@@ -56,27 +57,39 @@ export async function getDriveOwnerInvitation(token) {
 
 export function saveDriveAccessToken(kind, email, tokenResponse) {
   const expiresIn = Number(tokenResponse.expires_in ?? 3600)
-  sessionStorage.setItem(`ourdiary-drive-${kind}`, JSON.stringify({
+  const storedValue = JSON.stringify({
     accessToken: tokenResponse.access_token,
     email: email.toLowerCase(),
     expiresAt: Date.now() + Math.max(0, expiresIn - 60) * 1000,
-  }))
+  })
+  sessionStorage.setItem(DRIVE_ACCESS_TOKEN_KEY, storedValue)
+  sessionStorage.setItem(`ourdiary-drive-${kind}`, storedValue)
 }
 
 export function loadDriveAccessToken(kind, email) {
-  const stored = sessionStorage.getItem(`ourdiary-drive-${kind}`)
-  if (!stored) return ''
-  try {
-    const value = JSON.parse(stored)
-    if (!value.accessToken || value.email !== email.toLowerCase() || value.expiresAt <= Date.now()) {
-      sessionStorage.removeItem(`ourdiary-drive-${kind}`)
-      return ''
+  const legacyAlternative = kind === 'read' ? 'write' : 'read'
+  const storageKeys = [
+    DRIVE_ACCESS_TOKEN_KEY,
+    `ourdiary-drive-${legacyAlternative}`,
+    `ourdiary-drive-${kind}`,
+  ]
+
+  for (const storageKey of storageKeys) {
+    const stored = sessionStorage.getItem(storageKey)
+    if (!stored) continue
+    try {
+      const value = JSON.parse(stored)
+      if (value.accessToken && value.email === email.toLowerCase() && value.expiresAt > Date.now()) {
+        sessionStorage.setItem(DRIVE_ACCESS_TOKEN_KEY, stored)
+        return value.accessToken
+      }
+      sessionStorage.removeItem(storageKey)
+    } catch {
+      sessionStorage.removeItem(storageKey)
     }
-    return value.accessToken
-  } catch {
-    sessionStorage.removeItem(`ourdiary-drive-${kind}`)
-    return ''
   }
+
+  return ''
 }
 
 export async function verifyDriveAccount(accessToken, expectedEmail) {
