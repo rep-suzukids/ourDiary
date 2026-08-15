@@ -22,19 +22,34 @@ export async function getAlbumPhotos(credential, familyId) {
 }
 
 export async function getDrivePhotoUrl(accessToken, photo, signal) {
-  const response = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(photo.id)}?alt=media`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      signal,
-    },
-  )
-  if (!response.ok) {
-    throw new Error(response.status === 401
-      ? 'Google Driveへの接続期限が切れました。'
-      : '写真を読み込めませんでした。')
+  let response
+  try {
+    response = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(photo.id)}?alt=media`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        signal,
+      },
+    )
+  } catch (error) {
+    if (error.name === 'AbortError') throw error
+    throw new Error('Google Driveへの直接接続に失敗しました（通信またはCORS）')
   }
-  return URL.createObjectURL(await response.blob())
+
+  if (!response.ok) {
+    const messages = {
+      401: 'Google Driveへの接続期限が切れました',
+      403: 'Google Driveからこの写真の読み取りが許可されませんでした',
+      404: 'Google Driveに写真が見つかりませんでした',
+    }
+    throw new Error(`${messages[response.status] ?? '写真を取得できませんでした'}（HTTP ${response.status}）`)
+  }
+
+  const blob = await response.blob()
+  if (!blob.type.startsWith('image/')) {
+    throw new Error(`画像以外のデータを受信しました（${blob.type || '形式不明'}）`)
+  }
+  return URL.createObjectURL(blob)
 }
 
 export async function createDriveOwnerInvitation(credential, familyId, values) {
