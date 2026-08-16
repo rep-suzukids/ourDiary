@@ -384,3 +384,152 @@
     bottom: 68px;
   }
 }
+
+/* The album keeps its immersive canvas while sharing the diary's gentle palette. */
+.album-page {
+  background: #f9e9f3;
+  color: var(--ourdiary-ink);
+}
+
+.album-header {
+  border-color: rgb(212 139 166 / 28%);
+  background: rgb(255 250 252 / 88%);
+  box-shadow: 0 14px 38px rgb(139 73 99 / 14%);
+}
+
+.album-header h1 {
+  color: var(--ourdiary-heading);
+}
+
+.album-header__eyebrow {
+  color: var(--ourdiary-muted);
+}
+
+.album-header__back {
+  border-color: #edbdcf;
+  background: rgb(255 255 255 / 72%);
+  color: var(--ourdiary-rose-dark);
+}
+
+.album-header__back:hover {
+  background: #ffedf4;
+}
+
+.album-header__count {
+  color: #a68793;
+}
+
+.album-upload-link {
+  border-color: rgb(212 139 166 / 28%);
+  background: rgb(255 250 252 / 90%);
+  box-shadow: 0 10px 28px rgb(139 73 99 / 12%);
+  color: var(--ourdiary-rose-dark);
+  font-weight: 700;
+}
+
+.album-upload-link:hover {
+  background: #ffedf4;
+}
+
+.album-canvas {
+  background-image:
+    linear-gradient(rgb(191 110 143 / 10%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(191 110 143 / 10%) 1px, transparent 1px),
+    radial-gradient(circle at 50% 45%, #fffafd 0, #f9e6ee 58%, #f0d5e1 100%);
+}
+
+.album-photo {
+  border-color: rgb(174 105 132 / 24%);
+  background: #fff9fb;
+  color: var(--ourdiary-ink);
+}
+
+.album-photo:hover {
+  border-color: rgb(190 91 130 / 54%);
+  box-shadow: 0 18px 44px rgb(118 65 86 / 24%);
+}
+
+.album-photo:focus-visible {
+  outline-color: var(--ourdiary-rose);
+}
+
+.album-photo img {
+  background: #fff8fb;
+}
+
+.album-photo__caption {
+  background: linear-gradient(transparent, rgb(92 55 72 / 82%));
+  color: #fffafd;
+}
+
+.album-modal {
+  background: rgb(95 57 75 / 76%);
+}
+
+.album-modal img {
+  background: #fff8fb;
+  box-shadow: 0 30px 90px rgb(73 35 53 / 52%);
+}
+
+.album-modal__content p {
+  color: #fff7fa;
+}
+
+.album-modal__close {
+  border-color: rgb(212 139 166 / 42%);
+  background: rgb(255 249 252 / 94%);
+  color: var(--ourdiary-rose-dark);
+}
+
+.album-modal__close:hover,
+.album-modal__close:focus-visible {
+  background: var(--ourdiary-rose);
+  color: #fff;
+}
+
+.album-photo__placeholder {
+  background: linear-gradient(105deg, #fff5f9 35%, #f6dce6 48%, #fff5f9 61%);
+  background-size: 220% 100%;
+}
+
+.album-photo__error {
+  color: #a77b8c;
+}
+
+.album-controls {
+  border-color: rgb(212 139 166 / 26%);
+  background: rgb(255 250 252 / 88%);
+  box-shadow: 0 10px 28px rgb(139 73 99 / 12%);
+}
+
+.album-controls button,
+.album-controls output {
+  color: #8f526b;
+}
+
+.album-controls button:hover {
+  background: #ffedf4;
+}
+
+.album-canvas__hint {
+  color: #a77b8c;
+}
+
+.album-state {
+  border-color: var(--ourdiary-card-border);
+  border-radius: 20px;
+  background: rgb(255 250 252 / 90%);
+  box-shadow: var(--ourdiary-shadow);
+  color: var(--ourdiary-ink);
+  backdrop-filter: blur(12px);
+}
+
+.album-state--error {
+  border-color: #f3c6d1;
+  color: #bd4f6c;
+}
+
+.album-state a {
+  color: var(--ourdiary-rose-dark);
+  font-weight: 700;
+}

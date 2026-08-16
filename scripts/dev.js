@@ -10,6 +10,7 @@ Object.assign(process.env, localEnvironment, {
 
 const [
   { default: authSessionHandler },
+  { default: diaryEntriesHandler },
   { default: albumFilesHandler },
   { default: driveOwnerInvitationsHandler },
   { default: driveOwnerInvitationHandler },
@@ -18,6 +19,7 @@ const [
   { getDatabase },
 ] = await Promise.all([
   import('../api/auth-session.js'),
+  import('../api/diary-entries.js'),
   import('../api/album-files.js'),
   import('../api/drive-owner-invitations.js'),
   import('../api/drive-owner-invitation.js'),
@@ -28,6 +30,7 @@ const [
 
 const apiRoutes = new Map([
   ['/api/auth-session', authSessionHandler],
+  ['/api/diary-entries', diaryEntriesHandler],
   ['/api/album-files', albumFilesHandler],
   ['/api/drive-owner-invitations', driveOwnerInvitationsHandler],
   ['/api/drive-owner-invitation', driveOwnerInvitationHandler],
@@ -70,7 +73,9 @@ const server = createHttpServer(async (request, response) => {
 
   if (apiHandler) {
     try {
-      if (request.method === 'POST') request.body = await readJsonBody(request)
+      if (['POST', 'PATCH', 'DELETE'].includes(request.method)) {
+        request.body = await readJsonBody(request)
+      }
       await apiHandler(request, createApiResponse(response))
     } catch (error) {
       console.error('Local API request failed', error)
