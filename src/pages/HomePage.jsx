@@ -39,6 +39,30 @@ function HomePage({ session, onLogout, onNavigate }) {
           アルバムを見る
         </a>
 
+        <a
+          className="album-link home-diary-link"
+          href="/diary"
+          onClick={(event) => {
+            event.preventDefault()
+            onNavigate('/diary')
+          }}
+        >
+          日記カレンダーを見る
+        </a>
+
+        {['parent', 'admin'].includes(activeFamily.role) && (
+          <a
+            className="album-settings-link"
+            href="/diary/new"
+            onClick={(event) => {
+              event.preventDefault()
+              onNavigate('/diary/new')
+            }}
+          >
+            ＋ 新しい日記を書く
+          </a>
+        )}
+
         {activeFamily.role === 'admin' && (
           <a
             className="album-settings-link"
@@ -51,10 +75,6 @@ function HomePage({ session, onLogout, onNavigate }) {
             Google Driveアルバム設定
           </a>
         )}
-
-        <div className="placeholder-box">
-          権限に応じた日記投稿・閲覧機能をここに追加していきます。
-        </div>
 
         <button className="logout-button" type="button" onClick={onLogout}>
           ログアウト

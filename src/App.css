@@ -110,6 +110,14 @@
   background: #cf1755;
 }
 
+.home-diary-link {
+  background: linear-gradient(135deg, #d879a0, #9a83c7);
+}
+
+.home-diary-link:hover {
+  background: linear-gradient(135deg, #c8658e, #8870b7);
+}
+
 .album-link:focus-visible {
   outline: 3px solid rgb(233 30 99 / 30%);
   outline-offset: 2px;
@@ -398,4 +406,203 @@
     min-width: 0;
     padding: 32px 24px;
   }
+}
+
+/* Shared soft theme: keep the diary palette consistent across every standard page. */
+.page {
+  background: var(--ourdiary-page-background);
+  color: var(--ourdiary-ink);
+}
+
+.page__title {
+  color: var(--ourdiary-heading);
+  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', Georgia, serif;
+}
+
+.page__subtitle,
+.info-text,
+.status-message {
+  color: #91717e;
+}
+
+.card {
+  border: 1px solid var(--ourdiary-card-border);
+  border-radius: 24px;
+  background: var(--ourdiary-card);
+  box-shadow: var(--ourdiary-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.card__heading,
+.welcome-text,
+.owner-connect-details dd,
+.upload-item__detail strong {
+  color: var(--ourdiary-ink);
+}
+
+.profile-avatar {
+  box-shadow: 0 7px 18px rgb(139 73 99 / 16%);
+}
+
+.role-badge {
+  background: #f5eaf0;
+  color: #846573;
+}
+
+.role-badge--parent {
+  background: #eeeafb;
+  color: #6e71ad;
+}
+
+.role-badge--admin {
+  background: #fce5ee;
+  color: #a84e73;
+}
+
+.placeholder-box {
+  border-color: #e9c3d2;
+  border-radius: 14px;
+  background: rgb(255 249 251 / 62%);
+  color: var(--ourdiary-muted);
+}
+
+.album-link {
+  border-radius: 999px;
+  background: var(--ourdiary-primary-gradient);
+  box-shadow: 0 8px 20px rgb(190 91 130 / 22%);
+}
+
+.album-link:hover {
+  background: linear-gradient(135deg, #dc789d, #bd5a82);
+}
+
+.home-diary-link {
+  background: linear-gradient(135deg, #d879a0, var(--ourdiary-lavender));
+}
+
+.home-diary-link:hover {
+  background: linear-gradient(135deg, #c8658e, #777aba);
+}
+
+.album-link:focus-visible,
+.logout-button:focus-visible {
+  outline-color: rgb(216 118 155 / 32%);
+}
+
+.album-settings-link {
+  color: #987280;
+}
+
+.album-setup-form label {
+  color: #7e5263;
+}
+
+.album-setup-form input,
+.invitation-result input {
+  border-color: #ebc4d3;
+  border-radius: 12px;
+  background: #fff9fb;
+  color: var(--ourdiary-ink);
+}
+
+.album-setup-form input:focus,
+.invitation-result input:focus {
+  border-color: var(--ourdiary-rose);
+  outline: 3px solid rgb(216 118 155 / 13%);
+}
+
+.owner-connect-details {
+  border: 1px solid #f0dbe3;
+  border-radius: 14px;
+  background: #fff7fa;
+}
+
+.owner-connect-details dt {
+  color: var(--ourdiary-muted);
+}
+
+.owner-connect-note {
+  color: #b75a74;
+}
+
+.file-picker {
+  border-color: #e4a9bf;
+  border-radius: 16px;
+  background: #fff7fa;
+  color: var(--ourdiary-rose-dark);
+}
+
+.file-picker:hover {
+  background: #fff0f5;
+}
+
+.upload-item {
+  border-color: #efd3de;
+  border-radius: 12px;
+  background: rgb(255 251 253 / 86%);
+}
+
+.upload-item__detail span,
+.upload-item__detail small {
+  color: #987582;
+}
+
+.upload-item__detail progress {
+  accent-color: var(--ourdiary-rose);
+}
+
+.upload-item output {
+  color: #7785b6;
+}
+
+.upload-item--error output,
+.upload-item--error small {
+  color: #c65370;
+}
+
+.upload-success {
+  border: 1px solid #d8d4f1;
+  border-radius: 12px;
+  background: #f1effb;
+  color: #666ba8;
+}
+
+.not-found-page {
+  background: var(--ourdiary-page-background);
+  color: var(--ourdiary-ink);
+}
+
+.not-found-page__code {
+  color: var(--ourdiary-rose);
+}
+
+.not-found-page p:not(.not-found-page__code) {
+  color: #987582;
+}
+
+.not-found-page a {
+  padding: 11px 24px;
+  border-radius: 999px;
+  background: var(--ourdiary-primary-gradient);
+  box-shadow: 0 8px 20px rgb(190 91 130 / 22%);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.logout-button {
+  border-radius: 999px;
+  background: #f6e1e9;
+  color: #a95773;
+}
+
+.logout-button:hover {
+  background: #efd0dc;
+}
+
+.error-box {
+  border: 1px solid #f3c6d1;
+  border-radius: 12px;
+  background: #fff0f4;
+  color: #bd4f6c;
 }

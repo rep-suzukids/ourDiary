@@ -5,6 +5,8 @@ import AlbumSetupPage from './pages/AlbumSetupPage.jsx'
 import AlbumUploadPage from './pages/AlbumUploadPage.jsx'
 import DriveOwnerCompletePage from './pages/DriveOwnerCompletePage.jsx'
 import DriveOwnerConnectPage from './pages/DriveOwnerConnectPage.jsx'
+import DiaryCreatePage from './pages/DiaryCreatePage.jsx'
+import DiaryPage from './pages/DiaryPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
@@ -115,6 +117,18 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <AlbumUploadPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/diary') {
+    if (!session) return <NotFoundPage onNavigate={navigate} />
+    return <DiaryPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/diary/new') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <DiaryCreatePage session={session} onNavigate={navigate} />
   }
 
   if (pathname !== '/') return <NotFoundPage onNavigate={navigate} />
