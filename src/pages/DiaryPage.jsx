@@ -8,6 +8,10 @@ import '../Diary.css'
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土']
 
+function openNativePicker(event) {
+  if (typeof event.currentTarget.showPicker === 'function') event.currentTarget.showPicker()
+}
+
 function localDateString() {
   const parts = new Intl.DateTimeFormat('ja-JP', {
     timeZone: 'Asia/Tokyo',
@@ -146,7 +150,14 @@ function DiaryPage({ session, onNavigate }) {
           <span aria-hidden="true">✿</span>
           <label>
             <span className="visually-hidden">表示する年月</span>
-            <input type="month" min="2026-01" max="2050-12" value={monthValue} onChange={handleMonthChange} />
+            <input
+              type="month"
+              min="2026-01"
+              max="2050-12"
+              value={monthValue}
+              onClick={openNativePicker}
+              onChange={handleMonthChange}
+            />
           </label>
           <span aria-hidden="true">✿</span>
         </div>
@@ -216,6 +227,7 @@ function DiaryPage({ session, onNavigate }) {
                       min="2026-01-01"
                       max="2050-12-31"
                       value={editValues.date}
+                      onClick={openNativePicker}
                       onChange={(event) => setEditValues((current) => ({ ...current, date: event.target.value }))}
                       required
                     />
