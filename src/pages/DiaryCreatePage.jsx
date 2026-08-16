@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react'
 import { createDiaryEntry, getDiaryEntries } from '../services/diaryApi.js'
 import '../Diary.css'
 
+function openNativePicker(event) {
+  if (typeof event.currentTarget.showPicker === 'function') event.currentTarget.showPicker()
+}
+
 function localDateString() {
   const parts = new Intl.DateTimeFormat('ja-JP', {
     timeZone: 'Asia/Tokyo',
@@ -89,6 +93,7 @@ function DiaryCreatePage({ session, onNavigate }) {
               max="2050-12-31"
               value={date}
               aria-label={`日付：${formatDateLabel(date)}`}
+              onClick={openNativePicker}
               onChange={(event) => setDate(event.target.value)}
               required
             />
