@@ -253,7 +253,7 @@ function DiaryPage({ session, onNavigate }) {
               ) : (
                 <>
                   <header>
-                    <span className="diary-note__child">{childMark(entry.childName)}・{entry.childName}</span>
+                    <span className="diary-note__child">{childMark(entry.childName)}ちゃん</span>
                     <time dateTime={entry.createdAt}>
                       {new Date(entry.createdAt).toLocaleTimeString('ja-JP', {
                         timeZone: 'Asia/Tokyo',
