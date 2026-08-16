@@ -9,6 +9,8 @@ import DiaryCreatePage from './pages/DiaryCreatePage.jsx'
 import DiaryPage from './pages/DiaryPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import MilkFormPage from './pages/MilkFormPage.jsx'
+import MilkPage from './pages/MilkPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import {
   clearSessionCredential,
@@ -129,6 +131,27 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <DiaryCreatePage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/milk') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <MilkPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/milk/new') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <MilkFormPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/milk/edit') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <MilkFormPage session={session} onNavigate={navigate} mode="edit" />
   }
 
   if (pathname !== '/') return <NotFoundPage onNavigate={navigate} />
