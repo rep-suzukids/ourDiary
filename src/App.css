@@ -484,6 +484,14 @@
   background: linear-gradient(135deg, #c8658e, #777aba);
 }
 
+.home-milk-link {
+  background: linear-gradient(135deg, #b6a1d7, #de92ae);
+}
+
+.home-milk-link:hover {
+  background: linear-gradient(135deg, #a38bc9, #d17c9d);
+}
+
 .album-link:focus-visible,
 .logout-button:focus-visible {
   outline-color: rgb(216 118 155 / 32%);

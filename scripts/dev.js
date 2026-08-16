@@ -11,6 +11,7 @@ Object.assign(process.env, localEnvironment, {
 const [
   { default: authSessionHandler },
   { default: diaryEntriesHandler },
+  { default: careEventsHandler },
   { default: albumFilesHandler },
   { default: driveOwnerInvitationsHandler },
   { default: driveOwnerInvitationHandler },
@@ -20,6 +21,7 @@ const [
 ] = await Promise.all([
   import('../api/auth-session.js'),
   import('../api/diary-entries.js'),
+  import('../api/care-events.js'),
   import('../api/album-files.js'),
   import('../api/drive-owner-invitations.js'),
   import('../api/drive-owner-invitation.js'),
@@ -31,6 +33,7 @@ const [
 const apiRoutes = new Map([
   ['/api/auth-session', authSessionHandler],
   ['/api/diary-entries', diaryEntriesHandler],
+  ['/api/care-events', careEventsHandler],
   ['/api/album-files', albumFilesHandler],
   ['/api/drive-owner-invitations', driveOwnerInvitationsHandler],
   ['/api/drive-owner-invitation', driveOwnerInvitationHandler],

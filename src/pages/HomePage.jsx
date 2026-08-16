@@ -51,16 +51,28 @@ function HomePage({ session, onLogout, onNavigate }) {
         </a>
 
         {['parent', 'admin'].includes(activeFamily.role) && (
-          <a
-            className="album-settings-link"
-            href="/diary/new"
-            onClick={(event) => {
-              event.preventDefault()
-              onNavigate('/diary/new')
-            }}
-          >
-            ＋ 新しい日記を書く
-          </a>
+          <>
+            <a
+              className="album-link home-milk-link"
+              href="/milk"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/milk')
+              }}
+            >
+              ミルクの記録を見る
+            </a>
+            <a
+              className="album-settings-link"
+              href="/diary/new"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/diary/new')
+              }}
+            >
+              ＋ 新しい日記を書く
+            </a>
+          </>
         )}
 
         {activeFamily.role === 'admin' && (
