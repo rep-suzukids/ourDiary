@@ -19,6 +19,32 @@ function isValidDate(value) {
     && Number(value.slice(0, 4)) <= 2050
 }
 
+function monthRange(yearValue, monthValue) {
+  const year = Number(yearValue)
+  const month = Number(monthValue)
+  if (!Number.isInteger(year) || year < 2026 || year > 2050
+    || !Number.isInteger(month) || month < 1 || month > 12) return null
+  const start = `${year}-${String(month).padStart(2, '0')}-01`
+  const next = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10)
+  return { start, endExclusive: next }
+}
+
+function addUtcDays(value, difference) {
+  const date = new Date(`${value}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + difference)
+  return date.toISOString().slice(0, 10)
+}
+
+function weekRange(value) {
+  const date = new Date(`${value}T00:00:00Z`)
+  const start = addUtcDays(value, -date.getUTCDay())
+  return {
+    start,
+    end: addUtcDays(start, 6),
+    endExclusive: addUtcDays(start, 7),
+  }
+}
+
 function isValidTime(value) {
   if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return false
   const [hour, minute] = value.split(':').map(Number)
@@ -111,6 +137,26 @@ async function getEvents(sql, familyId, userId, date) {
   `
 }
 
+async function getCareSummaries(sql, familyId, start, endExclusive) {
+  return sql`
+    SELECT
+      to_char(ce.event_date, 'YYYY-MM-DD') AS date,
+      ce.event_type AS "eventType",
+      ce.child_id AS "childId",
+      COUNT(*)::int AS count,
+      COALESCE(SUM(md.amount_ml), 0)::float8 AS "amountMl"
+    FROM care_events ce
+    INNER JOIN milk_event_details md
+      ON md.family_id = ce.family_id AND md.event_id = ce.id
+    WHERE ce.family_id = ${familyId}
+      AND ce.event_date >= ${start}
+      AND ce.event_date < ${endExclusive}
+      AND ce.deleted_at IS NULL
+    GROUP BY ce.event_date, ce.event_type, ce.child_id
+    ORDER BY ce.event_date, ce.event_type, ce.child_id
+  `
+}
+
 async function getRecentAmounts(sql, familyId) {
   return sql`
     WITH latest_amounts AS (
@@ -175,15 +221,35 @@ export default async function handler(request, response) {
 
     if (request.method === 'GET') {
       const url = new URL(request.url, 'http://localhost')
+      const view = request.query?.view ?? url.searchParams.get('view')
+      if (view === 'month') {
+        const range = monthRange(
+          request.query?.year ?? url.searchParams.get('year'),
+          request.query?.month ?? url.searchParams.get('month'),
+        )
+        if (!range) {
+          sendJson(response, 400, { error: '表示する年月が正しくありません。' })
+          return
+        }
+        const [children, summaries] = await Promise.all([
+          getFixedChildren(sql, familyId),
+          getCareSummaries(sql, familyId, range.start, range.endExclusive),
+        ])
+        sendJson(response, 200, { children, summaries })
+        return
+      }
+
       const date = request.query?.date ?? url.searchParams.get('date')
       if (!isValidDate(date)) {
         sendJson(response, 400, { error: '表示する日付が正しくありません。' })
         return
       }
-      const [children, events, amounts] = await Promise.all([
+      const week = weekRange(date)
+      const [children, events, amounts, weeklySummaries] = await Promise.all([
         getFixedChildren(sql, familyId),
         getEvents(sql, familyId, authorization.userId, date),
         getRecentAmounts(sql, familyId),
+        getCareSummaries(sql, familyId, week.start, week.endExclusive),
       ])
       const recentAmounts = { pumping: [], children: {} }
       for (const amount of amounts) {
@@ -194,7 +260,16 @@ export default async function handler(request, response) {
           recentAmounts.children[amount.childId].push(amount.amountMl)
         }
       }
-      sendJson(response, 200, { children, events, recentAmounts })
+      sendJson(response, 200, {
+        children,
+        events,
+        recentAmounts,
+        weeklySummary: {
+          start: week.start,
+          end: week.end,
+          summaries: weeklySummaries,
+        },
+      })
       return
     }
 

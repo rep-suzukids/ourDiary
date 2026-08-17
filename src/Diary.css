@@ -175,14 +175,15 @@
   box-shadow: inset 0 0 0 2px #df86a8;
 }
 
+.diary-calendar-day.is-today {
+  z-index: 1;
+  background: #ffedf4;
+  box-shadow: inset 0 0 0 2px #df86a8;
+}
+
 .diary-calendar-day.is-today .diary-calendar-day__number {
-  display: grid;
-  width: 27px;
-  height: 27px;
-  place-items: center;
-  border-radius: 50%;
-  background: #d8769b;
-  color: #fff;
+  color: #c5557f;
+  font-weight: 900;
 }
 
 .diary-calendar-day__number {

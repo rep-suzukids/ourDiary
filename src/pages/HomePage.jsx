@@ -54,10 +54,10 @@ function HomePage({ session, onLogout, onNavigate }) {
           <>
             <a
               className="album-link home-milk-link"
-              href="/milk"
+              href="/milk/calendar"
               onClick={(event) => {
                 event.preventDefault()
-                onNavigate('/milk')
+                onNavigate('/milk/calendar')
               }}
             >
               ミルクの記録を見る

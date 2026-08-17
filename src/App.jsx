@@ -10,6 +10,7 @@ import DiaryPage from './pages/DiaryPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import MilkFormPage from './pages/MilkFormPage.jsx'
+import MilkCalendarPage from './pages/MilkCalendarPage.jsx'
 import MilkPage from './pages/MilkPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import {
@@ -137,6 +138,13 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <MilkPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/milk/calendar') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <MilkCalendarPage session={session} onNavigate={navigate} />
   }
 
   if (pathname === '/milk/new') {
