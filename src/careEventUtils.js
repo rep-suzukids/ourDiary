@@ -61,6 +61,13 @@ export function eventTimeLabel(event) {
   return '時刻不明'
 }
 
+export function formatAmount(value) {
+  return Number(value).toLocaleString('ja-JP', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })
+}
+
 export function openNativePicker(event) {
   if (typeof event.currentTarget.showPicker === 'function') event.currentTarget.showPicker()
 }
