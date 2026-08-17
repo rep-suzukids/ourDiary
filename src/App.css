@@ -492,6 +492,25 @@
   background: linear-gradient(135deg, #a38bc9, #d17c9d);
 }
 
+.home-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.home-nav-link svg {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
+}
+
 .album-link:focus-visible,
 .logout-button:focus-visible {
   outline-color: rgb(216 118 155 / 32%);
