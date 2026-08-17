@@ -4,6 +4,34 @@ const ROLE_LABELS = {
   admin: '管理者',
 }
 
+function AlbumIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <rect x="6" y="9" width="36" height="30" rx="5" />
+      <circle cx="17" cy="19" r="3" />
+      <path d="m10 34 9-9 6 6 5-5 8 8" />
+    </svg>
+  )
+}
+
+function DiaryIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M8 10a5 5 0 0 1 5-5h11v35H13a5 5 0 0 0-5 3V10Z" />
+      <path d="M40 10a5 5 0 0 0-5-5H24v35h11a5 5 0 0 1 5 3V10ZM13 14h6M13 21h6M29 14h6M29 21h6" />
+    </svg>
+  )
+}
+
+function MilkIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M18 5h12v6l4 5v23a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V16l4-5V5Z" />
+      <path d="M17 20h14M17 27h9M17 34h14" />
+    </svg>
+  )
+}
+
 function HomePage({ session, onLogout, onNavigate }) {
   const activeFamily = session.families[0]
 
@@ -35,44 +63,35 @@ function HomePage({ session, onLogout, onNavigate }) {
           {activeFamily.name}のプライベート空間に安全に接続されています。
         </p>
 
-        <a className="album-link" href="/album" onClick={openAlbum}>
-          アルバムを見る
+        <a className="album-link home-nav-link" href="/album" onClick={openAlbum}>
+          <AlbumIcon />
+          <span>アルバム</span>
         </a>
 
         <a
-          className="album-link home-diary-link"
+          className="album-link home-nav-link home-diary-link"
           href="/diary"
           onClick={(event) => {
             event.preventDefault()
             onNavigate('/diary')
           }}
         >
-          日記カレンダーを見る
+          <DiaryIcon />
+          <span>日記</span>
         </a>
 
         {['parent', 'admin'].includes(activeFamily.role) && (
-          <>
-            <a
-              className="album-link home-milk-link"
-              href="/milk"
-              onClick={(event) => {
-                event.preventDefault()
-                onNavigate('/milk')
-              }}
-            >
-              ミルクの記録を見る
-            </a>
-            <a
-              className="album-settings-link"
-              href="/diary/new"
-              onClick={(event) => {
-                event.preventDefault()
-                onNavigate('/diary/new')
-              }}
-            >
-              ＋ 新しい日記を書く
-            </a>
-          </>
+          <a
+            className="album-link home-nav-link home-milk-link"
+            href="/milk/calendar"
+            onClick={(event) => {
+              event.preventDefault()
+              onNavigate('/milk/calendar')
+            }}
+          >
+            <MilkIcon />
+            <span>ミルク</span>
+          </a>
         )}
 
         {activeFamily.role === 'admin' && (

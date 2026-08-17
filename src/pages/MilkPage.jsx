@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { deleteCareEvent, getCareEvents } from '../services/careEventApi.js'
+import { BottleIcon, PumpIcon } from '../components/CareEventIcons.jsx'
 import {
   addDate,
   childDisplayName,
@@ -11,24 +12,6 @@ import {
   openNativePicker,
 } from '../careEventUtils.js'
 import '../Milk.css'
-
-function BottleIcon() {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M18 5h12v6l4 5v23a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V16l4-5V5Z" />
-      <path d="M17 20h14M17 27h9M17 34h14" />
-    </svg>
-  )
-}
-
-function PumpIcon() {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M24 5c7 10 12 16 12 24a12 12 0 0 1-24 0c0-8 5-14 12-24Z" />
-      <path d="M18 31c1.5 3.2 4 4.8 7.5 4.8" />
-    </svg>
-  )
-}
 
 function initialDate() {
   const requested = new URLSearchParams(window.location.search).get('date')
@@ -108,6 +91,7 @@ function MilkPage({ session, onNavigate }) {
   const [childFilter, setChildFilter] = useState('all')
   const [children, setChildren] = useState([])
   const [events, setEvents] = useState([])
+  const [weeklySummary, setWeeklySummary] = useState({ start: '', end: '', summaries: [] })
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [selectedEvent, setSelectedEvent] = useState(null)
@@ -119,6 +103,7 @@ function MilkPage({ session, onNavigate }) {
       .then((result) => {
         setChildren(result.children)
         setEvents(result.events)
+        setWeeklySummary(result.weeklySummary ?? { start: '', end: '', summaries: [] })
         setStatus('ready')
       })
       .catch((requestError) => {
@@ -143,6 +128,18 @@ function MilkPage({ session, onNavigate }) {
   const pumpingTotal = useMemo(() => events
     .filter((event) => event.eventType === 'pumping')
     .reduce((total, event) => total + event.amountMl, 0), [events])
+  const weeklyChildTotals = useMemo(() => Object.fromEntries(children.map((child) => [
+    child.id,
+    weeklySummary.summaries
+      .filter((summary) => summary.eventType === 'feeding' && summary.childId === child.id)
+      .reduce((total, summary) => total + summary.amountMl, 0),
+  ])), [children, weeklySummary.summaries])
+  const weeklyPumpingTotal = useMemo(() => weeklySummary.summaries
+    .filter((summary) => summary.eventType === 'pumping')
+    .reduce((total, summary) => total + summary.amountMl, 0), [weeklySummary.summaries])
+  const weekLabel = weeklySummary.start && weeklySummary.end
+    ? `${Number(weeklySummary.start.slice(5, 7))}/${Number(weeklySummary.start.slice(8, 10))}〜${Number(weeklySummary.end.slice(5, 7))}/${Number(weeklySummary.end.slice(8, 10))}`
+    : ''
 
   const updateLocation = (nextDate, nextTab = tab) => {
     window.history.replaceState({}, '', `/milk?date=${nextDate}&tab=${nextTab}`)
@@ -165,7 +162,7 @@ function MilkPage({ session, onNavigate }) {
     try {
       await deleteCareEvent(activeFamily.id, event.id)
       setSelectedEvent(null)
-      setEvents((current) => current.filter((item) => item.id !== event.id))
+      loadEvents()
     } catch (requestError) {
       setError(requestError.message)
     }
@@ -179,7 +176,13 @@ function MilkPage({ session, onNavigate }) {
   return (
     <main className="milk-page">
       <header className="milk-page-header">
-        <a href="/" onClick={navigateLink('/')} aria-label="TOPへ戻る">←</a>
+        <a
+          href={`/milk/calendar?month=${date.slice(0, 7)}`}
+          onClick={navigateLink(`/milk/calendar?month=${date.slice(0, 7)}`)}
+          aria-label="カレンダーへ戻る"
+        >
+          ←
+        </a>
         <div>
           <p>{activeFamily.name}</p>
           <h1>ミルクの記録</h1>
@@ -211,18 +214,21 @@ function MilkPage({ session, onNavigate }) {
           <button type="button" aria-label="次の日" onClick={() => changeDate(addDate(date, 1))}>›</button>
         </div>
 
-        <div className="milk-summary" aria-label="この日の合計">
+        <div className="milk-summary" aria-label="この日と週間の合計">
           {children.map((child) => (
             <div className={`milk-summary__item milk-summary__item--${childTone(child.name)}`} key={child.id}>
               <span>{childDisplayName(child.name)}</span>
               <strong>{formatAmount(childTotals[child.id] ?? 0)}<small> mL</small></strong>
+              <em>週合計 {formatAmount(weeklyChildTotals[child.id] ?? 0)} mL</em>
             </div>
           ))}
           <div className="milk-summary__item milk-summary__item--mother">
             <span>搾乳</span>
             <strong>{formatAmount(pumpingTotal)}<small> mL</small></strong>
+            <em>週合計 {formatAmount(weeklyPumpingTotal)} mL</em>
           </div>
         </div>
+        {weekLabel && <p className="milk-week-range">週間集計：{weekLabel}（日〜土）</p>}
 
         <div className="milk-tabs" role="tablist" aria-label="記録の種類">
           <button type="button" role="tab" aria-selected={tab === 'feeding'} className={tab === 'feeding' ? 'is-active' : ''} onClick={() => changeTab('feeding')}>

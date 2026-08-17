@@ -118,7 +118,7 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
       } else {
         await createCareEvent(activeFamily.id, values)
       }
-      onNavigate(`/milk?date=${date}&tab=${eventType}`)
+      onNavigate(`/milk?date=${date}&tab=${eventType}`, { replace: mode === 'create' })
     } catch (requestError) {
       setError(requestError.message)
       setStatus('ready')
@@ -203,7 +203,7 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
         <label className="milk-field">
           <span>日付</span>
           <span className="milk-date-control">
-            <span aria-hidden="true">{formatDateLabel(date)}</span>
+            <span className="milk-date-control__label" aria-hidden="true">{formatDateLabel(date)}</span>
             <input
               type="date"
               min="2026-01-01"

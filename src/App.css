@@ -341,7 +341,7 @@
 .not-found-page__code {
   margin: 0;
   color: #e91e63;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
   font-size: clamp(5rem, 18vw, 10rem);
   line-height: 0.85;
 }
@@ -416,7 +416,7 @@
 
 .page__title {
   color: var(--ourdiary-heading);
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', Georgia, serif;
+  font-weight: 700;
 }
 
 .page__subtitle,
@@ -490,6 +490,25 @@
 
 .home-milk-link:hover {
   background: linear-gradient(135deg, #a38bc9, #d17c9d);
+}
+
+.home-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.home-nav-link svg {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.5;
 }
 
 .album-link:focus-visible,

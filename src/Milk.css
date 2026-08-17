@@ -41,9 +41,8 @@
 
 .milk-page-header h1 {
   color: var(--ourdiary-heading);
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   font-size: clamp(1.55rem, 4vw, 2.35rem);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .milk-add-button,
@@ -123,11 +122,38 @@
   background: transparent;
   color: transparent;
   cursor: pointer;
+  font: inherit;
 }
 
 .milk-date-nav input::-webkit-datetime-edit,
 .milk-date-control input::-webkit-datetime-edit {
   color: transparent;
+}
+
+.milk-date-nav input::-webkit-calendar-picker-indicator,
+.milk-date-control input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 14px;
+  width: 1em;
+  height: 1em;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.milk-date-nav label::after,
+.milk-date-control::after {
+  position: absolute;
+  z-index: 1;
+  right: 14px;
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  content: '';
+  pointer-events: none;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1Zm12 8H5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9ZM6 6a1 1 0 0 0-1 1v1h14V7a1 1 0 0 0-1-1H6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1Zm12 8H5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9ZM6 6a1 1 0 0 0-1 1v1h14V7a1 1 0 0 0-1-1H6Z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .milk-summary {
@@ -174,6 +200,24 @@
 
 .milk-summary__item small {
   font-size: 0.68rem;
+}
+
+.milk-summary__item em {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid currentcolor;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 700;
+  opacity: 0.72;
+}
+
+.milk-week-range {
+  margin: -14px 0 22px;
+  color: #a17d8a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
 }
 
 .milk-tabs {
@@ -297,7 +341,8 @@
 }
 
 .milk-event-icon svg,
-.milk-modal__icon svg {
+.milk-modal__icon svg,
+.milk-calendar-record svg {
   width: 29px;
   height: 29px;
   fill: none;
@@ -402,7 +447,7 @@
 .milk-modal h2 {
   margin: 4px 0 20px;
   color: var(--ourdiary-heading);
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-weight: 700;
 }
 
 .milk-detail-list {
@@ -469,6 +514,233 @@
 
 .milk-danger-button {
   color: #b65069;
+}
+
+.milk-calendar-header {
+  width: min(1120px, 100%);
+}
+
+.milk-calendar-card {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  padding: clamp(14px, 3vw, 28px);
+  border: 1px solid var(--ourdiary-card-border);
+  border-radius: 24px;
+  background: var(--ourdiary-card);
+  box-shadow: var(--ourdiary-shadow);
+  box-sizing: border-box;
+  backdrop-filter: blur(10px);
+}
+
+.milk-calendar-toolbar {
+  display: flex;
+  margin-bottom: 14px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #df8cab;
+}
+
+.milk-calendar-toolbar input[type='month'] {
+  padding: 10px 44px 10px 16px;
+  border: 1px solid #ebc4d3;
+  border-radius: 999px;
+  background: #fff9fb;
+  color: #7e4d61;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.milk-month-picker {
+  position: relative;
+  display: inline-grid;
+  color: #7e4d61;
+}
+
+.milk-month-picker input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+}
+
+.milk-month-picker::after {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  content: '';
+  pointer-events: none;
+  transform: translateY(-50%);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1Zm12 8H5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9ZM6 6a1 1 0 0 0-1 1v1h14V7a1 1 0 0 0-1-1H6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 2a1 1 0 0 1 1 1v1h8V3a1 1 0 1 1 2 0v1h1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h1V3a1 1 0 0 1 1-1Zm12 8H5v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9ZM6 6a1 1 0 0 0-1 1v1h14V7a1 1 0 0 0-1-1H6Z'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+.milk-calendar-summary-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  color: #9b7483;
+  gap: 8px;
+}
+
+.milk-calendar-summary-heading span {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.milk-calendar-summary-heading strong {
+  color: var(--ourdiary-heading);
+  font-weight: 700;
+}
+
+.milk-calendar-summary {
+  width: min(760px, 100%);
+  margin: 12px auto 24px;
+}
+
+.milk-calendar-status {
+  margin: 12px 0;
+  color: #aa8794;
+  text-align: center;
+}
+
+.milk-calendar-weekdays,
+.milk-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.milk-calendar-weekdays span {
+  padding: 8px 0;
+  color: #a77b8c;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.milk-calendar-weekdays span:first-child {
+  color: #d96d91;
+}
+
+.milk-calendar-weekdays span:last-child {
+  color: #798fc6;
+}
+
+.milk-calendar-grid {
+  overflow: hidden;
+  border: 1px solid #f0dbe3;
+  border-radius: 16px;
+  background: #f0dbe3;
+  gap: 1px;
+}
+
+.milk-calendar-day,
+.milk-calendar-blank {
+  min-height: clamp(76px, 10vw, 116px);
+  background: rgb(255 253 254 / 96%);
+}
+
+.milk-calendar-day {
+  display: flex;
+  padding: 9px;
+  border: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  color: #684e58;
+  cursor: pointer;
+  font: inherit;
+  transition: background 140ms ease;
+}
+
+.milk-calendar-day:hover {
+  background: #fff5f9;
+}
+
+.milk-calendar-day.is-today {
+  position: relative;
+  z-index: 1;
+  background: #ffedf4;
+  box-shadow: inset 0 0 0 2px #df86a8;
+}
+
+.milk-calendar-day.is-today .milk-calendar-day__number {
+  color: #c5557f;
+  font-weight: 900;
+}
+
+.milk-calendar-day__number {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.milk-calendar-day__records {
+  display: grid;
+  margin-top: auto;
+  align-self: center;
+  grid-template-areas:
+    '. mother'
+    'tomo yuu';
+  grid-template-columns: repeat(2, 30px);
+  grid-template-rows: repeat(2, 30px);
+  gap: 5px;
+}
+
+.milk-calendar-record {
+  position: relative;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+}
+
+.milk-calendar-record--tomo {
+  grid-area: tomo;
+  background: linear-gradient(145deg, #a4a7e0, #777bbe);
+}
+
+.milk-calendar-record--yuu {
+  grid-area: yuu;
+  background: linear-gradient(145deg, #ed9cba, #d36f95);
+}
+
+.milk-calendar-record--mother {
+  grid-area: mother;
+  background: linear-gradient(145deg, #d9b6a3, #ae7e68);
+}
+
+.milk-calendar-record svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 3;
+}
+
+.milk-calendar-record small {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: grid;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #725563;
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  box-sizing: border-box;
+}
+
+.milk-calendar-note {
+  margin: 14px 0 0;
+  color: #a17d8a;
+  font-size: 0.74rem;
+  text-align: center;
 }
 
 .milk-page-header--compact,
@@ -671,6 +943,13 @@
   border-radius: 11px;
 }
 
+.milk-date-control__label {
+  position: relative;
+  z-index: 1;
+  color: #514147;
+  pointer-events: none;
+}
+
 .milk-time-types {
   display: flex;
   margin: 12px 0;
@@ -737,6 +1016,13 @@
     font-size: 0.82rem;
   }
 
+  .milk-date-nav input::-webkit-calendar-picker-indicator,
+  .milk-date-control input::-webkit-calendar-picker-indicator,
+  .milk-date-nav label::after,
+  .milk-date-control::after {
+    right: 12px;
+  }
+
   .milk-summary {
     gap: 6px;
   }
@@ -747,6 +1033,49 @@
 
   .milk-summary__item strong {
     font-size: 1.05rem;
+  }
+
+  .milk-summary__item em {
+    font-size: 0.58rem;
+  }
+
+  .milk-calendar-card {
+    padding: 10px;
+    border-radius: 18px;
+  }
+
+  .milk-calendar-day,
+  .milk-calendar-blank {
+    min-height: 86px;
+  }
+
+  .milk-calendar-day {
+    padding: 6px 4px;
+  }
+
+  .milk-calendar-day__records {
+    grid-template-columns: repeat(2, 24px);
+    grid-template-rows: repeat(2, 24px);
+    gap: 3px;
+  }
+
+  .milk-calendar-record {
+    width: 24px;
+    height: 24px;
+  }
+
+  .milk-calendar-record svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .milk-calendar-record small {
+    top: -5px;
+    right: -5px;
+    min-width: 15px;
+    height: 15px;
+    border-width: 1px;
+    font-size: 0.52rem;
   }
 
   .milk-type-options,

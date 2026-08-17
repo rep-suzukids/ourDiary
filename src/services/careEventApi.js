@@ -24,6 +24,19 @@ export async function getCareEvents(familyId, date) {
   return readResponse(response)
 }
 
+export async function getMonthlyCareSummary(familyId, year, month) {
+  const query = new URLSearchParams({
+    view: 'month',
+    year: String(year),
+    month: String(month),
+  })
+  const response = await fetch(`/api/care-events?${query}`, {
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId),
+  })
+  return readResponse(response)
+}
+
 export async function createCareEvent(familyId, values) {
   const response = await fetch('/api/care-events', {
     method: 'POST',
