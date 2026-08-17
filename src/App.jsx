@@ -62,8 +62,9 @@ function AppContent() {
     return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
-  const navigate = (path) => {
-    window.history.pushState({}, '', path)
+  const navigate = (path, options = {}) => {
+    const historyMethod = options.replace ? 'replaceState' : 'pushState'
+    window.history[historyMethod]({}, '', path)
     setPathname(new URL(path, window.location.origin).pathname)
   }
 

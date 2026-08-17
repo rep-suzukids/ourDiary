@@ -100,7 +100,7 @@ function MilkCalendarPage({ session, onNavigate }) {
       <section className="milk-calendar-card" aria-label={`${year}年${month}月のミルク・搾乳カレンダー`}>
         <div className="milk-calendar-toolbar">
           <span aria-hidden="true">♡</span>
-          <label>
+          <label className="milk-month-picker">
             <span className="visually-hidden">表示する年月</span>
             <input
               type="month"

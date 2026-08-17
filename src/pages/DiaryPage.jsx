@@ -148,7 +148,7 @@ function DiaryPage({ session, onNavigate }) {
       <section className="diary-calendar-card" aria-label={`${year}年${month}月の日記カレンダー`}>
         <div className="diary-calendar-toolbar">
           <span aria-hidden="true">✿</span>
-          <label>
+          <label className="diary-month-picker">
             <span className="visually-hidden">表示する年月</span>
             <input
               type="month"
