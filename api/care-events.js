@@ -28,7 +28,8 @@ function isValidTime(value) {
 function validateEventInput(body) {
   const eventType = typeof body?.eventType === 'string' ? body.eventType : ''
   const childId = typeof body?.childId === 'string' ? body.childId : ''
-  const amountMl = Number(body?.amountMl)
+  const amountText = String(body?.amountMl ?? '')
+  const amountMl = Number(amountText)
   const date = body?.date
   const timeType = typeof body?.timeType === 'string' ? body.timeType : ''
   const time = typeof body?.time === 'string' ? body.time : ''
@@ -36,7 +37,7 @@ function validateEventInput(body) {
   const memo = typeof body?.memo === 'string' ? body.memo.trim() : ''
 
   if (!EVENT_TYPES.has(eventType) || !isValidDate(date)) return null
-  if (!Number.isInteger(amountMl) || amountMl < 1 || amountMl > 2000) return null
+  if (!/^\d{1,4}(?:\.\d{1,2})?$/.test(amountText) || !Number.isFinite(amountMl) || amountMl <= 0 || amountMl > 2000) return null
   if (!TIME_TYPES.has(timeType) || memo.length > 5000) return null
   if (eventType === 'feeding' && !UUID_PATTERN.test(childId)) return null
   if (timeType === 'exact' && !isValidTime(time)) return null
@@ -78,7 +79,7 @@ async function getEvents(sql, familyId, userId, date) {
       ce.time_type AS "timeType",
       CASE WHEN ce.event_time IS NULL THEN NULL ELSE to_char(ce.event_time, 'HH24:MI') END AS time,
       ce.time_period AS "timePeriod",
-      md.amount_ml AS "amountMl",
+      md.amount_ml::float8 AS "amountMl",
       ce.memo,
       ce.author_id AS "authorId",
       COALESCE(u.display_name, u.email::text) AS "authorName",
@@ -138,7 +139,7 @@ async function getRecentAmounts(sql, familyId) {
     SELECT
       event_type AS "eventType",
       child_id AS "childId",
-      amount_ml AS "amountMl"
+      amount_ml::float8 AS "amountMl"
     FROM ranked
     WHERE position <= 5
     ORDER BY event_type, child_id, position

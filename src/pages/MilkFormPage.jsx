@@ -4,6 +4,7 @@ import {
   childDisplayName,
   childTone,
   formatDateLabel,
+  formatAmount,
   localDateString,
   localTimeString,
   openNativePicker,
@@ -90,8 +91,8 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
       return
     }
     const numericAmount = Number(amountMl)
-    if (!Number.isInteger(numericAmount) || numericAmount < 1 || numericAmount > 2000) {
-      setError('量は1〜2000mLの整数で入力してください。')
+    if (!/^\d{1,4}(?:\.\d{1,2})?$/.test(amountMl) || !Number.isFinite(numericAmount) || numericAmount <= 0 || numericAmount > 2000) {
+      setError('量は0より大きい2000mL以下の値を、小数第2位までで入力してください。')
       return
     }
     if (timeType === 'period' && !timePeriod) {
@@ -176,9 +177,9 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
           <span className="milk-amount-control">
             <input
               type="number"
-              min="1"
+              min="0.01"
               max="2000"
-              step="1"
+              step="0.01"
               inputMode="numeric"
               value={amountMl}
               onChange={(event) => setAmountMl(event.target.value)}
@@ -193,7 +194,7 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
             <span>最近の量</span>
             <div>
               {amountSuggestions.map((amount) => (
-                <button type="button" key={amount} onClick={() => setAmountMl(String(amount))}>{amount}mL</button>
+                <button type="button" key={amount} onClick={() => setAmountMl(String(amount))}>{formatAmount(amount)}mL</button>
               ))}
             </div>
           </div>

@@ -5,6 +5,7 @@ import {
   childDisplayName,
   childTone,
   eventTimeLabel,
+  formatAmount,
   formatDateLabel,
   localDateString,
   openNativePicker,
@@ -72,7 +73,7 @@ function EventModal({ event, onClose, onDelete, onNavigate }) {
         <p className="milk-modal__eyebrow">{eventTimeLabel(event)}の記録</p>
         <h2 id="milk-detail-title">{subject}の{typeLabel}</h2>
         <dl className="milk-detail-list">
-          <div><dt>量</dt><dd>{event.amountMl} mL</dd></div>
+          <div><dt>量</dt><dd>{formatAmount(event.amountMl)} mL</dd></div>
           <div><dt>日付</dt><dd>{formatDateLabel(event.date)}</dd></div>
           <div><dt>時刻</dt><dd>{eventTimeLabel(event)}</dd></div>
           <div><dt>記録した人</dt><dd>{event.authorName}</dd></div>
@@ -214,12 +215,12 @@ function MilkPage({ session, onNavigate }) {
           {children.map((child) => (
             <div className={`milk-summary__item milk-summary__item--${childTone(child.name)}`} key={child.id}>
               <span>{childDisplayName(child.name)}</span>
-              <strong>{childTotals[child.id] ?? 0}<small> mL</small></strong>
+              <strong>{formatAmount(childTotals[child.id] ?? 0)}<small> mL</small></strong>
             </div>
           ))}
           <div className="milk-summary__item milk-summary__item--mother">
             <span>搾乳</span>
-            <strong>{pumpingTotal}<small> mL</small></strong>
+            <strong>{formatAmount(pumpingTotal)}<small> mL</small></strong>
           </div>
         </div>
 
@@ -269,7 +270,7 @@ function MilkPage({ session, onNavigate }) {
                   <button
                     type="button"
                     className={`milk-event-icon milk-event-icon--${tone}`}
-                    aria-label={`${eventTimeLabel(event)}、${subject}、${typeLabel}${event.amountMl}mL。詳細を表示`}
+                    aria-label={`${eventTimeLabel(event)}、${subject}、${typeLabel}${formatAmount(event.amountMl)}mL。詳細を表示`}
                     onClick={() => setSelectedEvent(event)}
                   >
                     {event.eventType === 'pumping' ? <PumpIcon /> : <BottleIcon />}
