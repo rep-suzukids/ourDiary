@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { useGoogleLogin } from '@react-oauth/google'
 import InfiniteAlbumCanvas from '../components/InfiniteAlbumCanvas.jsx'
 import {
-  DRIVE_READ_SCOPES,
   getAlbumPhotos,
+  getDriveAccessToken,
+  getDriveConnectUrl,
   listDrivePhotosDirectly,
-  loadDriveAccessToken,
   registerDriveAlbumFiles,
-  saveDriveAccessToken,
-  verifyDriveAccount,
 } from '../services/albumApi.js'
 import '../Album.css'
 
@@ -19,29 +16,14 @@ function AlbumPage({ session, onNavigate }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [errorCode, setErrorCode] = useState('')
-  const [driveAccessToken, setDriveAccessToken] = useState(() => loadDriveAccessToken('read', session.user.email))
+  const [driveAccessToken, setDriveAccessToken] = useState('')
+  const [driveStatus, setDriveStatus] = useState('loading')
   const syncAttempted = useRef(false)
   const activeFamily = session.families[0]
 
-  const connectDrive = useGoogleLogin({
-    scope: DRIVE_READ_SCOPES,
-    include_granted_scopes: true,
-    onSuccess: async (tokenResponse) => {
-      try {
-        await verifyDriveAccount(tokenResponse.access_token, session.user.email)
-        saveDriveAccessToken('read', session.user.email, tokenResponse)
-        setDriveAccessToken(tokenResponse.access_token)
-        setError('')
-      } catch (accountError) {
-        setError(accountError.message)
-      }
-    },
-    onError: () => setError('Google Driveへの接続がキャンセルされました。'),
-  })
-
   useEffect(() => {
     let isActive = true
-    getAlbumPhotos(session.credential, activeFamily.id)
+    getAlbumPhotos(activeFamily.id)
       .then((album) => {
         if (!isActive) return
         setAlbumTitle(album.title)
@@ -56,7 +38,28 @@ function AlbumPage({ session, onNavigate }) {
         setStatus('error')
       })
     return () => { isActive = false }
-  }, [activeFamily.id, session.credential])
+  }, [activeFamily.id])
+
+  useEffect(() => {
+    let isActive = true
+    const oauthStatus = new URLSearchParams(window.location.search).get('drive')
+    if (oauthStatus === 'failed') setError('Google Driveへの接続に失敗しました。')
+    if (oauthStatus === 'email_mismatch') {
+      setError(`${session.user.email}のGoogleアカウントを選択してください。`)
+    }
+    getDriveAccessToken(activeFamily.id)
+      .then((driveAccess) => {
+        if (!isActive) return
+        setDriveAccessToken(driveAccess.accessToken)
+        setDriveStatus('ready')
+      })
+      .catch((requestError) => {
+        if (!isActive) return
+        setDriveStatus(requestError.code === 'DRIVE_USER_NOT_CONNECTED' ? 'not-connected' : 'error')
+        if (requestError.code !== 'DRIVE_USER_NOT_CONNECTED') setError(requestError.message)
+      })
+    return () => { isActive = false }
+  }, [activeFamily.id, session.user.email])
 
   useEffect(() => {
     if (status !== 'ready' || photos.length > 0 || !folderId || !driveAccessToken || syncAttempted.current) return
@@ -64,13 +67,13 @@ function AlbumPage({ session, onNavigate }) {
     listDrivePhotosDirectly(driveAccessToken, folderId)
       .then((drivePhotos) => {
         if (drivePhotos.length === 0) return null
-        return registerDriveAlbumFiles(session.credential, activeFamily.id, drivePhotos)
+        return registerDriveAlbumFiles(activeFamily.id, drivePhotos)
       })
       .then((result) => {
         if (result?.photos) setPhotos(result.photos)
       })
       .catch((syncError) => setError(syncError.message))
-  }, [activeFamily.id, driveAccessToken, folderId, photos.length, session.credential, status])
+  }, [activeFamily.id, driveAccessToken, folderId, photos.length, status])
 
   const navigateLink = (path) => (event) => {
     event.preventDefault()
@@ -112,14 +115,20 @@ function AlbumPage({ session, onNavigate }) {
           )}
         </div>
       )}
-      {status === 'ready' && !driveAccessToken && (
+      {status === 'ready' && driveStatus === 'loading' && (
+        <div className="album-state">Google Driveへの接続を確認しています…</div>
+      )}
+      {status === 'ready' && driveStatus === 'not-connected' && (
         <div className="album-state">
-          <p>Google Driveの写真を直接確認・表示するため、Google Driveへの読み取りアクセスを許可してください。</p>
+          <p>初回のみGoogle Driveへのアクセスを許可してください。次回からは自動的に接続します。</p>
           {error && <p className="upload-error">{error}</p>}
-          <button className="album-link album-link--button" type="button" onClick={() => connectDrive()}>
+          <a className="album-link album-link--button" href={getDriveConnectUrl(activeFamily.id, '/album')}>
             Google Driveに接続
-          </button>
+          </a>
         </div>
+      )}
+      {status === 'ready' && driveStatus === 'error' && (
+        <div className="album-state album-state--error">{error}</div>
       )}
       {status === 'ready' && photos.length > 0 && driveAccessToken && (
         <InfiniteAlbumCanvas photos={photos} driveAccessToken={driveAccessToken} />

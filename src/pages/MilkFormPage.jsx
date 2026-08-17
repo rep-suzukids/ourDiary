@@ -46,7 +46,7 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
 
   useEffect(() => {
     let isActive = true
-    getCareEvents(session.credential, activeFamily.id, date)
+    getCareEvents(activeFamily.id, date)
       .then((result) => {
         if (!isActive) return
         setChildren(result.children)
@@ -72,7 +72,7 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
         setStatus('error')
       })
     return () => { isActive = false }
-  }, [activeFamily.id, date, eventId, mode, session.credential])
+  }, [activeFamily.id, date, eventId, mode])
 
   const amountSuggestions = eventType === 'pumping'
     ? recentAmounts.pumping
@@ -114,9 +114,9 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
     }
     try {
       if (mode === 'edit') {
-        await updateCareEvent(session.credential, activeFamily.id, { id: eventId, ...values })
+        await updateCareEvent(activeFamily.id, { id: eventId, ...values })
       } else {
-        await createCareEvent(session.credential, activeFamily.id, values)
+        await createCareEvent(activeFamily.id, values)
       }
       onNavigate(`/milk?date=${date}&tab=${eventType}`)
     } catch (requestError) {

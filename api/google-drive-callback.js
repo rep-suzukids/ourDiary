@@ -18,6 +18,50 @@ function redirectResult(request, response, status) {
   response.end()
 }
 
+function redirectUserResult(request, response, returnPath, status) {
+  const location = new URL(returnPath, getApplicationBaseUrl(request))
+  location.searchParams.set('drive', status)
+  response.statusCode = 302
+  response.setHeader('Location', location.toString())
+  response.setHeader('Cache-Control', 'no-store')
+  response.end()
+}
+
+async function completeUserConnection(sql, state, code) {
+  const authorization = await exchangeDriveAuthorizationCode(code)
+  if (authorization.email !== state.email.toLowerCase()) return 'email_mismatch'
+
+  const encryptedToken = encryptRefreshToken(authorization.refreshToken)
+  await sql`
+    INSERT INTO google_drive_user_connections (
+      family_id,
+      user_id,
+      google_subject,
+      google_email,
+      encrypted_refresh_token,
+      refresh_token_iv,
+      refresh_token_auth_tag
+    ) VALUES (
+      ${state.family_id},
+      ${state.user_id},
+      ${authorization.subject},
+      ${authorization.email},
+      ${encryptedToken.encryptedRefreshToken},
+      ${encryptedToken.refreshTokenIv},
+      ${encryptedToken.refreshTokenAuthTag}
+    )
+    ON CONFLICT (family_id, user_id) DO UPDATE SET
+      google_subject = EXCLUDED.google_subject,
+      google_email = EXCLUDED.google_email,
+      encrypted_refresh_token = EXCLUDED.encrypted_refresh_token,
+      refresh_token_iv = EXCLUDED.refresh_token_iv,
+      refresh_token_auth_tag = EXCLUDED.refresh_token_auth_tag,
+      updated_at = now()
+  `
+  await sql`DELETE FROM google_drive_user_oauth_states WHERE id = ${state.id}`
+  return 'connected'
+}
+
 export default async function handler(request, response) {
   if (request.method !== 'GET') {
     response.status(405).json({ error: 'Method not allowed' })
@@ -25,18 +69,35 @@ export default async function handler(request, response) {
   }
   const url = new URL(request.url, 'http://localhost')
   const code = request.query?.code ?? url.searchParams.get('code')
-  const state = request.query?.state ?? url.searchParams.get('state')
-  if (!code || !state) {
+  const stateValue = request.query?.state ?? url.searchParams.get('state')
+  if (!code || !stateValue) {
     redirectResult(request, response, 'invalid_request')
     return
   }
 
+  let userReturnPath = null
   try {
     const sql = getDatabase()
+    const userStates = await sql`
+      SELECT s.id, s.family_id, s.user_id, s.return_path, u.email
+      FROM google_drive_user_oauth_states s
+      INNER JOIN users u ON u.id = s.user_id
+      WHERE s.state_hash = ${hashInvitationValue(stateValue)}
+        AND s.expires_at > now()
+        AND u.is_active = true
+      LIMIT 1
+    `
+    if (userStates.length > 0) {
+      userReturnPath = userStates[0].return_path
+      const status = await completeUserConnection(sql, userStates[0], code)
+      redirectUserResult(request, response, userReturnPath, status)
+      return
+    }
+
     const invitations = await sql`
       SELECT id, family_id, invited_email, album_title, invited_by
       FROM album_owner_invitations
-      WHERE oauth_state_hash = ${hashInvitationValue(state)}
+      WHERE oauth_state_hash = ${hashInvitationValue(stateValue)}
         AND accepted_at IS NULL
         AND expires_at > now()
       LIMIT 1
@@ -114,6 +175,10 @@ export default async function handler(request, response) {
     redirectResult(request, response, 'success')
   } catch (error) {
     console.error('Google Drive OAuth callback failed', error)
-    redirectResult(request, response, 'failed')
+    if (userReturnPath) {
+      redirectUserResult(request, response, userReturnPath, 'failed')
+    } else {
+      redirectResult(request, response, 'failed')
+    }
   }
 }

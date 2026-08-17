@@ -13,8 +13,16 @@
 7. 固定の子ども2人と日記日付を追加する `006_fixed_children_and_diary_dates.sql` を実行します。
 8. ミルク・搾乳記録を追加する `007_care_events.sql` を実行します。
 9. ミルク・搾乳量の小数入力を有効にする `008_fractional_milk_amounts.sql` を実行します。
-10. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-11. 再デプロイし、登録した管理者Googleアカウントでログインします。
+10. ログイン状態の維持とGoogle Driveの自動再接続を有効にする `009_persistent_sessions_and_drive_connections.sql` を実行します。
+11. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+12. 再デプロイし、登録した管理者Googleアカウントでログインします。
+
+## ログインセッション
+
+- Our Diaryのログインは、JavaScriptから読み取れないHttpOnly Cookieで維持します。
+- 30日間利用がないセッションは失効し、継続利用中でも180日経過するとGoogleでの再ログインが必要です。
+- Google Driveは利用者ごとに初回のみ接続し、更新トークンを暗号化して保存します。アルバム所有者本人は、アルバム作成時の接続情報を再利用します。
+- 写真データは従来どおりブラウザとGoogle Driveの間で直接送受信し、Vercel Functionを経由しません。
 
 `google_subject` は最初の正常なログイン時に、Googleが発行する変更されないユーザーIDへ自動的に紐づきます。以降はメールアドレスだけでは別アカウントへ置き換えられません。
 

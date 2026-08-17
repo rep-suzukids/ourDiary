@@ -48,7 +48,7 @@ function createLocalSqlClient() {
     user: process.env.POSTGRES_USER,
     password: process.env.POSTGRES_PASSWORD,
     ssl: process.env.POSTGRES_SSL === 'true'
-      ? { rejectUnauthorized: false }
+      ? { rejectUnauthorized: true }
       : false,
     max: 5,
     idleTimeoutMillis: 10_000,

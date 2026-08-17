@@ -115,7 +115,7 @@ function MilkPage({ session, onNavigate }) {
   const loadEvents = () => {
     setStatus('loading')
     setError('')
-    getCareEvents(session.credential, activeFamily.id, date)
+    getCareEvents(activeFamily.id, date)
       .then((result) => {
         setChildren(result.children)
         setEvents(result.events)
@@ -127,7 +127,7 @@ function MilkPage({ session, onNavigate }) {
       })
   }
 
-  useEffect(loadEvents, [activeFamily.id, date, session.credential])
+  useEffect(loadEvents, [activeFamily.id, date])
 
   const visibleEvents = useMemo(() => events.filter((event) => {
     if (event.eventType !== tab) return false
@@ -163,7 +163,7 @@ function MilkPage({ session, onNavigate }) {
   const removeEvent = async (event) => {
     if (!window.confirm('この記録を削除しますか？')) return
     try {
-      await deleteCareEvent(session.credential, activeFamily.id, event.id)
+      await deleteCareEvent(activeFamily.id, event.id)
       setSelectedEvent(null)
       setEvents((current) => current.filter((item) => item.id !== event.id))
     } catch (requestError) {
