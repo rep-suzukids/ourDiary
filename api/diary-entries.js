@@ -12,13 +12,16 @@ function isValidDate(value) {
 }
 
 function validateEntryInput(body) {
-  const childId = typeof body?.childId === 'string' ? body.childId : ''
+  const subjectType = body?.subjectType
+  const childId = subjectType === 'child' && typeof body?.childId === 'string' ? body.childId : null
   const diaryDate = body?.date
   const text = typeof body?.text === 'string' ? body.text.trim() : ''
-  if (!childId || !isValidDate(diaryDate) || !text || text.length > 10_000) return null
+  if (!['child', 'father', 'mother'].includes(subjectType)) return null
+  if (subjectType === 'child' && !childId) return null
+  if (!isValidDate(diaryDate) || !text || text.length > 10_000) return null
   const year = Number(diaryDate.slice(0, 4))
   if (year < 2026 || year > 2050) return null
-  return { childId, diaryDate, text }
+  return { subjectType, childId, diaryDate, text }
 }
 
 async function getFixedChildren(sql, familyId) {
@@ -36,8 +39,13 @@ async function getEntries(sql, familyId, userId, year, month) {
   return sql`
     SELECT
       de.id,
+      de.subject_type AS "subjectType",
       de.child_id AS "childId",
-      c.display_name AS "childName",
+      CASE de.subject_type
+        WHEN 'father' THEN 'お父さん'
+        WHEN 'mother' THEN 'ママ'
+        ELSE c.display_name
+      END AS "subjectName",
       to_char(de.diary_date, 'YYYY-MM-DD') AS date,
       de.body AS text,
       de.author_id AS "authorId",
@@ -46,7 +54,7 @@ async function getEntries(sql, familyId, userId, year, month) {
       de.updated_at AS "updatedAt",
       (de.author_id = ${userId}) AS "canEdit"
     FROM diary_entries de
-    INNER JOIN children c ON c.id = de.child_id AND c.family_id = de.family_id
+    LEFT JOIN children c ON c.id = de.child_id AND c.family_id = de.family_id
     INNER JOIN users u ON u.id = de.author_id
     WHERE de.family_id = ${familyId}
       AND de.entry_type = 'note'
@@ -100,20 +108,20 @@ export default async function handler(request, response) {
     if (request.method === 'POST') {
       const input = validateEntryInput(request.body)
       if (!input) {
-        sendJson(response, 400, { error: '子ども・日付・本文を正しく入力してください。' })
+        sendJson(response, 400, { error: '日記の対象・日付・本文を正しく入力してください。' })
         return
       }
       const children = await getFixedChildren(sql, familyId)
-      if (!children.some((child) => child.id === input.childId)) {
+      if (input.subjectType === 'child' && !children.some((child) => child.id === input.childId)) {
         sendJson(response, 400, { error: '対象の子どもを選択してください。' })
         return
       }
       const rows = await sql`
         INSERT INTO diary_entries (
-          family_id, child_id, author_id, entry_type, body, diary_date,
+          family_id, subject_type, child_id, author_id, entry_type, body, diary_date,
           recorded_at, audience
         ) VALUES (
-          ${familyId}, ${input.childId}, ${authorization.userId}, 'note', ${input.text},
+          ${familyId}, ${input.subjectType}, ${input.childId}, ${authorization.userId}, 'note', ${input.text},
           ${input.diaryDate}, (${input.diaryDate}::date + time '12:00') AT TIME ZONE 'Asia/Tokyo',
           'family_members'
         )
@@ -132,17 +140,18 @@ export default async function handler(request, response) {
     if (request.method === 'PATCH') {
       const input = validateEntryInput(request.body)
       if (!input) {
-        sendJson(response, 400, { error: '子ども・日付・本文を正しく入力してください。' })
+        sendJson(response, 400, { error: '日記の対象・日付・本文を正しく入力してください。' })
         return
       }
       const children = await getFixedChildren(sql, familyId)
-      if (!children.some((child) => child.id === input.childId)) {
+      if (input.subjectType === 'child' && !children.some((child) => child.id === input.childId)) {
         sendJson(response, 400, { error: '対象の子どもを選択してください。' })
         return
       }
       const rows = await sql`
         UPDATE diary_entries
         SET
+          subject_type = ${input.subjectType},
           child_id = ${input.childId},
           body = ${input.text},
           diary_date = ${input.diaryDate},

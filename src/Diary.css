@@ -224,6 +224,14 @@
   background: #e47fa5;
 }
 
+.diary-day-badge--father {
+  background: linear-gradient(145deg, #a8d2b3, #6f9f7f);
+}
+
+.diary-day-badge--mother {
+  background: linear-gradient(145deg, #d9b6a3, #ae7e68);
+}
+
 .diary-day-section {
   margin-top: 24px;
   padding: clamp(20px, 4vw, 36px);
@@ -321,6 +329,26 @@
   background: radial-gradient(circle, #d8aabb 0 3px, transparent 3.5px) center top / 8px 25px repeat-y;
 }
 
+.diary-note--father {
+  background:
+    linear-gradient(90deg, transparent 31px, rgb(111 159 127 / 22%) 32px, transparent 33px),
+    #fbfefb;
+}
+
+.diary-note--father::before {
+  background: radial-gradient(circle, #8ab397 0 3px, transparent 3.5px) center top / 8px 25px repeat-y;
+}
+
+.diary-note--mother {
+  background:
+    linear-gradient(90deg, transparent 31px, rgb(174 126 104 / 22%) 32px, transparent 33px),
+    #fffdf9;
+}
+
+.diary-note--mother::before {
+  background: radial-gradient(circle, #c39c89 0 3px, transparent 3.5px) center top / 8px 25px repeat-y;
+}
+
 .diary-note > header,
 .diary-note > footer {
   display: flex;
@@ -342,6 +370,14 @@
 
 .diary-note--yuu .diary-note__child {
   color: #b45277;
+}
+
+.diary-note--father .diary-note__child {
+  color: #5f8d6e;
+}
+
+.diary-note--mother .diary-note__child {
+  color: #9a6d59;
 }
 
 .diary-note__text {
@@ -513,6 +549,14 @@
   background: #fff4f8;
 }
 
+.diary-child-option--father {
+  background: #eff8f1;
+}
+
+.diary-child-option--mother {
+  background: #f8f1ec;
+}
+
 .diary-child-option:has(input:checked) {
   border-color: #898dcc;
   box-shadow: 0 0 0 3px rgb(137 141 204 / 12%);
@@ -523,6 +567,16 @@
   box-shadow: 0 0 0 3px rgb(217 125 160 / 12%);
 }
 
+.diary-child-option--father:has(input:checked) {
+  border-color: #75a985;
+  box-shadow: 0 0 0 3px rgb(117 169 133 / 12%);
+}
+
+.diary-child-option--mother:has(input:checked) {
+  border-color: #b58a76;
+  box-shadow: 0 0 0 3px rgb(181 138 118 / 12%);
+}
+
 .diary-child-option input {
   margin-right: 9px;
   accent-color: #898dcc;
@@ -530,6 +584,14 @@
 
 .diary-child-option--yuu input {
   accent-color: #d36f95;
+}
+
+.diary-child-option--father input {
+  accent-color: #6f9f7f;
+}
+
+.diary-child-option--mother input {
+  accent-color: #ae7e68;
 }
 
 .diary-child-option > span {
@@ -546,6 +608,14 @@
 
 .diary-child-option--yuu > span {
   background: #df81a4;
+}
+
+.diary-child-option--father > span {
+  background: #6f9f7f;
+}
+
+.diary-child-option--mother > span {
+  background: #ae7e68;
 }
 
 .diary-primary-button {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { buildDiarySubjects, diarySubjectInput } from '../diarySubjects.js'
 import { createDiaryEntry, getDiaryEntries } from '../services/diaryApi.js'
 import '../Diary.css'
 
@@ -28,10 +29,11 @@ function DiaryCreatePage({ session, onNavigate }) {
   const activeFamily = session.families[0]
   const [children, setChildren] = useState([])
   const [date, setDate] = useState(localDateString)
-  const [childId, setChildId] = useState('')
+  const [subjectValue, setSubjectValue] = useState('')
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const subjects = buildDiarySubjects(children)
 
   useEffect(() => {
     if (!date) return
@@ -51,8 +53,9 @@ function DiaryCreatePage({ session, onNavigate }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-    if (!childId) {
-      setError('どちらの子どもの日記か選択してください。')
+    const subject = diarySubjectInput(subjectValue)
+    if (!subject) {
+      setError('だれについての日記か選択してください。')
       return
     }
     if (!text.trim()) {
@@ -63,7 +66,7 @@ function DiaryCreatePage({ session, onNavigate }) {
     setIsSubmitting(true)
     setError('')
     try {
-      await createDiaryEntry(activeFamily.id, { childId, date, text })
+      await createDiaryEntry(activeFamily.id, { ...subject, date, text })
       onNavigate(`/diary?date=${encodeURIComponent(date)}`)
     } catch (requestError) {
       setError(requestError.message)
@@ -101,20 +104,20 @@ function DiaryCreatePage({ session, onNavigate }) {
         </label>
 
         <fieldset className="diary-child-picker">
-          <legend>どちらの子どもの日記ですか？</legend>
+          <legend>だれについての日記ですか？</legend>
           <div>
-            {children.map((child) => (
-              <label key={child.id} className={`diary-child-option diary-child-option--${child.name === 'ともちゃん' ? 'tomo' : 'yuu'}`}>
+            {subjects.map((subject) => (
+              <label key={subject.value} className={`diary-child-option diary-child-option--${subject.tone}`}>
                 <input
                   type="radio"
-                  name="child"
-                  value={child.id}
-                  checked={childId === child.id}
-                  onChange={(event) => setChildId(event.target.value)}
+                  name="subject"
+                  value={subject.value}
+                  checked={subjectValue === subject.value}
+                  onChange={(event) => setSubjectValue(event.target.value)}
                   required
                 />
-                <span aria-hidden="true">{child.name === 'ともちゃん' ? '智' : '結'}</span>
-                {child.name}
+                <span aria-hidden="true">{subject.mark}</span>
+                {subject.name}
               </label>
             ))}
           </div>
