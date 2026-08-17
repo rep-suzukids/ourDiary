@@ -4,6 +4,13 @@ import {
   getDiaryEntries,
   updateDiaryEntry,
 } from '../services/diaryApi.js'
+import {
+  buildDiarySubjects,
+  diaryEntryLabel,
+  diaryEntrySubjectValue,
+  diaryEntryTone,
+  diarySubjectInput,
+} from '../diarySubjects.js'
 import '../Diary.css'
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土']
@@ -46,10 +53,6 @@ function dateKey(year, month, day) {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
 }
 
-function childMark(name) {
-  return name === 'ともちゃん' ? '智' : '結'
-}
-
 function DiaryPage({ session, onNavigate }) {
   const activeFamily = session.families[0]
   const canCreate = ['parent', 'admin'].includes(activeFamily.role)
@@ -61,9 +64,10 @@ function DiaryPage({ session, onNavigate }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [editingId, setEditingId] = useState('')
-  const [editValues, setEditValues] = useState({ childId: '', date: '', text: '' })
+  const [editValues, setEditValues] = useState({ subjectValue: '', date: '', text: '' })
   const [year, month] = monthValue.split('-').map(Number)
   const calendarDays = useMemo(() => buildCalendar(year, month), [month, year])
+  const subjects = buildDiarySubjects(children)
 
   const loadEntries = () => {
     setStatus('loading')
@@ -102,13 +106,20 @@ function DiaryPage({ session, onNavigate }) {
 
   const startEditing = (entry) => {
     setEditingId(entry.id)
-    setEditValues({ childId: entry.childId, date: entry.date, text: entry.text })
+    setEditValues({ subjectValue: diaryEntrySubjectValue(entry), date: entry.date, text: entry.text })
   }
 
   const saveEdit = async (event) => {
     event.preventDefault()
     try {
-      await updateDiaryEntry(activeFamily.id, { id: editingId, ...editValues })
+      const subject = diarySubjectInput(editValues.subjectValue)
+      if (!subject) throw new Error('だれについての日記か選択してください。')
+      await updateDiaryEntry(activeFamily.id, {
+        id: editingId,
+        ...subject,
+        date: editValues.date,
+        text: editValues.text,
+      })
       setEditingId('')
       if (editValues.date.slice(0, 7) !== monthValue) {
         setMonthValue(editValues.date.slice(0, 7))
@@ -138,7 +149,7 @@ function DiaryPage({ session, onNavigate }) {
         <a href="/" onClick={navigateLink('/')} aria-label="TOPへ戻る">←</a>
         <div>
           <p>{activeFamily.name}</p>
-          <h1>ふたりの成長日記</h1>
+          <h1>ファミリー日記</h1>
         </div>
         {canCreate && (
           <a className="diary-add-button" href="/diary/new" onClick={navigateLink('/diary/new')}>＋ 書く</a>
@@ -172,7 +183,7 @@ function DiaryPage({ session, onNavigate }) {
             const dayEntries = entriesByDate[key] ?? []
             const counts = dayEntries.reduce((result, entry) => ({
               ...result,
-              [entry.childName]: (result[entry.childName] ?? 0) + 1,
+              [diaryEntrySubjectValue(entry)]: (result[diaryEntrySubjectValue(entry)] ?? 0) + 1,
             }), {})
             return (
               <button
@@ -186,9 +197,9 @@ function DiaryPage({ session, onNavigate }) {
               >
                 <span className="diary-calendar-day__number">{day}</span>
                 <span className="diary-calendar-day__badges">
-                  {children.map((child) => counts[child.name] ? (
-                    <span key={child.id} className={`diary-day-badge diary-day-badge--${child.name === 'ともちゃん' ? 'tomo' : 'yuu'}`}>
-                      {childMark(child.name)}{counts[child.name] > 1 && <small>{counts[child.name]}</small>}
+                  {subjects.map((subject) => counts[subject.value] ? (
+                    <span key={subject.value} className={`diary-day-badge diary-day-badge--${subject.tone}`}>
+                      {subject.mark}{counts[subject.value] > 1 && <small>{counts[subject.value]}</small>}
                     </span>
                   ) : null)}
                 </span>
@@ -218,7 +229,7 @@ function DiaryPage({ session, onNavigate }) {
 
         <div className="diary-notes">
           {selectedEntries.map((entry) => (
-            <article className={`diary-note diary-note--${entry.childName === 'ともちゃん' ? 'tomo' : 'yuu'}`} key={entry.id}>
+            <article className={`diary-note diary-note--${diaryEntryTone(entry)}`} key={entry.id}>
               {editingId === entry.id ? (
                 <form className="diary-edit-form" onSubmit={saveEdit}>
                   <div className="diary-edit-row">
@@ -232,10 +243,10 @@ function DiaryPage({ session, onNavigate }) {
                       required
                     />
                     <select
-                      value={editValues.childId}
-                      onChange={(event) => setEditValues((current) => ({ ...current, childId: event.target.value }))}
+                      value={editValues.subjectValue}
+                      onChange={(event) => setEditValues((current) => ({ ...current, subjectValue: event.target.value }))}
                     >
-                      {children.map((child) => <option value={child.id} key={child.id}>{child.name}</option>)}
+                      {subjects.map((subject) => <option value={subject.value} key={subject.value}>{subject.name}</option>)}
                     </select>
                   </div>
                   <textarea
@@ -253,7 +264,7 @@ function DiaryPage({ session, onNavigate }) {
               ) : (
                 <>
                   <header>
-                    <span className="diary-note__child">{childMark(entry.childName)}ちゃん</span>
+                    <span className="diary-note__child">{diaryEntryLabel(entry)}</span>
                     <time dateTime={entry.createdAt}>
                       {new Date(entry.createdAt).toLocaleTimeString('ja-JP', {
                         timeZone: 'Asia/Tokyo',
