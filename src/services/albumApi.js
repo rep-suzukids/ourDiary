@@ -1,9 +1,3 @@
-const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
-const DRIVE_ACCESS_TOKEN_KEY = 'ourdiary-drive-access'
-
-export const DRIVE_READ_SCOPES = `openid email ${DRIVE_FILE_SCOPE}`
-export const DRIVE_WRITE_SCOPES = `openid email ${DRIVE_FILE_SCOPE}`
-
 async function readApiResponse(response) {
   const body = await response.json().catch(() => ({}))
   if (!response.ok) {
@@ -14,9 +8,10 @@ async function readApiResponse(response) {
   return body
 }
 
-export async function getAlbumPhotos(credential, familyId) {
+export async function getAlbumPhotos(familyId) {
   const response = await fetch('/api/album-files', {
-    headers: { Authorization: `Bearer ${credential}`, 'x-family-id': familyId },
+    credentials: 'same-origin',
+    headers: { 'x-family-id': familyId },
   })
   return readApiResponse(response)
 }
@@ -46,14 +41,14 @@ export async function listDrivePhotosDirectly(accessToken, folderId) {
     }))
 }
 
-export async function registerDriveAlbumFiles(credential, familyId, files) {
+export async function registerDriveAlbumFiles(familyId, files) {
   const response = await fetch('/api/album-files', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${credential}`,
       'Content-Type': 'application/json',
       'x-family-id': familyId,
     },
+    credentials: 'same-origin',
     body: JSON.stringify({ files }),
   })
   return readApiResponse(response)
@@ -90,14 +85,14 @@ export async function getDrivePhotoUrl(accessToken, photo, signal) {
   return URL.createObjectURL(blob)
 }
 
-export async function createDriveOwnerInvitation(credential, familyId, values) {
+export async function createDriveOwnerInvitation(familyId, values) {
   const response = await fetch('/api/drive-owner-invitations', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${credential}`,
       'Content-Type': 'application/json',
       'x-family-id': familyId,
     },
+    credentials: 'same-origin',
     body: JSON.stringify(values),
   })
   return readApiResponse(response)
@@ -108,52 +103,17 @@ export async function getDriveOwnerInvitation(token) {
   return readApiResponse(response)
 }
 
-export function saveDriveAccessToken(kind, email, tokenResponse) {
-  const expiresIn = Number(tokenResponse.expires_in ?? 3600)
-  const storedValue = JSON.stringify({
-    accessToken: tokenResponse.access_token,
-    email: email.toLowerCase(),
-    expiresAt: Date.now() + Math.max(0, expiresIn - 60) * 1000,
+export async function getDriveAccessToken(familyId) {
+  const response = await fetch('/api/drive-access-token', {
+    credentials: 'same-origin',
+    cache: 'no-store',
+    headers: { 'x-family-id': familyId },
   })
-  sessionStorage.setItem(DRIVE_ACCESS_TOKEN_KEY, storedValue)
-  sessionStorage.setItem(`ourdiary-drive-${kind}`, storedValue)
+  return readApiResponse(response)
 }
 
-export function loadDriveAccessToken(kind, email) {
-  const legacyAlternative = kind === 'read' ? 'write' : 'read'
-  const storageKeys = [
-    DRIVE_ACCESS_TOKEN_KEY,
-    `ourdiary-drive-${legacyAlternative}`,
-    `ourdiary-drive-${kind}`,
-  ]
-
-  for (const storageKey of storageKeys) {
-    const stored = sessionStorage.getItem(storageKey)
-    if (!stored) continue
-    try {
-      const value = JSON.parse(stored)
-      if (value.accessToken && value.email === email.toLowerCase() && value.expiresAt > Date.now()) {
-        sessionStorage.setItem(DRIVE_ACCESS_TOKEN_KEY, stored)
-        return value.accessToken
-      }
-      sessionStorage.removeItem(storageKey)
-    } catch {
-      sessionStorage.removeItem(storageKey)
-    }
-  }
-
-  return ''
-}
-
-export async function verifyDriveAccount(accessToken, expectedEmail) {
-  const response = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
-  if (!response.ok) throw new Error('Googleアカウントを確認できませんでした。')
-  const user = await response.json()
-  if (user.email?.toLowerCase() !== expectedEmail.toLowerCase()) {
-    throw new Error(`${expectedEmail}のGoogleアカウントを選択してください。`)
-  }
+export function getDriveConnectUrl(familyId, returnTo) {
+  return `/api/drive-user-oauth-start?${new URLSearchParams({ familyId, returnTo })}`
 }
 
 async function createDriveUploadSession(accessToken, folderId, file) {

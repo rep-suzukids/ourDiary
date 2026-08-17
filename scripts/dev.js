@@ -16,6 +16,8 @@ const [
   { default: driveOwnerInvitationsHandler },
   { default: driveOwnerInvitationHandler },
   { default: driveOwnerOauthStartHandler },
+  { default: driveUserOauthStartHandler },
+  { default: driveAccessTokenHandler },
   { default: googleDriveCallbackHandler },
   { getDatabase },
 ] = await Promise.all([
@@ -26,6 +28,8 @@ const [
   import('../api/drive-owner-invitations.js'),
   import('../api/drive-owner-invitation.js'),
   import('../api/drive-owner-oauth-start.js'),
+  import('../api/drive-user-oauth-start.js'),
+  import('../api/drive-access-token.js'),
   import('../api/google-drive-callback.js'),
   import('../api/_lib/db.js'),
 ])
@@ -38,6 +42,8 @@ const apiRoutes = new Map([
   ['/api/drive-owner-invitations', driveOwnerInvitationsHandler],
   ['/api/drive-owner-invitation', driveOwnerInvitationHandler],
   ['/api/drive-owner-oauth-start', driveOwnerOauthStartHandler],
+  ['/api/drive-user-oauth-start', driveUserOauthStartHandler],
+  ['/api/drive-access-token', driveAccessTokenHandler],
   ['/api/google-drive-callback', googleDriveCallbackHandler],
 ])
 

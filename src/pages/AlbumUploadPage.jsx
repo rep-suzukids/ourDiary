@@ -1,13 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { useGoogleLogin } from '@react-oauth/google'
 import {
-  DRIVE_WRITE_SCOPES,
   getAlbumPhotos,
-  loadDriveAccessToken,
+  getDriveAccessToken,
+  getDriveConnectUrl,
   registerDriveAlbumFiles,
-  saveDriveAccessToken,
   uploadFileDirectlyToDrive,
-  verifyDriveAccount,
 } from '../services/albumApi.js'
 
 const MAX_FILES = 10
@@ -19,28 +16,13 @@ function AlbumUploadPage({ session, onNavigate }) {
   const [items, setItems] = useState([])
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState('')
-  const [driveAccessToken, setDriveAccessToken] = useState(() => loadDriveAccessToken('write', session.user.email))
+  const [driveAccessToken, setDriveAccessToken] = useState('')
+  const [driveStatus, setDriveStatus] = useState('loading')
   const previewUrls = useRef([])
-
-  const connectDrive = useGoogleLogin({
-    scope: DRIVE_WRITE_SCOPES,
-    include_granted_scopes: true,
-    onSuccess: async (tokenResponse) => {
-      try {
-        await verifyDriveAccount(tokenResponse.access_token, session.user.email)
-        saveDriveAccessToken('write', session.user.email, tokenResponse)
-        setDriveAccessToken(tokenResponse.access_token)
-        setError('')
-      } catch (accountError) {
-        setError(accountError.message)
-      }
-    },
-    onError: () => setError('Google Driveへの接続がキャンセルされました。'),
-  })
 
   useEffect(() => {
     let isActive = true
-    getAlbumPhotos(session.credential, activeFamily.id)
+    getAlbumPhotos(activeFamily.id)
       .then((album) => {
         if (isActive) setFolderId(album.folderId)
       })
@@ -48,7 +30,28 @@ function AlbumUploadPage({ session, onNavigate }) {
         if (isActive) setError(requestError.message)
       })
     return () => { isActive = false }
-  }, [activeFamily.id, session.credential])
+  }, [activeFamily.id])
+
+  useEffect(() => {
+    let isActive = true
+    const oauthStatus = new URLSearchParams(window.location.search).get('drive')
+    if (oauthStatus === 'failed') setError('Google Driveへの接続に失敗しました。')
+    if (oauthStatus === 'email_mismatch') {
+      setError(`${session.user.email}のGoogleアカウントを選択してください。`)
+    }
+    getDriveAccessToken(activeFamily.id)
+      .then((driveAccess) => {
+        if (!isActive) return
+        setDriveAccessToken(driveAccess.accessToken)
+        setDriveStatus('ready')
+      })
+      .catch((requestError) => {
+        if (!isActive) return
+        setDriveStatus(requestError.code === 'DRIVE_USER_NOT_CONNECTED' ? 'not-connected' : 'error')
+        if (requestError.code !== 'DRIVE_USER_NOT_CONNECTED') setError(requestError.message)
+      })
+    return () => { isActive = false }
+  }, [activeFamily.id, session.user.email])
 
   useEffect(() => () => {
     for (const url of previewUrls.current) URL.revokeObjectURL(url)
@@ -99,7 +102,7 @@ function AlbumUploadPage({ session, onNavigate }) {
           (progress) => updateItem(index, { progress }),
         )
         updateItem(index, { uploadedFile, message: 'アルバムへ登録中' })
-        await registerDriveAlbumFiles(session.credential, activeFamily.id, [uploadedFile])
+        await registerDriveAlbumFiles(activeFamily.id, [uploadedFile])
         updateItem(index, { status: 'success', progress: 100, message: '完了' })
       } catch (uploadError) {
         failedCount += 1
@@ -121,10 +124,12 @@ function AlbumUploadPage({ session, onNavigate }) {
           写真はブラウザからGoogle Driveへ直接送信されます。Vercel Functionには写真データを送信しません。
         </p>
 
-        {!driveAccessToken && (
-          <button className="album-link album-link--button" type="button" onClick={() => connectDrive()}>
+        {driveStatus === 'loading' && <p className="info-text">Google Driveへの接続を確認しています…</p>}
+
+        {driveStatus === 'not-connected' && (
+          <a className="album-link album-link--button" href={getDriveConnectUrl(activeFamily.id, '/album/upload')}>
             Google Driveに接続
-          </button>
+          </a>
         )}
 
         {driveAccessToken && (

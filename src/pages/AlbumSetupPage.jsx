@@ -21,7 +21,6 @@ function AlbumSetupPage({ session, onNavigate }) {
     setError('')
     try {
       const result = await createDriveOwnerInvitation(
-        session.credential,
         activeFamily.id,
         { email, title },
       )

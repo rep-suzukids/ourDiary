@@ -8,44 +8,47 @@ async function readResponse(response) {
   return body
 }
 
-function requestHeaders(credential, familyId, includeJson = false) {
+function requestHeaders(familyId, includeJson = false) {
   return {
-    Authorization: `Bearer ${credential}`,
     'x-family-id': familyId,
     ...(includeJson && { 'Content-Type': 'application/json' }),
   }
 }
 
-export async function getDiaryEntries(credential, familyId, year, month) {
+export async function getDiaryEntries(familyId, year, month) {
   const query = new URLSearchParams({ year: String(year), month: String(month) })
   const response = await fetch(`/api/diary-entries?${query}`, {
-    headers: requestHeaders(credential, familyId),
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId),
   })
   return readResponse(response)
 }
 
-export async function createDiaryEntry(credential, familyId, values) {
+export async function createDiaryEntry(familyId, values) {
   const response = await fetch('/api/diary-entries', {
     method: 'POST',
-    headers: requestHeaders(credential, familyId, true),
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId, true),
     body: JSON.stringify(values),
   })
   return readResponse(response)
 }
 
-export async function updateDiaryEntry(credential, familyId, values) {
+export async function updateDiaryEntry(familyId, values) {
   const response = await fetch('/api/diary-entries', {
     method: 'PATCH',
-    headers: requestHeaders(credential, familyId, true),
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId, true),
     body: JSON.stringify(values),
   })
   return readResponse(response)
 }
 
-export async function deleteDiaryEntry(credential, familyId, id) {
+export async function deleteDiaryEntry(familyId, id) {
   const response = await fetch('/api/diary-entries', {
     method: 'DELETE',
-    headers: requestHeaders(credential, familyId, true),
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId, true),
     body: JSON.stringify({ id }),
   })
   return readResponse(response)

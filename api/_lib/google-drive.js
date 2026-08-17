@@ -33,6 +33,14 @@ export class GoogleDriveNotConnectedError extends Error {
   }
 }
 
+export class GoogleDriveUserNotConnectedError extends Error {
+  constructor() {
+    super('Google Driveへの接続が必要です。')
+    this.name = 'GoogleDriveUserNotConnectedError'
+    this.status = 404
+  }
+}
+
 function requireEnvironment(name) {
   const value = process.env[name]
   if (!value) throw new GoogleDriveConfigurationError(`${name} is not configured`)
@@ -86,7 +94,7 @@ export async function exchangeDriveAuthorizationCode(code) {
     audience: requireEnvironment('GOOGLE_CLIENT_ID'),
   })
   const payload = ticket.getPayload()
-  if (!payload?.sub || !payload.email || payload.email_verified === false) {
+  if (!payload?.sub || !payload.email || !payload.email_verified) {
     throw new GoogleDriveRequestError('Googleアカウントを確認できませんでした。', 400)
   }
 
@@ -120,6 +128,21 @@ function decryptRefreshToken(connection) {
     decipher.update(Buffer.from(connection.encrypted_refresh_token, 'base64')),
     decipher.final(),
   ]).toString('utf8')
+}
+
+async function refreshDriveAccessToken(connection) {
+  try {
+    const oauthClient = createOAuthClient()
+    oauthClient.setCredentials({ refresh_token: decryptRefreshToken(connection) })
+    const accessToken = await oauthClient.getAccessToken()
+    const token = typeof accessToken === 'string' ? accessToken : accessToken?.token
+    if (!token) throw new Error('Access token was not returned')
+    const expiresAt = Number(oauthClient.credentials.expiry_date ?? Date.now() + 55 * 60 * 1000)
+    return { token, expiresAt }
+  } catch (error) {
+    console.error('Google Drive token refresh failed', error)
+    throw new GoogleDriveRequestError('Google Driveの認証を更新できませんでした。', 401)
+  }
 }
 
 async function driveFetch(url, accessToken, options = {}) {
@@ -176,18 +199,40 @@ async function getFamilyDriveAccess(familyId) {
   `
   if (rows.length === 0) throw new GoogleDriveNotConnectedError()
 
-  const oauthClient = createOAuthClient()
-  oauthClient.setCredentials({ refresh_token: decryptRefreshToken(rows[0]) })
-  const accessToken = await oauthClient.getAccessToken()
-  const token = typeof accessToken === 'string' ? accessToken : accessToken?.token
-  if (!token) throw new GoogleDriveRequestError('Google Driveの認証を更新できませんでした。', 401)
+  const refreshed = await refreshDriveAccessToken(rows[0])
 
   return {
-    token,
+    token: refreshed.token,
     folderId: rows[0].google_drive_folder_id,
     ownerEmail: rows[0].owner_email,
     title: rows[0].title,
   }
+}
+
+export async function getUserDriveAccess(familyId, userId, email) {
+  const sql = getDatabase()
+  const connections = await sql`
+    SELECT encrypted_refresh_token, refresh_token_iv, refresh_token_auth_tag
+    FROM google_drive_user_connections
+    WHERE family_id = ${familyId}
+      AND user_id = ${userId}
+    LIMIT 1
+  `
+
+  if (connections.length > 0) return refreshDriveAccessToken(connections[0])
+
+  // The folder owner already completed an offline OAuth flow when the album was created.
+  // Reuse that encrypted refresh token for the matching Our Diary user without another consent screen.
+  const ownerConnections = await sql`
+    SELECT encrypted_refresh_token, refresh_token_iv, refresh_token_auth_tag
+    FROM google_drive_connections
+    WHERE family_id = ${familyId}
+      AND lower(owner_email::text) = ${email.toLowerCase()}
+    LIMIT 1
+  `
+  if (ownerConnections.length > 0) return refreshDriveAccessToken(ownerConnections[0])
+
+  throw new GoogleDriveUserNotConnectedError()
 }
 
 export async function ensureDriveFolderPermission(familyId, email, role) {

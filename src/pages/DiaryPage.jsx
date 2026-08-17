@@ -68,7 +68,7 @@ function DiaryPage({ session, onNavigate }) {
   const loadEntries = () => {
     setStatus('loading')
     setError('')
-    getDiaryEntries(session.credential, activeFamily.id, year, month)
+    getDiaryEntries(activeFamily.id, year, month)
       .then((result) => {
         setChildren(result.children)
         setEntries(result.entries.map((entry) => ({ ...entry, date: normalizeDate(entry.date) })))
@@ -80,7 +80,7 @@ function DiaryPage({ session, onNavigate }) {
       })
   }
 
-  useEffect(loadEntries, [activeFamily.id, month, session.credential, year])
+  useEffect(loadEntries, [activeFamily.id, month, year])
 
   const entriesByDate = useMemo(() => entries.reduce((grouped, entry) => {
     grouped[entry.date] = [...(grouped[entry.date] ?? []), entry]
@@ -108,7 +108,7 @@ function DiaryPage({ session, onNavigate }) {
   const saveEdit = async (event) => {
     event.preventDefault()
     try {
-      await updateDiaryEntry(session.credential, activeFamily.id, { id: editingId, ...editValues })
+      await updateDiaryEntry(activeFamily.id, { id: editingId, ...editValues })
       setEditingId('')
       if (editValues.date.slice(0, 7) !== monthValue) {
         setMonthValue(editValues.date.slice(0, 7))
@@ -125,7 +125,7 @@ function DiaryPage({ session, onNavigate }) {
   const removeEntry = async (entry) => {
     if (!window.confirm('この日記を削除しますか？')) return
     try {
-      await deleteDiaryEntry(session.credential, activeFamily.id, entry.id)
+      await deleteDiaryEntry(activeFamily.id, entry.id)
       setEntries((current) => current.filter((item) => item.id !== entry.id))
     } catch (requestError) {
       setError(requestError.message)

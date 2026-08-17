@@ -13,10 +13,10 @@ import MilkFormPage from './pages/MilkFormPage.jsx'
 import MilkPage from './pages/MilkPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import {
-  clearSessionCredential,
+  clearLegacySessionStorage,
   createSession,
-  loadSessionCredential,
-  saveSessionCredential,
+  deleteSession,
+  restoreSession,
 } from './services/authApi.js'
 import './App.css'
 
@@ -38,20 +38,16 @@ function AppContent() {
   const [pathname, setPathname] = useState(window.location.pathname)
   const [error, setError] = useState('')
   const [isAuthenticating, setIsAuthenticating] = useState(false)
-  const [isRestoringSession, setIsRestoringSession] = useState(() => Boolean(loadSessionCredential()))
+  const [isRestoringSession, setIsRestoringSession] = useState(true)
 
   useEffect(() => {
-    const credential = loadSessionCredential()
-    if (!credential) return
-
+    clearLegacySessionStorage()
     let isActive = true
-    createSession(credential)
+    restoreSession()
       .then((authenticatedSession) => {
-        if (isActive) setSession({ ...authenticatedSession, credential })
+        if (isActive) setSession(authenticatedSession)
       })
-      .catch(() => {
-        clearSessionCredential()
-      })
+      .catch(() => {})
       .finally(() => {
         if (isActive) setIsRestoringSession(false)
       })
@@ -79,8 +75,7 @@ function AppContent() {
     setError('')
     try {
       const authenticatedSession = await createSession(credentialResponse.credential)
-      saveSessionCredential(credentialResponse.credential)
-      setSession({ ...authenticatedSession, credential: credentialResponse.credential })
+      setSession(authenticatedSession)
       navigate('/')
     } catch (authenticationError) {
       setSession(null)
@@ -90,8 +85,12 @@ function AppContent() {
     }
   }
 
-  const handleLogout = () => {
-    clearSessionCredential()
+  const handleLogout = async () => {
+    try {
+      await deleteSession()
+    } catch (logoutError) {
+      console.error(logoutError)
+    }
     setSession(null)
     setError('')
     navigate('/')

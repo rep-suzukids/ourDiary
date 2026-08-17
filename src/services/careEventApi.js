@@ -8,44 +8,47 @@ async function readResponse(response) {
   return body
 }
 
-function requestHeaders(credential, familyId, includeJson = false) {
+function requestHeaders(familyId, includeJson = false) {
   return {
-    Authorization: `Bearer ${credential}`,
     'x-family-id': familyId,
     ...(includeJson && { 'Content-Type': 'application/json' }),
   }
 }
 
-export async function getCareEvents(credential, familyId, date) {
+export async function getCareEvents(familyId, date) {
   const query = new URLSearchParams({ date })
   const response = await fetch(`/api/care-events?${query}`, {
-    headers: requestHeaders(credential, familyId),
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId),
   })
   return readResponse(response)
 }
 
-export async function createCareEvent(credential, familyId, values) {
+export async function createCareEvent(familyId, values) {
   const response = await fetch('/api/care-events', {
     method: 'POST',
-    headers: requestHeaders(credential, familyId, true),
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId, true),
     body: JSON.stringify(values),
   })
   return readResponse(response)
 }
 
-export async function updateCareEvent(credential, familyId, values) {
+export async function updateCareEvent(familyId, values) {
   const response = await fetch('/api/care-events', {
     method: 'PATCH',
-    headers: requestHeaders(credential, familyId, true),
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId, true),
     body: JSON.stringify(values),
   })
   return readResponse(response)
 }
 
-export async function deleteCareEvent(credential, familyId, id) {
+export async function deleteCareEvent(familyId, id) {
   const response = await fetch('/api/care-events', {
     method: 'DELETE',
-    headers: requestHeaders(credential, familyId, true),
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId, true),
     body: JSON.stringify({ id }),
   })
   return readResponse(response)

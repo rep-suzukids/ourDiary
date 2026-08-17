@@ -36,13 +36,13 @@ function DiaryCreatePage({ session, onNavigate }) {
   useEffect(() => {
     if (!date) return
     const [year, month] = date.split('-').map(Number)
-    getDiaryEntries(session.credential, activeFamily.id, year, month)
+    getDiaryEntries(activeFamily.id, year, month)
       .then((result) => {
         if (!Array.isArray(result.children)) throw new Error('子どもの情報を取得できませんでした。')
         setChildren(result.children)
       })
       .catch((requestError) => setError(requestError.message))
-  }, [activeFamily.id, date, session.credential])
+  }, [activeFamily.id, date])
 
   const navigateLink = (path) => (event) => {
     event.preventDefault()
@@ -63,7 +63,7 @@ function DiaryCreatePage({ session, onNavigate }) {
     setIsSubmitting(true)
     setError('')
     try {
-      await createDiaryEntry(session.credential, activeFamily.id, { childId, date, text })
+      await createDiaryEntry(activeFamily.id, { childId, date, text })
       onNavigate(`/diary?date=${encodeURIComponent(date)}`)
     } catch (requestError) {
       setError(requestError.message)
