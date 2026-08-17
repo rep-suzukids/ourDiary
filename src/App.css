@@ -341,7 +341,7 @@
 .not-found-page__code {
   margin: 0;
   color: #e91e63;
-  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 900;
   font-size: clamp(5rem, 18vw, 10rem);
   line-height: 0.85;
 }
@@ -416,7 +416,7 @@
 
 .page__title {
   color: var(--ourdiary-heading);
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', Georgia, serif;
+  font-weight: 700;
 }
 
 .page__subtitle,

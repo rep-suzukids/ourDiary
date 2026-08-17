@@ -41,9 +41,8 @@
 
 .milk-page-header h1 {
   color: var(--ourdiary-heading);
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   font-size: clamp(1.55rem, 4vw, 2.35rem);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .milk-add-button,
@@ -421,7 +420,7 @@
 .milk-modal h2 {
   margin: 4px 0 20px;
   color: var(--ourdiary-heading);
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-weight: 700;
 }
 
 .milk-detail-list {
@@ -542,7 +541,7 @@
 
 .milk-calendar-summary-heading strong {
   color: var(--ourdiary-heading);
-  font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-weight: 700;
 }
 
 .milk-calendar-summary {
