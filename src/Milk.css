@@ -130,6 +130,16 @@
   color: transparent;
 }
 
+.milk-date-control input {
+  outline: none;
+  opacity: 0;
+}
+
+.milk-date-control:focus-within {
+  border-color: #d77d9f;
+  box-shadow: 0 0 0 3px rgb(215 125 159 / 12%);
+}
+
 .milk-date-nav input::-webkit-calendar-picker-indicator,
 .milk-date-control input::-webkit-calendar-picker-indicator {
   position: absolute;
@@ -184,8 +194,8 @@
 }
 
 .milk-summary__item--mother {
-  background: #f8f1ec;
-  color: #9a6d59;
+  background: #fff2cf;
+  color: #8a5b26;
 }
 
 .milk-summary__item span {
@@ -361,7 +371,8 @@
 }
 
 .milk-event-icon--mother {
-  background: linear-gradient(145deg, #d9b6a3, #ae7e68);
+  background: linear-gradient(145deg, #e8bd68, #cf8735);
+  color: #fff;
 }
 
 .milk-empty,
@@ -680,7 +691,7 @@
   margin-top: auto;
   align-self: center;
   grid-template-areas:
-    '. mother'
+    'mother mother'
     'tomo yuu';
   grid-template-columns: repeat(2, 30px);
   grid-template-rows: repeat(2, 30px);
@@ -709,7 +720,9 @@
 
 .milk-calendar-record--mother {
   grid-area: mother;
-  background: linear-gradient(145deg, #d9b6a3, #ae7e68);
+  justify-self: center;
+  background: linear-gradient(145deg, #e8bd68, #cf8735);
+  color: #fff;
 }
 
 .milk-calendar-record svg {
@@ -790,7 +803,7 @@
 }
 
 .milk-type-options label:nth-child(2) {
-  background: #f8f1ec;
+  background: #fff4d7;
 }
 
 .milk-type-options label.is-selected {
@@ -799,8 +812,12 @@
 }
 
 .milk-type-options label:nth-child(2).is-selected {
-  border-color: #b68a75;
-  box-shadow: 0 0 0 3px rgb(182 138 117 / 12%);
+  border-color: #dda85f;
+  box-shadow: 0 0 0 3px rgb(221 168 95 / 14%);
+}
+
+.milk-type-options label:nth-child(2) input {
+  accent-color: #d99c4a;
 }
 
 .milk-type-options input,
@@ -852,8 +869,8 @@
   padding: 16px;
   align-items: center;
   border-radius: 14px;
-  background: #f8f1ec;
-  color: #8f6654;
+  background: #fff4d7;
+  color: #8a5b26;
   gap: 9px;
 }
 

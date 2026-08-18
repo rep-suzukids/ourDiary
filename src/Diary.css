@@ -229,7 +229,8 @@
 }
 
 .diary-day-badge--mother {
-  background: linear-gradient(145deg, #d9b6a3, #ae7e68);
+  background: linear-gradient(145deg, #e8bd68, #cf8735);
+  color: #fff;
 }
 
 .diary-day-section {
@@ -341,12 +342,12 @@
 
 .diary-note--mother {
   background:
-    linear-gradient(90deg, transparent 31px, rgb(174 126 104 / 22%) 32px, transparent 33px),
-    #fffdf9;
+    linear-gradient(90deg, transparent 31px, rgb(217 156 74 / 24%) 32px, transparent 33px),
+    #fffaf0;
 }
 
 .diary-note--mother::before {
-  background: radial-gradient(circle, #c39c89 0 3px, transparent 3.5px) center top / 8px 25px repeat-y;
+  background: radial-gradient(circle, #e0b05e 0 3px, transparent 3.5px) center top / 8px 25px repeat-y;
 }
 
 .diary-note > header,
@@ -377,7 +378,7 @@
 }
 
 .diary-note--mother .diary-note__child {
-  color: #9a6d59;
+  color: #9a641f;
 }
 
 .diary-note__text {
@@ -554,7 +555,7 @@
 }
 
 .diary-child-option--mother {
-  background: #f8f1ec;
+  background: #fff4d7;
 }
 
 .diary-child-option:has(input:checked) {
@@ -573,8 +574,8 @@
 }
 
 .diary-child-option--mother:has(input:checked) {
-  border-color: #b58a76;
-  box-shadow: 0 0 0 3px rgb(181 138 118 / 12%);
+  border-color: #dda85f;
+  box-shadow: 0 0 0 3px rgb(221 168 95 / 14%);
 }
 
 .diary-child-option input {
@@ -591,7 +592,7 @@
 }
 
 .diary-child-option--mother input {
-  accent-color: #ae7e68;
+  accent-color: #d99c4a;
 }
 
 .diary-child-option > span {
@@ -615,7 +616,7 @@
 }
 
 .diary-child-option--mother > span {
-  background: #ae7e68;
+  background: #d99c4a;
 }
 
 .diary-primary-button {
