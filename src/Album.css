@@ -532,3 +532,282 @@
   color: var(--ourdiary-rose-dark);
   font-weight: 700;
 }
+
+/* Photo tagging uses a neutral tone so tags are not mistaken for family badges. */
+.album-photo__tag-marker {
+  position: absolute;
+  z-index: 3;
+  bottom: 7px;
+  left: 8px;
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 48%);
+  border-radius: 50%;
+  background: rgb(94 62 76 / 38%);
+  box-shadow: none;
+  color: rgb(255 255 255 / 78%);
+  pointer-events: none;
+}
+
+.album-photo__tag-marker svg,
+.album-modal__tag-button svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.album-photo__tag-marker + .album-photo__caption {
+  padding-left: 36px;
+}
+
+.album-modal__content--tagging {
+  grid-template-columns: minmax(0, 1fr) 310px;
+  width: min(1120px, calc(100vw - 72px));
+  align-items: stretch;
+}
+
+.album-modal__photo-area {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  align-content: center;
+  justify-items: center;
+}
+
+.album-modal__content--tagging img {
+  max-width: 100%;
+  max-height: calc(100svh - 146px);
+}
+
+.album-modal__footer {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.album-modal__footer p {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 12px 0 0;
+}
+
+.album-modal__content--tagging .album-modal__footer {
+  padding-right: 22px;
+  box-sizing: border-box;
+}
+
+.album-modal__tag-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 8px 13px;
+  border: 1px solid #d7c2bc;
+  border-radius: 999px;
+  background: #f6f1ee;
+  color: #835f67;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.album-modal__tag-button:hover,
+.album-modal__tag-button:focus-visible {
+  border-color: #b99098;
+  background: #fff;
+}
+
+.album-tag-editor {
+  display: flex;
+  min-width: 0;
+  max-height: calc(100svh - 72px);
+  padding: 24px 20px 18px;
+  overflow: hidden;
+  border: 2px solid #d7c2bc;
+  border-radius: 0 22px 22px 0;
+  background: #fffaf7;
+  box-shadow: 18px 24px 60px rgb(65 35 48 / 28%);
+  color: #76535d;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.album-tag-editor__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.album-tag-editor__heading span {
+  color: #b17a8c;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.album-tag-editor__heading h2 {
+  margin: 2px 0 18px;
+  color: #76535d;
+  font-size: 1.35rem;
+}
+
+.album-tag-editor__heading > button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #e2cbc5;
+  border-radius: 50%;
+  background: #fff;
+  color: #916b72;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.25rem;
+}
+
+.album-tag-editor__choices {
+  display: flex;
+  min-height: 0;
+  padding: 5px 5px 12px;
+  overflow-y: auto;
+  align-content: flex-start;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.album-tag-editor__choices label {
+  position: relative;
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  padding: 9px 12px;
+  border: 2px solid #d7c2bc;
+  border-radius: 999px;
+  background: #f6f1ee;
+  color: #916b72;
+  cursor: pointer;
+  font-size: 0.8rem;
+  gap: 5px;
+}
+
+.album-tag-editor__choices label.is-selected {
+  border-color: #9b6f74;
+  background: #9b6f74;
+  color: #fff;
+  box-shadow: 0 5px 12px rgb(108 74 88 / 18%);
+}
+
+.album-tag-editor__choices label:focus-within {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #e88aaa, 0 5px 12px rgb(108 74 88 / 14%);
+}
+
+.album-tag-editor__choices input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.album-tag-editor__choices strong {
+  overflow-wrap: anywhere;
+}
+
+.album-tag-editor .album-tag-editor__message,
+.album-tag-editor .album-tag-editor__error,
+.album-tag-editor__empty p {
+  margin: 14px 0;
+  color: #8e7078;
+  font-size: 0.82rem;
+  white-space: normal;
+}
+
+.album-tag-editor .album-tag-editor__error {
+  color: #c34f70;
+}
+
+.album-tag-editor__empty a {
+  color: #a54f6f;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.album-tag-editor__actions {
+  display: grid;
+  margin-top: auto;
+  padding-top: 18px;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.album-tag-editor__actions button {
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #dcc5bf;
+  border-radius: 999px;
+  background: #fff;
+  color: #835f67;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.album-tag-editor__actions button:last-child {
+  border-color: #9b6f74;
+  background: #9b6f74;
+  color: #fff;
+}
+
+.album-tag-editor__actions button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+@media (max-width: 760px) {
+  .album-modal {
+    padding: 16px;
+  }
+
+  .album-modal__content--tagging {
+    width: calc(100vw - 32px);
+    max-height: calc(100svh - 32px);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .album-modal__content--tagging img {
+    max-width: 100%;
+    max-height: 43svh;
+  }
+
+  .album-modal__content--tagging .album-modal__close {
+    top: 8px;
+    right: 8px;
+  }
+
+  .album-modal__footer {
+    padding: 0 2px;
+    box-sizing: border-box;
+  }
+
+  .album-tag-editor {
+    max-height: 43svh;
+    padding: 18px 16px 14px;
+    border-radius: 0 0 20px 20px;
+  }
+
+  .album-tag-editor__heading h2 {
+    margin-bottom: 12px;
+    font-size: 1.15rem;
+  }
+}

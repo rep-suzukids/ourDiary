@@ -95,16 +95,28 @@ function HomePage({ session, onLogout, onNavigate }) {
         )}
 
         {activeFamily.role === 'admin' && (
-          <a
-            className="album-settings-link"
-            href="/album/setup"
-            onClick={(event) => {
-              event.preventDefault()
-              onNavigate('/album/setup')
-            }}
-          >
-            Google Driveアルバム設定
-          </a>
+          <div className="admin-settings-links" aria-label="管理者メニュー">
+            <a
+              className="album-settings-link"
+              href="/album/setup"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/album/setup')
+              }}
+            >
+              Google Driveアルバム設定
+            </a>
+            <a
+              className="album-settings-link"
+              href="/admin/tags"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/admin/tags')
+              }}
+            >
+              タグ管理
+            </a>
+          </div>
         )}
 
         <button className="logout-button" type="button" onClick={onLogout}>

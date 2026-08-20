@@ -88,16 +88,22 @@ export default async function handler(request, response) {
 
       const registered = await sql`
         SELECT
+          daf.id AS "albumFileId",
           google_drive_file_id AS id,
           name,
           mime_type AS "mimeType",
           drive_created_at AS "createdTime",
           size_bytes AS size,
           width,
-          height
-        FROM drive_album_files
-        WHERE family_id = ${familyId}
-        ORDER BY drive_created_at DESC NULLS LAST, created_at DESC
+          height,
+          COALESCE((
+            SELECT json_agg(daft.tag_id ORDER BY daft.created_at)
+            FROM drive_album_file_tags daft
+            WHERE daft.family_id = ${familyId} AND daft.album_file_id = daf.id
+          ), '[]'::json) AS "tagIds"
+        FROM drive_album_files daf
+        WHERE daf.family_id = ${familyId}
+        ORDER BY daf.drive_created_at DESC NULLS LAST, daf.created_at DESC
       `
       sendJson(response, 201, { photos: registered })
       return
@@ -110,16 +116,22 @@ export default async function handler(request, response) {
     )
     const photos = await sql`
       SELECT
+        daf.id AS "albumFileId",
         google_drive_file_id AS id,
         name,
         mime_type AS "mimeType",
         drive_created_at AS "createdTime",
         size_bytes AS size,
         width,
-        height
-      FROM drive_album_files
-      WHERE family_id = ${familyId}
-      ORDER BY drive_created_at DESC NULLS LAST, created_at DESC
+        height,
+        COALESCE((
+          SELECT json_agg(daft.tag_id ORDER BY daft.created_at)
+          FROM drive_album_file_tags daft
+          WHERE daft.family_id = ${familyId} AND daft.album_file_id = daf.id
+        ), '[]'::json) AS "tagIds"
+      FROM drive_album_files daf
+      WHERE daf.family_id = ${familyId}
+      ORDER BY daf.drive_created_at DESC NULLS LAST, daf.created_at DESC
     `
     response.setHeader('Cache-Control', 'private, no-store')
     sendJson(response, 200, {

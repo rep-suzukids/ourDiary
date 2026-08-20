@@ -20,6 +20,7 @@ function AlbumPage({ session, onNavigate }) {
   const [driveStatus, setDriveStatus] = useState('loading')
   const syncAttempted = useRef(false)
   const activeFamily = session.families[0]
+  const canEditTags = ['parent', 'admin'].includes(activeFamily.role)
 
   useEffect(() => {
     let isActive = true
@@ -80,6 +81,12 @@ function AlbumPage({ session, onNavigate }) {
     onNavigate(path)
   }
 
+  const updatePhotoTags = (albumFileId, tagIds) => {
+    setPhotos((current) => current.map((photo) => (
+      photo.albumFileId === albumFileId ? { ...photo, tagIds } : photo
+    )))
+  }
+
   return (
     <main className="album-page">
       <header className="album-header">
@@ -131,7 +138,14 @@ function AlbumPage({ session, onNavigate }) {
         <div className="album-state album-state--error">{error}</div>
       )}
       {status === 'ready' && photos.length > 0 && driveAccessToken && (
-        <InfiniteAlbumCanvas photos={photos} driveAccessToken={driveAccessToken} />
+        <InfiniteAlbumCanvas
+          photos={photos}
+          driveAccessToken={driveAccessToken}
+          familyId={activeFamily.id}
+          canEditTags={canEditTags}
+          canManageTags={activeFamily.role === 'admin'}
+          onPhotoTagsChange={updatePhotoTags}
+        />
       )}
     </main>
   )
