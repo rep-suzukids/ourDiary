@@ -13,6 +13,7 @@ import MilkFormPage from './pages/MilkFormPage.jsx'
 import MilkCalendarPage from './pages/MilkCalendarPage.jsx'
 import MilkPage from './pages/MilkPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
+import TagManagementPage from './pages/TagManagementPage.jsx'
 import {
   clearLegacySessionStorage,
   createSession,
@@ -120,6 +121,13 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <AlbumUploadPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/admin/tags') {
+    if (!session || session.families[0]?.role !== 'admin') {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <TagManagementPage session={session} onNavigate={navigate} />
   }
 
   if (pathname === '/diary') {

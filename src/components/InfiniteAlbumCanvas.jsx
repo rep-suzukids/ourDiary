@@ -14,7 +14,14 @@ function clamp(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, value))
 }
 
-function InfiniteAlbumCanvas({ photos, driveAccessToken }) {
+function InfiniteAlbumCanvas({
+  photos,
+  driveAccessToken,
+  familyId,
+  canEditTags,
+  canManageTags,
+  onPhotoTagsChange,
+}) {
   const [camera, setCamera] = useState({ x: 0, y: 0, scale: 1 })
   const [selectedPhoto, setSelectedPhoto] = useState(null)
   const [viewport, setViewport] = useState(() => ({
@@ -123,6 +130,14 @@ function InfiniteAlbumCanvas({ photos, driveAccessToken }) {
     setSelectedPhoto({ photo, imageUrl })
   }
 
+  const handleTagsChange = (albumFileId, tagIds) => {
+    onPhotoTagsChange(albumFileId, tagIds)
+    setSelectedPhoto((current) => current ? {
+      ...current,
+      photo: { ...current.photo, tagIds },
+    } : current)
+  }
+
   return (
     <section
       className="album-canvas"
@@ -175,6 +190,10 @@ function InfiniteAlbumCanvas({ photos, driveAccessToken }) {
         <AlbumPhotoModal
           photo={selectedPhoto.photo}
           imageUrl={selectedPhoto.imageUrl}
+          familyId={familyId}
+          canEditTags={canEditTags}
+          canManageTags={canManageTags}
+          onTagsChange={handleTagsChange}
           onClose={() => setSelectedPhoto(null)}
         />
       )}

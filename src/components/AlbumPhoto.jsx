@@ -52,6 +52,14 @@ function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
         )}
         {!imageUrl && !failed && <span className="album-photo__placeholder" aria-label="読み込み中" />}
         {failed && <span className="album-photo__error">{failureMessage || '読み込めませんでした'}</span>}
+        {photo.tagIds?.length > 0 && (
+          <span className="album-photo__tag-marker" aria-label="タグ設定済み" title="タグ設定済み">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 5.5V11l8.1 8.1a2 2 0 0 0 2.8 0l4.2-4.2a2 2 0 0 0 0-2.8L11 4H5.5A1.5 1.5 0 0 0 4 5.5Z" />
+              <circle cx="8" cy="8" r="1.2" />
+            </svg>
+          </span>
+        )}
         <span className="album-photo__caption">{photo.name}</span>
       </button>
     </div>

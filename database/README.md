@@ -15,8 +15,9 @@
 9. ミルク・搾乳量の小数入力を有効にする `008_fractional_milk_amounts.sql` を実行します。
 10. ログイン状態の維持とGoogle Driveの自動再接続を有効にする `009_persistent_sessions_and_drive_connections.sql` を実行します。
 11. お父さん・ママを日記の対象に追加する `010_family_diary_subjects.sql` を実行します。
-12. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-13. 再デプロイし、登録した管理者Googleアカウントでログインします。
+12. 写真タグ管理を追加する `011_photo_tags.sql` を実行します。
+13. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+14. 再デプロイし、登録した管理者Googleアカウントでログインします。
 
 ## ログインセッション
 
