@@ -203,36 +203,11 @@ async function getFamilyDriveAccess(familyId) {
 
   return {
     token: refreshed.token,
+    expiresAt: refreshed.expiresAt,
     folderId: rows[0].google_drive_folder_id,
     ownerEmail: rows[0].owner_email,
     title: rows[0].title,
   }
-}
-
-export async function getUserDriveAccess(familyId, userId, email) {
-  const sql = getDatabase()
-  const connections = await sql`
-    SELECT encrypted_refresh_token, refresh_token_iv, refresh_token_auth_tag
-    FROM google_drive_user_connections
-    WHERE family_id = ${familyId}
-      AND user_id = ${userId}
-    LIMIT 1
-  `
-
-  if (connections.length > 0) return refreshDriveAccessToken(connections[0])
-
-  // The folder owner already completed an offline OAuth flow when the album was created.
-  // Reuse that encrypted refresh token for the matching Our Diary user without another consent screen.
-  const ownerConnections = await sql`
-    SELECT encrypted_refresh_token, refresh_token_iv, refresh_token_auth_tag
-    FROM google_drive_connections
-    WHERE family_id = ${familyId}
-      AND lower(owner_email::text) = ${email.toLowerCase()}
-    LIMIT 1
-  `
-  if (ownerConnections.length > 0) return refreshDriveAccessToken(ownerConnections[0])
-
-  throw new GoogleDriveUserNotConnectedError()
 }
 
 export async function ensureDriveFolderPermission(familyId, email, role) {

@@ -1,10 +1,9 @@
 import { AuthorizationError, authorizeFamilyRequest } from './_lib/authorization.js'
 import {
   ensureDriveFolderPermission,
-  getUserDriveAccess,
   GoogleDriveConfigurationError,
+  GoogleDriveNotConnectedError,
   GoogleDriveRequestError,
-  GoogleDriveUserNotConnectedError,
 } from './_lib/google-drive.js'
 
 export default async function handler(request, response) {
@@ -21,15 +20,14 @@ export default async function handler(request, response) {
 
   try {
     const authorization = await authorizeFamilyRequest(request, familyId)
-    await ensureDriveFolderPermission(
+    // All family members share the folder owner's Drive access token. Under the
+    // drive.file scope a token can only read files the app created for that same
+    // account, so unifying on the owner (who created every album file) lets every
+    // member view and add photos without per-user consent or cross-user 404s.
+    const access = await ensureDriveFolderPermission(
       familyId,
       authorization.googleUser.email,
       authorization.role,
-    )
-    const access = await getUserDriveAccess(
-      familyId,
-      authorization.userId,
-      authorization.googleUser.email,
     )
     response.setHeader('Cache-Control', 'private, no-store')
     response.status(200).json({
@@ -41,10 +39,10 @@ export default async function handler(request, response) {
       response.status(error.status).json({ error: error.message })
       return
     }
-    if (error instanceof GoogleDriveUserNotConnectedError) {
+    if (error instanceof GoogleDriveNotConnectedError) {
       response.status(error.status).json({
         error: error.message,
-        code: 'DRIVE_USER_NOT_CONNECTED',
+        code: 'ALBUM_NOT_CONNECTED',
       })
       return
     }
@@ -56,9 +54,8 @@ export default async function handler(request, response) {
     if (error instanceof GoogleDriveRequestError) {
       response.status(error.status).json({
         error: error.status === 401
-          ? 'Google Driveへの接続を更新できませんでした。再接続してください。'
+          ? 'Google Driveへの接続を更新できませんでした。アルバム作成者（オーナー）による再接続が必要です。'
           : error.message,
-        code: error.status === 401 ? 'DRIVE_USER_NOT_CONNECTED' : undefined,
       })
       return
     }
