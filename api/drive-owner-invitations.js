@@ -34,9 +34,20 @@ export default async function handler(request, response) {
   try {
     const authorization = await authorizeFamilyRequest(request, familyId, 'album:manage')
     const sql = getDatabase()
-    const existingAlbums = await sql`SELECT id FROM drive_albums WHERE family_id = ${familyId} LIMIT 1`
-    if (existingAlbums.length > 0) {
-      sendJson(response, 409, { error: 'この家族のGoogle Driveアルバムは作成済みです。' })
+    // If an album already exists we still allow issuing an invitation, but only so the
+    // original owner can re-authorize and refresh an expired/revoked token. The Drive
+    // folder is reused; the callback updates the stored token in place.
+    const existingAlbums = await sql`
+      SELECT c.owner_email
+      FROM drive_albums a
+      INNER JOIN google_drive_connections c ON c.id = a.connection_id
+      WHERE a.family_id = ${familyId}
+      LIMIT 1
+    `
+    if (existingAlbums.length > 0 && existingAlbums[0].owner_email.toLowerCase() !== email) {
+      sendJson(response, 409, {
+        error: 'この家族のGoogle Driveアルバムは作成済みです。再接続はアルバム作成者本人のメールアドレスでのみ可能です。',
+      })
       return
     }
 

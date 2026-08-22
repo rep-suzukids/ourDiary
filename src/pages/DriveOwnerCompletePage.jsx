@@ -3,6 +3,10 @@ const STATUS_MESSAGES = {
     title: 'アルバムを作成しました',
     message: 'Google Driveとの連携が完了しました。この画面を閉じて、招待した方へ完了したことをお伝えください。',
   },
+  reconnected: {
+    title: 'Google Drive連携を更新しました',
+    message: '認証を更新しました。アルバムの写真を再び表示・追加できます。この画面は閉じて構いません。',
+  },
   email_mismatch: {
     title: 'Googleアカウントが一致しません',
     message: '招待されたメールアドレスのGoogleアカウントを選択して、招待URLからもう一度お試しください。',

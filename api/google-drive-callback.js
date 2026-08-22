@@ -114,16 +114,43 @@ export default async function handler(request, response) {
       return
     }
 
+    const encryptedToken = encryptRefreshToken(authorization.refreshToken)
+
     const existingAlbums = await sql`
-      SELECT id FROM drive_albums WHERE family_id = ${invitation.family_id} LIMIT 1
+      SELECT a.id, a.connection_id, c.owner_email
+      FROM drive_albums a
+      INNER JOIN google_drive_connections c ON c.id = a.connection_id
+      WHERE a.family_id = ${invitation.family_id}
+      LIMIT 1
     `
     if (existingAlbums.length > 0) {
-      redirectResult(request, response, 'already_connected')
+      // Reconnect: the album already exists, so refresh the stored owner token in
+      // place (keeping the same Drive folder) instead of creating a new album. Only
+      // the original owner may do this; anyone else is treated as already connected.
+      const existing = existingAlbums[0]
+      if (existing.owner_email.toLowerCase() !== authorization.email) {
+        redirectResult(request, response, 'already_connected')
+        return
+      }
+      await sql`
+        UPDATE google_drive_connections SET
+          owner_google_subject = ${authorization.subject},
+          encrypted_refresh_token = ${encryptedToken.encryptedRefreshToken},
+          refresh_token_iv = ${encryptedToken.refreshTokenIv},
+          refresh_token_auth_tag = ${encryptedToken.refreshTokenAuthTag},
+          updated_at = now()
+        WHERE id = ${existing.connection_id}
+      `
+      await sql`
+        UPDATE album_owner_invitations
+        SET accepted_at = now(), oauth_state_hash = NULL
+        WHERE id = ${invitation.id}
+      `
+      redirectResult(request, response, 'reconnected')
       return
     }
 
     const folder = await createGoogleDriveFolder(authorization.accessToken, invitation.album_title)
-    const encryptedToken = encryptRefreshToken(authorization.refreshToken)
     const connections = await sql`
       INSERT INTO google_drive_connections (
         family_id,
