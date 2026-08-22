@@ -13,7 +13,9 @@ import MilkFormPage from './pages/MilkFormPage.jsx'
 import MilkCalendarPage from './pages/MilkCalendarPage.jsx'
 import MilkPage from './pages/MilkPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx'
 import TagManagementPage from './pages/TagManagementPage.jsx'
+import TermsOfServicePage from './pages/TermsOfServicePage.jsx'
 import {
   clearLegacySessionStorage,
   createSession,
@@ -102,6 +104,10 @@ function AppContent() {
   if (pathname === '/drive-owner-connect') return <DriveOwnerConnectPage />
   if (pathname === '/drive-owner-connect/complete') return <DriveOwnerCompletePage />
 
+  // OAuth審査と利用者への事前説明のため、法務ページはログイン不要で公開します。
+  if (pathname === '/privacy-policy') return <PrivacyPolicyPage onNavigate={navigate} />
+  if (pathname === '/terms-of-service') return <TermsOfServicePage onNavigate={navigate} />
+
   if (isRestoringSession) return <SessionLoadingPage />
 
   if (pathname === '/album') {
@@ -179,6 +185,7 @@ function AppContent() {
   return <LoginPage
     error={error}
     isAuthenticating={isAuthenticating}
+    onNavigate={navigate}
     onLoginSuccess={handleLoginSuccess}
     onLoginFailure={() => setError('Googleログインに失敗しました。再試行してください。')}
   />
