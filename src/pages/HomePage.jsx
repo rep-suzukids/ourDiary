@@ -1,3 +1,5 @@
+import LegalFooter from '../components/LegalFooter.jsx'
+
 const ROLE_LABELS = {
   member: 'メンバー',
   parent: '両親',
@@ -123,6 +125,8 @@ function HomePage({ session, onLogout, onNavigate }) {
           ログアウト
         </button>
       </section>
+
+      <LegalFooter onNavigate={onNavigate} />
     </main>
   )
 }
