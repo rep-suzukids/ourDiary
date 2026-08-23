@@ -21,7 +21,7 @@ export async function listDrivePhotosDirectly(accessToken, folderId) {
     q: `'${folderId.replaceAll("'", "\\'")}' in parents and trashed = false`,
     pageSize: '100',
     orderBy: 'createdTime desc',
-    fields: 'files(id,name,mimeType,createdTime,size,imageMediaMetadata(width,height))',
+    fields: 'files(id,name,mimeType,createdTime,size,imageMediaMetadata(width,height,time))',
   })
   const response = await fetch(`https://www.googleapis.com/drive/v3/files?${parameters}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -38,6 +38,7 @@ export async function listDrivePhotosDirectly(accessToken, folderId) {
       size: file.size ?? null,
       width: file.imageMediaMetadata?.width ?? null,
       height: file.imageMediaMetadata?.height ?? null,
+      capturedTime: file.imageMediaMetadata?.time ?? null,
     }))
 }
 
@@ -120,7 +121,7 @@ export function getDriveConnectUrl(familyId, returnTo) {
 async function createDriveUploadSession(accessToken, folderId, file) {
   const parameters = new URLSearchParams({
     uploadType: 'resumable',
-    fields: 'id,name,mimeType,createdTime,size,imageMediaMetadata(width,height)',
+    fields: 'id,name,mimeType,createdTime,size,imageMediaMetadata(width,height,time)',
   })
   const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files?${parameters}`, {
     method: 'POST',

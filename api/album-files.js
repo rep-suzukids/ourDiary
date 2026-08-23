@@ -12,27 +12,59 @@ function sendJson(response, status, body) {
   response.status(status).json(body)
 }
 
-async function removeFilesMissingFromDrive(sql, familyId, drivePhotos) {
+function normalizeCapturedOn(value) {
+  if (typeof value !== 'string') return null
+  const match = /^(\d{4})[:-](\d{2})[:-](\d{2})/.exec(value.trim())
+  if (!match) return null
+
+  const [, year, month, day] = match
+  const candidate = new Date(`${year}-${month}-${day}T00:00:00Z`)
+  if (
+    Number.isNaN(candidate.getTime())
+    || candidate.getUTCFullYear() !== Number(year)
+    || candidate.getUTCMonth() + 1 !== Number(month)
+    || candidate.getUTCDate() !== Number(day)
+  ) return null
+
+  return `${year}-${month}-${day}`
+}
+
+async function synchronizeDriveFiles(sql, familyId, drivePhotos) {
   const registeredFiles = await sql`
     SELECT google_drive_file_id
     FROM drive_album_files
     WHERE family_id = ${familyId}
   `
-  if (registeredFiles.length === 0) return
-
   const driveFileIds = new Set(drivePhotos.map((photo) => photo.id))
   const missingFileIds = registeredFiles
     .map((file) => file.google_drive_file_id)
     .filter((fileId) => !driveFileIds.has(fileId))
 
-  if (missingFileIds.length === 0) return
+  if (missingFileIds.length > 0) {
+    await sql`
+      DELETE FROM drive_album_files
+      WHERE family_id = ${familyId}
+        AND google_drive_file_id IN (
+          SELECT jsonb_array_elements_text(${JSON.stringify(missingFileIds)}::jsonb)
+        )
+    `
+  }
 
+  if (drivePhotos.length === 0) return
+  const driveMetadata = drivePhotos.map((photo) => ({
+    id: photo.id,
+    captured_on: normalizeCapturedOn(photo.capturedTime),
+  }))
   await sql`
-    DELETE FROM drive_album_files
-    WHERE family_id = ${familyId}
-      AND google_drive_file_id IN (
-        SELECT jsonb_array_elements_text(${JSON.stringify(missingFileIds)}::jsonb)
-      )
+    UPDATE drive_album_files AS album_file
+    SET
+      captured_on = drive_file.captured_on,
+      updated_at = now()
+    FROM jsonb_to_recordset(${JSON.stringify(driveMetadata)}::jsonb)
+      AS drive_file(id text, captured_on date)
+    WHERE album_file.family_id = ${familyId}
+      AND album_file.google_drive_file_id = drive_file.id
+      AND album_file.captured_on IS DISTINCT FROM drive_file.captured_on
   `
 }
 
@@ -91,14 +123,15 @@ export default async function handler(request, response) {
         const createdTime = file.createdTime && !Number.isNaN(Date.parse(file.createdTime))
           ? file.createdTime
           : null
+        const capturedOn = normalizeCapturedOn(file.capturedTime)
 
         await sql`
           INSERT INTO drive_album_files (
             family_id, album_id, google_drive_file_id, name, mime_type,
-            size_bytes, width, height, drive_created_at, created_by
+            size_bytes, width, height, drive_created_at, captured_on, created_by
           ) VALUES (
             ${familyId}, ${album.id}, ${file.id}, ${file.name.trim()}, ${file.mimeType},
-            ${size}, ${width}, ${height}, ${createdTime}, ${authorization.userId}
+            ${size}, ${width}, ${height}, ${createdTime}, ${capturedOn}, ${authorization.userId}
           )
           ON CONFLICT (family_id, google_drive_file_id) DO UPDATE SET
             name = EXCLUDED.name,
@@ -107,6 +140,7 @@ export default async function handler(request, response) {
             width = EXCLUDED.width,
             height = EXCLUDED.height,
             drive_created_at = COALESCE(EXCLUDED.drive_created_at, drive_album_files.drive_created_at),
+            captured_on = EXCLUDED.captured_on,
             updated_at = now()
         `
       }
@@ -121,6 +155,7 @@ export default async function handler(request, response) {
           size_bytes AS size,
           width,
           height,
+          captured_on AS "capturedOn",
           COALESCE((
             SELECT json_agg(daft.tag_id ORDER BY daft.created_at)
             FROM drive_album_file_tags daft
@@ -140,7 +175,7 @@ export default async function handler(request, response) {
       authorization.role,
     )
     const driveAlbum = await listGoogleDrivePhotos(familyId)
-    await removeFilesMissingFromDrive(sql, familyId, driveAlbum.photos)
+    await synchronizeDriveFiles(sql, familyId, driveAlbum.photos)
 
     const photos = await sql`
       SELECT
@@ -152,6 +187,7 @@ export default async function handler(request, response) {
         size_bytes AS size,
         width,
         height,
+        captured_on AS "capturedOn",
         COALESCE((
           SELECT json_agg(daft.tag_id ORDER BY daft.created_at)
           FROM drive_album_file_tags daft
