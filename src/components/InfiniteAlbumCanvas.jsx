@@ -147,6 +147,8 @@ function InfiniteAlbumCanvas({
       onPointerMove={handlePointerMove}
       onPointerUp={stopDragging}
       onPointerCancel={stopDragging}
+      onContextMenu={(event) => event.preventDefault()}
+      onDragStart={(event) => event.preventDefault()}
     >
       <div
         className="album-canvas__plane"
