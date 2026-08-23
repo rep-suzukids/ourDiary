@@ -1,5 +1,5 @@
-import { getDatabase } from './_lib/db.js'
-import { hashInvitationValue } from './_lib/google-drive.js'
+import { getDatabase } from '../_lib/db.js'
+import { hashInvitationValue } from '../_lib/google-drive.js'
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') {

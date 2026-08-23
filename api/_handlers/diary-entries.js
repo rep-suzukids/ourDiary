@@ -1,5 +1,5 @@
-import { AuthorizationError, authorizeFamilyRequest } from './_lib/authorization.js'
-import { getDatabase } from './_lib/db.js'
+import { AuthorizationError, authorizeFamilyRequest } from '../_lib/authorization.js'
+import { getDatabase } from '../_lib/db.js'
 
 function sendJson(response, status, body) {
   response.status(status).json(body)

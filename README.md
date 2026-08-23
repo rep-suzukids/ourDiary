@@ -68,9 +68,11 @@ npm run build
 ## 主な構成
 
 - `src/`: Reactフロントエンド
-- `api/auth-session.js`: GoogleログインとDB上の所属・ロール確認
-- `api/drive-owner-invitations.js`: 管理者専用の招待URL発行
-- `api/google-drive-callback.js`: オーナーのOAuth承認とDriveフォルダ作成
-- `api/album-files.js`: 認証済みユーザー向けの写真メタデータ一覧
+- `api/index.js`: すべての公開APIを受ける単一のVercel Function
+- `api/_router.js`: 公開APIパスとハンドラーのホワイトリスト
+- `api/_handlers/`: Googleログイン、日記、アルバム、Google DriveなどのAPI処理
+- `api/_lib/`: 認証、権限、DB、Google Driveなどの共通処理
 - `src/services/albumApi.js`: ブラウザとGoogle Drive間の直接アップロード・取得
 - `database/`: Postgresスキーマとセットアップ手順
+
+`vercel.json`の内部Rewriteにより、`/api/auth-session`など既存の公開URLは変更せずに`api/index.js`へ集約します。APIを追加するときは`api/_handlers/`へ処理を追加し、`api/_router.js`の許可リストへ登録してください。`api/`直下へ新しい公開エントリーポイントを追加するとVercel Function数が増えるため使用しません。

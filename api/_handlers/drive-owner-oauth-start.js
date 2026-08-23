@@ -1,9 +1,9 @@
-import { getDatabase } from './_lib/db.js'
+import { getDatabase } from '../_lib/db.js'
 import {
   buildDriveAuthorizationUrl,
   createInvitationToken,
   hashInvitationValue,
-} from './_lib/google-drive.js'
+} from '../_lib/google-drive.js'
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') {

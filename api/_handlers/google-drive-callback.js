@@ -1,4 +1,4 @@
-import { getDatabase } from './_lib/db.js'
+import { getDatabase } from '../_lib/db.js'
 import {
   createGoogleDriveFolder,
   encryptRefreshToken,
@@ -6,7 +6,7 @@ import {
   exchangeDriveAuthorizationCode,
   getApplicationBaseUrl,
   hashInvitationValue,
-} from './_lib/google-drive.js'
+} from '../_lib/google-drive.js'
 
 function redirectResult(request, response, status) {
   response.statusCode = 302

@@ -9,51 +9,11 @@ Object.assign(process.env, localEnvironment, {
 })
 
 const [
-  { default: authSessionHandler },
-  { default: diaryEntriesHandler },
-  { default: careEventsHandler },
-  { default: tagsHandler },
-  { default: photoTagsHandler },
-  { default: photoFavoriteHandler },
-  { default: albumFilesHandler },
-  { default: driveOwnerInvitationsHandler },
-  { default: driveOwnerInvitationHandler },
-  { default: driveOwnerOauthStartHandler },
-  { default: driveUserOauthStartHandler },
-  { default: driveAccessTokenHandler },
-  { default: googleDriveCallbackHandler },
+  { default: dispatchApiRequest },
   { getDatabase },
 ] = await Promise.all([
-  import('../api/auth-session.js'),
-  import('../api/diary-entries.js'),
-  import('../api/care-events.js'),
-  import('../api/tags.js'),
-  import('../api/photo-tags.js'),
-  import('../api/photo-favorite.js'),
-  import('../api/album-files.js'),
-  import('../api/drive-owner-invitations.js'),
-  import('../api/drive-owner-invitation.js'),
-  import('../api/drive-owner-oauth-start.js'),
-  import('../api/drive-user-oauth-start.js'),
-  import('../api/drive-access-token.js'),
-  import('../api/google-drive-callback.js'),
+  import('../api/_router.js'),
   import('../api/_lib/db.js'),
-])
-
-const apiRoutes = new Map([
-  ['/api/auth-session', authSessionHandler],
-  ['/api/diary-entries', diaryEntriesHandler],
-  ['/api/care-events', careEventsHandler],
-  ['/api/tags', tagsHandler],
-  ['/api/photo-tags', photoTagsHandler],
-  ['/api/photo-favorite', photoFavoriteHandler],
-  ['/api/album-files', albumFilesHandler],
-  ['/api/drive-owner-invitations', driveOwnerInvitationsHandler],
-  ['/api/drive-owner-invitation', driveOwnerInvitationHandler],
-  ['/api/drive-owner-oauth-start', driveOwnerOauthStartHandler],
-  ['/api/drive-user-oauth-start', driveUserOauthStartHandler],
-  ['/api/drive-access-token', driveAccessTokenHandler],
-  ['/api/google-drive-callback', googleDriveCallbackHandler],
 ])
 
 const sql = getDatabase()
@@ -87,14 +47,12 @@ async function readJsonBody(request) {
 
 const server = createHttpServer(async (request, response) => {
   const pathname = new URL(request.url, 'http://localhost').pathname
-  const apiHandler = apiRoutes.get(pathname)
-
-  if (apiHandler) {
+  if (pathname.startsWith('/api/')) {
     try {
       if (['POST', 'PATCH', 'DELETE'].includes(request.method)) {
         request.body = await readJsonBody(request)
       }
-      await apiHandler(request, createApiResponse(response))
+      await dispatchApiRequest(request, createApiResponse(response))
     } catch (error) {
       console.error('Local API request failed', error)
       if (!response.headersSent) {

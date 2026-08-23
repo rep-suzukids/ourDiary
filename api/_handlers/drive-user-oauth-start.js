@@ -1,10 +1,10 @@
-import { AuthorizationError, authorizeFamilyRequest } from './_lib/authorization.js'
-import { getDatabase } from './_lib/db.js'
+import { AuthorizationError, authorizeFamilyRequest } from '../_lib/authorization.js'
+import { getDatabase } from '../_lib/db.js'
 import {
   buildDriveAuthorizationUrl,
   createInvitationToken,
   hashInvitationValue,
-} from './_lib/google-drive.js'
+} from '../_lib/google-drive.js'
 
 function safeReturnPath(value) {
   return value === '/album/upload' ? value : '/album'

@@ -1,5 +1,5 @@
-import { AuthorizationError, authorizeFamilyRequest } from './_lib/authorization.js'
-import { getDatabase } from './_lib/db.js'
+import { AuthorizationError, authorizeFamilyRequest } from '../_lib/authorization.js'
+import { getDatabase } from '../_lib/db.js'
 
 const EVENT_TYPES = new Set(['feeding', 'pumping'])
 const TIME_TYPES = new Set(['exact', 'period', 'unknown'])

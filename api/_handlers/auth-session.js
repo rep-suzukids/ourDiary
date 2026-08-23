@@ -1,13 +1,13 @@
-import { verifyGoogleCredential } from './_lib/auth.js'
-import { getDatabase } from './_lib/db.js'
-import { permissionsFor } from './_lib/permissions.js'
+import { verifyGoogleCredential } from '../_lib/auth.js'
+import { getDatabase } from '../_lib/db.js'
+import { permissionsFor } from '../_lib/permissions.js'
 import {
   assertSameOrigin,
   clearSessionCookie,
   createAppSession,
   getAppSession,
   revokeAppSession,
-} from './_lib/session.js'
+} from '../_lib/session.js'
 
 function sendJson(response, status, body) {
   response.setHeader('Cache-Control', 'private, no-store')

@@ -1,10 +1,10 @@
-import { AuthorizationError, authorizeFamilyRequest } from './_lib/authorization.js'
+import { AuthorizationError, authorizeFamilyRequest } from '../_lib/authorization.js'
 import {
   ensureDriveFolderPermission,
   GoogleDriveConfigurationError,
   GoogleDriveNotConnectedError,
   GoogleDriveRequestError,
-} from './_lib/google-drive.js'
+} from '../_lib/google-drive.js'
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') {
