@@ -89,6 +89,8 @@
   cursor: grab;
   touch-action: none;
   user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
   perspective: 1050px;
   perspective-origin: 50% 48%;
   background-image:
@@ -158,6 +160,8 @@
   object-fit: contain;
   background: #111;
   pointer-events: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
 }
 
 .album-photo__caption {
@@ -204,6 +208,18 @@
   background: #0b0b0b;
   box-shadow: 0 30px 90px rgb(0 0 0 / 70%);
   object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+}
+
+@media print {
+  .album-page,
+  .album-modal {
+    display: none !important;
+  }
 }
 
 .album-modal__content p {

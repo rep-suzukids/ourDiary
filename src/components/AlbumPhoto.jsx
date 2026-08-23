@@ -38,12 +38,15 @@ function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
         aria-label={`${photo.name}を拡大表示`}
         aria-disabled={!imageUrl}
         onClick={() => imageUrl && onOpen(photo, imageUrl)}
+        onContextMenu={(event) => event.preventDefault()}
+        onDragStart={(event) => event.preventDefault()}
       >
         {imageUrl && !failed && (
           <img
             src={imageUrl}
             alt={photo.name}
             draggable="false"
+            onContextMenu={(event) => event.preventDefault()}
             onError={() => {
               setFailed(true)
               setFailureMessage(`この画像形式を表示できません（${photo.mimeType || '形式不明'}）`)

@@ -85,11 +85,18 @@ function AlbumPhotoModal({
       aria-modal="true"
       aria-label={`${photo.name}の拡大表示`}
       onClick={onClose}
+      onContextMenu={(event) => event.preventDefault()}
+      onDragStart={(event) => event.preventDefault()}
       onPointerDown={(event) => event.stopPropagation()}
     >
       <div className={`album-modal__content${isEditingTags ? ' album-modal__content--tagging' : ''}`} onClick={(event) => event.stopPropagation()}>
         <div className="album-modal__photo-area">
-          <img src={imageUrl} alt={photo.name} />
+          <img
+            src={imageUrl}
+            alt={photo.name}
+            draggable="false"
+            onContextMenu={(event) => event.preventDefault()}
+          />
           {!isEditingTags && (
             <button
               ref={closeButtonRef}

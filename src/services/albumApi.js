@@ -61,6 +61,7 @@ export async function getDrivePhotoUrl(accessToken, photo, signal) {
       `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(photo.id)}?alt=media`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
+        cache: 'no-store',
         signal,
       },
     )
