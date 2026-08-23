@@ -5,10 +5,35 @@ import {
   GoogleDriveConfigurationError,
   GoogleDriveNotConnectedError,
   GoogleDriveRequestError,
+  listGoogleDrivePhotos,
 } from './_lib/google-drive.js'
 
 function sendJson(response, status, body) {
   response.status(status).json(body)
+}
+
+async function removeFilesMissingFromDrive(sql, familyId, drivePhotos) {
+  const registeredFiles = await sql`
+    SELECT google_drive_file_id
+    FROM drive_album_files
+    WHERE family_id = ${familyId}
+  `
+  if (registeredFiles.length === 0) return
+
+  const driveFileIds = new Set(drivePhotos.map((photo) => photo.id))
+  const missingFileIds = registeredFiles
+    .map((file) => file.google_drive_file_id)
+    .filter((fileId) => !driveFileIds.has(fileId))
+
+  if (missingFileIds.length === 0) return
+
+  await sql`
+    DELETE FROM drive_album_files
+    WHERE family_id = ${familyId}
+      AND google_drive_file_id IN (
+        SELECT jsonb_array_elements_text(${JSON.stringify(missingFileIds)}::jsonb)
+      )
+  `
 }
 
 export default async function handler(request, response) {
@@ -114,6 +139,9 @@ export default async function handler(request, response) {
       authorization.googleUser.email,
       authorization.role,
     )
+    const driveAlbum = await listGoogleDrivePhotos(familyId)
+    await removeFilesMissingFromDrive(sql, familyId, driveAlbum.photos)
+
     const photos = await sql`
       SELECT
         daf.id AS "albumFileId",
