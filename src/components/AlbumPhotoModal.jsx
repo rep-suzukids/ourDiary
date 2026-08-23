@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { updatePhotoFavorite } from '../services/albumApi.js'
 import { getTags, updatePhotoTags } from '../services/tagApi.js'
 
 function TagIcon() {
@@ -10,6 +11,14 @@ function TagIcon() {
   )
 }
 
+function HeartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 20.2 4.7 13A4.8 4.8 0 0 1 11.5 6.2l.5.5.5-.5A4.8 4.8 0 0 1 19.3 13Z" />
+    </svg>
+  )
+}
+
 function AlbumPhotoModal({
   photo,
   imageUrl,
@@ -17,6 +26,7 @@ function AlbumPhotoModal({
   canEditTags,
   canManageTags,
   onTagsChange,
+  onFavoriteChange,
   onClose,
 }) {
   const closeButtonRef = useRef(null)
@@ -25,6 +35,9 @@ function AlbumPhotoModal({
   const [selectedTagIds, setSelectedTagIds] = useState(photo.tagIds ?? [])
   const [tagStatus, setTagStatus] = useState('idle')
   const [tagError, setTagError] = useState('')
+  const [isFavorite, setIsFavorite] = useState(Boolean(photo.isFavorite))
+  const [favoriteStatus, setFavoriteStatus] = useState('idle')
+  const [favoriteError, setFavoriteError] = useState('')
 
   useEffect(() => {
     closeButtonRef.current?.focus()
@@ -78,6 +91,21 @@ function AlbumPhotoModal({
     }
   }
 
+  const toggleFavorite = async () => {
+    const nextFavorite = !isFavorite
+    setFavoriteStatus('saving')
+    setFavoriteError('')
+    try {
+      const result = await updatePhotoFavorite(familyId, photo.albumFileId, nextFavorite)
+      setIsFavorite(result.isFavorite)
+      onFavoriteChange(photo.albumFileId, result.isFavorite)
+      setFavoriteStatus('idle')
+    } catch (error) {
+      setFavoriteError(error.message)
+      setFavoriteStatus('error')
+    }
+  }
+
   return (
     <div
       className="album-modal"
@@ -110,13 +138,28 @@ function AlbumPhotoModal({
           )}
           <div className="album-modal__footer">
             <p>{photo.name}</p>
-            {canEditTags && !isEditingTags && (
-              <button className="album-modal__tag-button" type="button" onClick={openTagEditor}>
-                <TagIcon />
-                タグを編集
-              </button>
+            {!isEditingTags && (
+              <div className="album-modal__photo-actions">
+                <button
+                  className={`album-modal__favorite-button${isFavorite ? ' is-favorite' : ''}`}
+                  type="button"
+                  aria-pressed={isFavorite}
+                  onClick={toggleFavorite}
+                  disabled={favoriteStatus === 'saving'}
+                >
+                  <HeartIcon />
+                  {favoriteStatus === 'saving' ? '更新中…' : 'お気に入り'}
+                </button>
+                {canEditTags && (
+                  <button className="album-modal__tag-button" type="button" onClick={openTagEditor}>
+                    <TagIcon />
+                    タグを編集
+                  </button>
+                )}
+              </div>
             )}
           </div>
+          {favoriteError && <p className="album-modal__favorite-error" role="alert">{favoriteError}</p>}
         </div>
 
         {isEditingTags && (

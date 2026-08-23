@@ -11,7 +11,7 @@ import {
 import { getTags } from '../services/tagApi.js'
 import '../Album.css'
 
-const EMPTY_FILTERS = { tagIds: [], tagMode: 'or', from: '', to: '' }
+const EMPTY_FILTERS = { tagIds: [], tagMode: 'or', favoriteOnly: false, from: '', to: '' }
 
 function AlbumPage({ session, onNavigate }) {
   const [albumTitle, setAlbumTitle] = useState('Album')
@@ -113,12 +113,19 @@ function AlbumPage({ session, onNavigate }) {
     )))
   }
 
+  const updatePhotoFavorite = (albumFileId, isFavorite) => {
+    setPhotos((current) => current.map((photo) => (
+      photo.albumFileId === albumFileId ? { ...photo, isFavorite } : photo
+    )))
+  }
+
   const invalidDateRange = Boolean(filters.from && filters.to && filters.from > filters.to)
   const filteredPhotos = useMemo(() => {
     if (invalidDateRange) return []
 
     return photos.filter((photo) => {
       const photoTagIds = photo.tagIds ?? []
+      if (filters.favoriteOnly && !photo.isFavorite) return false
       const matchesTags = filters.tagIds.length === 0
         || (filters.tagMode === 'and'
           ? filters.tagIds.every((tagId) => photoTagIds.includes(tagId))
@@ -133,7 +140,9 @@ function AlbumPage({ session, onNavigate }) {
     })
   }, [filters, invalidDateRange, photos])
 
-  const filtersAreActive = Boolean(filters.tagIds.length > 0 || filters.from || filters.to)
+  const filtersAreActive = Boolean(
+    filters.tagIds.length > 0 || filters.favoriteOnly || filters.from || filters.to,
+  )
 
   return (
     <main className="album-page">
@@ -210,6 +219,7 @@ function AlbumPage({ session, onNavigate }) {
           canEditTags={canEditTags}
           canManageTags={activeFamily.role === 'admin'}
           onPhotoTagsChange={updatePhotoTags}
+          onPhotoFavoriteChange={updatePhotoFavorite}
         />
       )}
       {status === 'ready' && photos.length > 0 && filteredPhotos.length === 0 && driveAccessToken && (

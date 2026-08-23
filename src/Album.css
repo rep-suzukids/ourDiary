@@ -1163,3 +1163,202 @@
     padding: 19px;
   }
 }
+
+/* Personal photo favorites */
+.album-filter-panel__favorite {
+  display: grid;
+  margin-top: 20px;
+  padding: 13px 14px;
+  border: 1px solid #ead5dc;
+  border-radius: 16px;
+  align-items: center;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  background: #fff7fa;
+  cursor: pointer;
+}
+
+.album-filter-panel__favorite-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  place-items: center;
+  background: #f9dce7;
+  color: #bd5c81;
+}
+
+.album-filter-panel__favorite-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: currentcolor;
+}
+
+.album-filter-panel__favorite-copy strong,
+.album-filter-panel__favorite-copy small {
+  display: block;
+}
+
+.album-filter-panel__favorite-copy strong {
+  color: #825d68;
+  font-size: 0.82rem;
+}
+
+.album-filter-panel__favorite-copy small {
+  margin-top: 2px;
+  color: #a68790;
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+.album-filter-panel__favorite input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.album-filter-panel__switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: #d8c8cd;
+  transition: background 160ms ease;
+}
+
+.album-filter-panel__switch::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px rgb(97 63 75 / 20%);
+  content: '';
+  transition: transform 160ms ease;
+}
+
+.album-filter-panel__favorite input:checked + .album-filter-panel__switch {
+  background: #d76f98;
+}
+
+.album-filter-panel__favorite input:checked + .album-filter-panel__switch::after {
+  transform: translateX(18px);
+}
+
+.album-filter-panel__favorite input:focus-visible + .album-filter-panel__switch {
+  outline: 2px solid #d96c98;
+  outline-offset: 3px;
+}
+
+.album-photo__favorite-marker {
+  position: absolute;
+  z-index: 3;
+  bottom: 7px;
+  left: 8px;
+  display: grid;
+  width: 21px;
+  height: 21px;
+  border: 1px solid rgb(216 104 146 / 36%);
+  border-radius: 50%;
+  place-items: center;
+  box-sizing: border-box;
+  background: rgb(255 247 250 / 88%);
+  color: #cf668e;
+  pointer-events: none;
+}
+
+.album-photo__favorite-marker svg {
+  width: 12px;
+  height: 12px;
+  fill: currentcolor;
+}
+
+.album-photo__caption.has-markers {
+  padding-left: 36px;
+}
+
+.album-photo__caption.has-two-markers {
+  padding-left: 63px;
+}
+
+.album-modal__photo-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.album-modal__favorite-button {
+  display: inline-flex;
+  padding: 8px 13px;
+  border: 1px solid #e0bdca;
+  border-radius: 999px;
+  align-items: center;
+  gap: 6px;
+  background: #fff7fa;
+  color: #a65473;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.album-modal__favorite-button svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.album-modal__favorite-button.is-favorite {
+  border-color: #da7c9f;
+  background: #ffedf4;
+  color: #c5527e;
+}
+
+.album-modal__favorite-button.is-favorite svg {
+  fill: currentcolor;
+}
+
+.album-modal__favorite-button:hover,
+.album-modal__favorite-button:focus-visible {
+  border-color: #c76d8e;
+  background: #fff;
+}
+
+.album-modal__favorite-button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.album-modal__favorite-error {
+  margin: 8px 0 0;
+  color: #c34f70;
+  font-size: 0.76rem;
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .album-modal__footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .album-modal__photo-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .album-modal__favorite-button,
+  .album-modal__tag-button {
+    padding: 7px 10px;
+    font-size: 0.72rem;
+  }
+}
