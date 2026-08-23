@@ -156,6 +156,13 @@ export default async function handler(request, response) {
           width,
           height,
           captured_on AS "capturedOn",
+          EXISTS (
+            SELECT 1
+            FROM photo_favorites favorite
+            WHERE favorite.family_id = ${familyId}
+              AND favorite.album_file_id = daf.id
+              AND favorite.user_id = ${authorization.userId}
+          ) AS "isFavorite",
           COALESCE((
             SELECT json_agg(daft.tag_id ORDER BY daft.created_at)
             FROM drive_album_file_tags daft
@@ -188,6 +195,13 @@ export default async function handler(request, response) {
         width,
         height,
         captured_on AS "capturedOn",
+        EXISTS (
+          SELECT 1
+          FROM photo_favorites favorite
+          WHERE favorite.family_id = ${familyId}
+            AND favorite.album_file_id = daf.id
+            AND favorite.user_id = ${authorization.userId}
+        ) AS "isFavorite",
         COALESCE((
           SELECT json_agg(daft.tag_id ORDER BY daft.created_at)
           FROM drive_album_file_tags daft

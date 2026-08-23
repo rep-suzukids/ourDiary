@@ -63,7 +63,21 @@ function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
             </svg>
           </span>
         )}
-        <span className="album-photo__caption">{photo.name}</span>
+        {photo.isFavorite && (
+          <span
+            className="album-photo__favorite-marker"
+            aria-label="お気に入り"
+            title="お気に入り"
+            style={photo.tagIds?.length > 0 ? { left: '35px' } : undefined}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 20.2 4.7 13A4.8 4.8 0 0 1 11.5 6.2l.5.5.5-.5A4.8 4.8 0 0 1 19.3 13Z" />
+            </svg>
+          </span>
+        )}
+        <span className={`album-photo__caption${photo.tagIds?.length > 0 || photo.isFavorite ? ' has-markers' : ''}${photo.tagIds?.length > 0 && photo.isFavorite ? ' has-two-markers' : ''}`}>
+          {photo.name}
+        </span>
       </button>
     </div>
   )

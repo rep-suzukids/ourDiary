@@ -55,6 +55,19 @@ export async function registerDriveAlbumFiles(familyId, files) {
   return readApiResponse(response)
 }
 
+export async function updatePhotoFavorite(familyId, albumFileId, isFavorite) {
+  const response = await fetch('/api/photo-favorite', {
+    method: 'PATCH',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-family-id': familyId,
+    },
+    body: JSON.stringify({ albumFileId, isFavorite }),
+  })
+  return readApiResponse(response)
+}
+
 export async function getDrivePhotoUrl(accessToken, photo, signal) {
   let response
   try {

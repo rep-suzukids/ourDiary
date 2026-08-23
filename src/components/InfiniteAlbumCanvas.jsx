@@ -21,6 +21,7 @@ function InfiniteAlbumCanvas({
   canEditTags,
   canManageTags,
   onPhotoTagsChange,
+  onPhotoFavoriteChange,
 }) {
   const [camera, setCamera] = useState({ x: 0, y: 0, scale: 1 })
   const [selectedPhoto, setSelectedPhoto] = useState(null)
@@ -138,6 +139,14 @@ function InfiniteAlbumCanvas({
     } : current)
   }
 
+  const handleFavoriteChange = (albumFileId, isFavorite) => {
+    onPhotoFavoriteChange(albumFileId, isFavorite)
+    setSelectedPhoto((current) => current ? {
+      ...current,
+      photo: { ...current.photo, isFavorite },
+    } : current)
+  }
+
   return (
     <section
       className="album-canvas"
@@ -196,6 +205,7 @@ function InfiniteAlbumCanvas({
           canEditTags={canEditTags}
           canManageTags={canManageTags}
           onTagsChange={handleTagsChange}
+          onFavoriteChange={handleFavoriteChange}
           onClose={() => setSelectedPhoto(null)}
         />
       )}

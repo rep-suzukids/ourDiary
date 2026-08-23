@@ -8,6 +8,14 @@ function FilterIcon() {
   )
 }
 
+function HeartIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 20.2 4.7 13A4.8 4.8 0 0 1 11.5 6.2l.5.5.5-.5A4.8 4.8 0 0 1 19.3 13Z" />
+    </svg>
+  )
+}
+
 function AlbumFilterPanel({
   filters,
   onChange,
@@ -18,7 +26,10 @@ function AlbumFilterPanel({
   totalCount,
 }) {
   const [isOpen, setIsOpen] = useState(false)
-  const activeCount = filters.tagIds.length + Number(Boolean(filters.from)) + Number(Boolean(filters.to))
+  const activeCount = filters.tagIds.length
+    + Number(Boolean(filters.favoriteOnly))
+    + Number(Boolean(filters.from))
+    + Number(Boolean(filters.to))
   const invalidDateRange = filters.from && filters.to && filters.from > filters.to
 
   const toggleTag = (tagId) => {
@@ -31,7 +42,7 @@ function AlbumFilterPanel({
   }
 
   const resetFilters = () => {
-    onChange({ tagIds: [], tagMode: 'or', from: '', to: '' })
+    onChange({ tagIds: [], tagMode: 'or', favoriteOnly: false, from: '', to: '' })
   }
 
   return (
@@ -113,6 +124,20 @@ function AlbumFilterPanel({
               </label>
             </fieldset>
           )}
+
+          <label className="album-filter-panel__favorite">
+            <span className="album-filter-panel__favorite-icon"><HeartIcon /></span>
+            <span className="album-filter-panel__favorite-copy">
+              <strong>お気に入りのみ</strong>
+              <small>自分がお気に入りにした写真を表示</small>
+            </span>
+            <input
+              type="checkbox"
+              checked={Boolean(filters.favoriteOnly)}
+              onChange={(event) => onChange({ ...filters, favoriteOnly: event.target.checked })}
+            />
+            <span className="album-filter-panel__switch" aria-hidden="true" />
+          </label>
 
           <fieldset className="album-filter-panel__dates">
             <legend>撮影日</legend>
