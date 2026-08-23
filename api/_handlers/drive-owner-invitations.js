@@ -1,10 +1,10 @@
-import { AuthorizationError, authorizeFamilyRequest } from './_lib/authorization.js'
-import { getDatabase } from './_lib/db.js'
+import { AuthorizationError, authorizeFamilyRequest } from '../_lib/authorization.js'
+import { getDatabase } from '../_lib/db.js'
 import {
   createInvitationToken,
   getApplicationBaseUrl,
   hashInvitationValue,
-} from './_lib/google-drive.js'
+} from '../_lib/google-drive.js'
 
 const INVITATION_LIFETIME_HOURS = 24
 
