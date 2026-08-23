@@ -262,7 +262,7 @@ export async function listGoogleDrivePhotos(familyId) {
       q: query,
       pageSize: '1000',
       orderBy: 'createdTime desc',
-      fields: 'nextPageToken,files(id,name,mimeType,createdTime,size,imageMediaMetadata(width,height,rotation))',
+      fields: 'nextPageToken,files(id,name,mimeType,createdTime,size,imageMediaMetadata(width,height,rotation,time))',
       ...(pageToken && { pageToken }),
     })
     const response = await driveFetch(
@@ -280,6 +280,7 @@ export async function listGoogleDrivePhotos(familyId) {
         size: item.size ? Number(item.size) : null,
         width: item.imageMediaMetadata?.width ?? null,
         height: item.imageMediaMetadata?.height ?? null,
+        capturedTime: item.imageMediaMetadata?.time ?? null,
       })
     }
     pageToken = page.nextPageToken ?? ''

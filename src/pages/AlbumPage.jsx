@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import AlbumFilterPanel from '../components/AlbumFilterPanel.jsx'
 import InfiniteAlbumCanvas from '../components/InfiniteAlbumCanvas.jsx'
 import {
   getAlbumPhotos,
@@ -7,7 +8,10 @@ import {
   listDrivePhotosDirectly,
   registerDriveAlbumFiles,
 } from '../services/albumApi.js'
+import { getTags } from '../services/tagApi.js'
 import '../Album.css'
+
+const EMPTY_FILTERS = { tagIds: [], tagMode: 'or', from: '', to: '' }
 
 function AlbumPage({ session, onNavigate }) {
   const [albumTitle, setAlbumTitle] = useState('Album')
@@ -18,6 +22,10 @@ function AlbumPage({ session, onNavigate }) {
   const [errorCode, setErrorCode] = useState('')
   const [driveAccessToken, setDriveAccessToken] = useState('')
   const [driveStatus, setDriveStatus] = useState('loading')
+  const [tags, setTags] = useState([])
+  const [tagStatus, setTagStatus] = useState('loading')
+  const [tagError, setTagError] = useState('')
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
   const syncAttempted = useRef(false)
   const activeFamily = session.families[0]
   const canEditTags = ['parent', 'admin'].includes(activeFamily.role)
@@ -37,6 +45,24 @@ function AlbumPage({ session, onNavigate }) {
         setError(requestError.message)
         setErrorCode(requestError.code)
         setStatus('error')
+      })
+    return () => { isActive = false }
+  }, [activeFamily.id])
+
+  useEffect(() => {
+    let isActive = true
+    setTagStatus('loading')
+    setTagError('')
+    getTags(activeFamily.id)
+      .then((result) => {
+        if (!isActive) return
+        setTags(result.tags ?? [])
+        setTagStatus('ready')
+      })
+      .catch((requestError) => {
+        if (!isActive) return
+        setTagError(requestError.message)
+        setTagStatus('error')
       })
     return () => { isActive = false }
   }, [activeFamily.id])
@@ -87,6 +113,28 @@ function AlbumPage({ session, onNavigate }) {
     )))
   }
 
+  const invalidDateRange = Boolean(filters.from && filters.to && filters.from > filters.to)
+  const filteredPhotos = useMemo(() => {
+    if (invalidDateRange) return []
+
+    return photos.filter((photo) => {
+      const photoTagIds = photo.tagIds ?? []
+      const matchesTags = filters.tagIds.length === 0
+        || (filters.tagMode === 'and'
+          ? filters.tagIds.every((tagId) => photoTagIds.includes(tagId))
+          : filters.tagIds.some((tagId) => photoTagIds.includes(tagId)))
+      if (!matchesTags) return false
+
+      if (!filters.from && !filters.to) return true
+      if (!photo.capturedOn) return false
+      if (filters.from && photo.capturedOn < filters.from) return false
+      if (filters.to && photo.capturedOn > filters.to) return false
+      return true
+    })
+  }, [filters, invalidDateRange, photos])
+
+  const filtersAreActive = Boolean(filters.tagIds.length > 0 || filters.from || filters.to)
+
   return (
     <main className="album-page">
       <header className="album-header">
@@ -95,13 +143,30 @@ function AlbumPage({ session, onNavigate }) {
           <p className="album-header__eyebrow">{activeFamily.name}</p>
           <h1>{albumTitle}</h1>
         </div>
-        {status === 'ready' && <span className="album-header__count">{photos.length} photos</span>}
+        {status === 'ready' && (
+          <span className="album-header__count">
+            {filtersAreActive ? `${filteredPhotos.length} / ${photos.length}` : photos.length} photos
+          </span>
+        )}
       </header>
 
-      {['parent', 'admin'].includes(activeFamily.role) && status === 'ready' && (
-        <a className="album-upload-link" href="/album/upload" onClick={navigateLink('/album/upload')}>
-          ＋ 写真を追加
-        </a>
+      {status === 'ready' && photos.length > 0 && (
+        <div className="album-actions">
+          <AlbumFilterPanel
+            filters={filters}
+            onChange={setFilters}
+            tags={tags}
+            tagStatus={tagStatus}
+            tagError={tagError}
+            resultCount={filteredPhotos.length}
+            totalCount={photos.length}
+          />
+          {['parent', 'admin'].includes(activeFamily.role) && (
+            <a className="album-upload-link" href="/album/upload" onClick={navigateLink('/album/upload')}>
+              ＋ 写真を追加
+            </a>
+          )}
+        </div>
       )}
 
       {status === 'loading' && <div className="album-state">写真を読み込んでいます…</div>}
@@ -139,13 +204,19 @@ function AlbumPage({ session, onNavigate }) {
       )}
       {status === 'ready' && photos.length > 0 && driveAccessToken && (
         <InfiniteAlbumCanvas
-          photos={photos}
+          photos={filteredPhotos}
           driveAccessToken={driveAccessToken}
           familyId={activeFamily.id}
           canEditTags={canEditTags}
           canManageTags={activeFamily.role === 'admin'}
           onPhotoTagsChange={updatePhotoTags}
         />
+      )}
+      {status === 'ready' && photos.length > 0 && filteredPhotos.length === 0 && driveAccessToken && (
+        <div className="album-state album-state--filter-empty">
+          <p>条件に合う写真がありません。</p>
+          <span>絞り込み条件を変えてお試しください。</span>
+        </div>
       )}
     </main>
   )
