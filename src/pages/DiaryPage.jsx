@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  diaryDateFromSearch,
+  formatDiaryDateLabel,
+  localDiaryDateString,
+} from '../diaryDateUtils.js'
+import {
   deleteDiaryEntry,
   getDiaryEntries,
   updateDiaryEntry,
@@ -19,25 +24,12 @@ function openNativePicker(event) {
   if (typeof event.currentTarget.showPicker === 'function') event.currentTarget.showPicker()
 }
 
-function localDateString() {
-  const parts = new Intl.DateTimeFormat('ja-JP', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]))
-  return `${value.year}-${value.month}-${value.day}`
-}
-
 function normalizeDate(value) {
   return String(value).slice(0, 10)
 }
 
 function initialDate() {
-  const requested = new URLSearchParams(window.location.search).get('date')
-  if (requested && /^20(?:2[6-9]|[3-4]\d|50)-\d{2}-\d{2}$/.test(requested)) return requested
-  return localDateString()
+  return diaryDateFromSearch(window.location.search) ?? localDiaryDateString()
 }
 
 function buildCalendar(year, month) {
@@ -91,6 +83,7 @@ function DiaryPage({ session, onNavigate }) {
     return grouped
   }, {}), [entries])
   const selectedEntries = entriesByDate[selectedDate] ?? []
+  const createDiaryPath = `/diary/new?date=${encodeURIComponent(selectedDate)}`
 
   const navigateLink = (path) => (event) => {
     event.preventDefault()
@@ -152,7 +145,7 @@ function DiaryPage({ session, onNavigate }) {
           <h1>ファミリー日記</h1>
         </div>
         {canCreate && (
-          <a className="diary-add-button" href="/diary/new" onClick={navigateLink('/diary/new')}>＋ 書く</a>
+          <a className="diary-add-button" href={createDiaryPath} onClick={navigateLink(createDiaryPath)}>＋ 書く</a>
         )}
       </header>
 
@@ -189,7 +182,7 @@ function DiaryPage({ session, onNavigate }) {
               <button
                 type="button"
                 key={key}
-                className={`diary-calendar-day${selectedDate === key ? ' is-selected' : ''}${key === localDateString() ? ' is-today' : ''}`}
+                className={`diary-calendar-day${selectedDate === key ? ' is-selected' : ''}${key === localDiaryDateString() ? ' is-today' : ''}`}
                 onClick={() => {
                   setSelectedDate(key)
                   setEditingId('')
@@ -233,15 +226,21 @@ function DiaryPage({ session, onNavigate }) {
               {editingId === entry.id ? (
                 <form className="diary-edit-form" onSubmit={saveEdit}>
                   <div className="diary-edit-row">
-                    <input
-                      type="date"
-                      min="2026-01-01"
-                      max="2050-12-31"
-                      value={editValues.date}
-                      onClick={openNativePicker}
-                      onChange={(event) => setEditValues((current) => ({ ...current, date: event.target.value }))}
-                      required
-                    />
+                    <span className="diary-date-control">
+                      <span className="diary-date-control__label" aria-hidden="true">
+                        {formatDiaryDateLabel(editValues.date)}
+                      </span>
+                      <input
+                        type="date"
+                        min="2026-01-01"
+                        max="2050-12-31"
+                        value={editValues.date}
+                        aria-label={`日付：${formatDiaryDateLabel(editValues.date)}`}
+                        onClick={openNativePicker}
+                        onChange={(event) => setEditValues((current) => ({ ...current, date: event.target.value }))}
+                        required
+                      />
+                    </span>
                     <select
                       value={editValues.subjectValue}
                       onChange={(event) => setEditValues((current) => ({ ...current, subjectValue: event.target.value }))}

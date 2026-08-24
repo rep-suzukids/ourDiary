@@ -1,4 +1,9 @@
 import { useEffect, useState } from 'react'
+import {
+  diaryDateFromSearch,
+  formatDiaryDateLabel,
+  localDiaryDateString,
+} from '../diaryDateUtils.js'
 import { buildDiarySubjects, diarySubjectInput } from '../diarySubjects.js'
 import { createDiaryEntry, getDiaryEntries } from '../services/diaryApi.js'
 import '../Diary.css'
@@ -7,28 +12,14 @@ function openNativePicker(event) {
   if (typeof event.currentTarget.showPicker === 'function') event.currentTarget.showPicker()
 }
 
-function localDateString() {
-  const parts = new Intl.DateTimeFormat('ja-JP', {
-    timeZone: 'Asia/Tokyo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]))
-  return `${value.year}-${value.month}-${value.day}`
-}
-
-function formatDateLabel(value) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return '日付を選択してください'
-  const [year, month, day] = value.split('-').map(Number)
-  const weekday = ['日', '月', '火', '水', '木', '金', '土'][new Date(year, month - 1, day).getDay()]
-  return `${year}年${month}月${day}日（${weekday}）`
+function initialDate() {
+  return diaryDateFromSearch(window.location.search) ?? localDiaryDateString()
 }
 
 function DiaryCreatePage({ session, onNavigate }) {
   const activeFamily = session.families[0]
   const [children, setChildren] = useState([])
-  const [date, setDate] = useState(localDateString)
+  const [date, setDate] = useState(initialDate)
   const [subjectValue, setSubjectValue] = useState('')
   const [text, setText] = useState('')
   const [error, setError] = useState('')
@@ -81,7 +72,7 @@ function DiaryCreatePage({ session, onNavigate }) {
         <a href="/diary" onClick={navigateLink('/diary')} aria-label="日記カレンダーへ戻る">←</a>
         <div>
           <p>Our Diary</p>
-          <h1>今日のことを書く</h1>
+          <h1>日記を書く</h1>
         </div>
       </header>
 
@@ -89,13 +80,13 @@ function DiaryCreatePage({ session, onNavigate }) {
         <label className="diary-field">
           <span>日付</span>
           <span className="diary-date-control">
-            <span className="diary-date-control__label" aria-hidden="true">{formatDateLabel(date)}</span>
+            <span className="diary-date-control__label" aria-hidden="true">{formatDiaryDateLabel(date)}</span>
             <input
               type="date"
               min="2026-01-01"
               max="2050-12-31"
               value={date}
-              aria-label={`日付：${formatDateLabel(date)}`}
+              aria-label={`日付：${formatDiaryDateLabel(date)}`}
               onClick={openNativePicker}
               onChange={(event) => setDate(event.target.value)}
               required
