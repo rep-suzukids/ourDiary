@@ -16,6 +16,15 @@ function HeartIcon() {
   )
 }
 
+function UnknownDateIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 3v3M17 3v3M4.5 9h15M6 5h12a2 2 0 0 1 2 2v12H4V7a2 2 0 0 1 2-2Z" />
+      <path d="M10.4 13.2a1.8 1.8 0 1 1 2.4 1.7c-.8.3-.8.8-.8 1.1M12 17.8v.1" />
+    </svg>
+  )
+}
+
 function AlbumFilterPanel({
   filters,
   onChange,
@@ -26,10 +35,12 @@ function AlbumFilterPanel({
   totalCount,
 }) {
   const [isOpen, setIsOpen] = useState(false)
+  const dateFilterActive = Boolean(filters.from || filters.to)
   const activeCount = filters.tagIds.length
     + Number(Boolean(filters.favoriteOnly))
     + Number(Boolean(filters.from))
     + Number(Boolean(filters.to))
+    + Number(dateFilterActive && Boolean(filters.includeUnknownCapturedDate))
   const invalidDateRange = filters.from && filters.to && filters.from > filters.to
 
   const toggleTag = (tagId) => {
@@ -42,7 +53,20 @@ function AlbumFilterPanel({
   }
 
   const resetFilters = () => {
-    onChange({ tagIds: [], tagMode: 'or', favoriteOnly: false, from: '', to: '' })
+    onChange({
+      tagIds: [],
+      tagMode: 'or',
+      favoriteOnly: false,
+      from: '',
+      to: '',
+      includeUnknownCapturedDate: false,
+    })
+  }
+
+  const updateDate = (key, value) => {
+    const nextFilters = { ...filters, [key]: value }
+    if (!nextFilters.from && !nextFilters.to) nextFilters.includeUnknownCapturedDate = false
+    onChange(nextFilters)
   }
 
   return (
@@ -148,7 +172,7 @@ function AlbumFilterPanel({
                 value={filters.from}
                 max={filters.to || undefined}
                 aria-describedby="album-captured-date-help"
-                onChange={(event) => onChange({ ...filters, from: event.target.value })}
+                onChange={(event) => updateDate('from', event.target.value)}
               />
             </label>
             <span aria-hidden="true">〜</span>
@@ -159,12 +183,29 @@ function AlbumFilterPanel({
                 value={filters.to}
                 min={filters.from || undefined}
                 aria-describedby="album-captured-date-help"
-                onChange={(event) => onChange({ ...filters, to: event.target.value })}
+                onChange={(event) => updateDate('to', event.target.value)}
               />
             </label>
           </fieldset>
+          <label className={`album-filter-panel__favorite album-filter-panel__unknown-date${dateFilterActive ? '' : ' is-disabled'}`}>
+            <span className="album-filter-panel__favorite-icon"><UnknownDateIcon /></span>
+            <span className="album-filter-panel__favorite-copy">
+              <strong>撮影日不明を表示対象に含める</strong>
+              <small>撮影日を指定しているときだけ変更できます</small>
+            </span>
+            <input
+              type="checkbox"
+              checked={Boolean(filters.includeUnknownCapturedDate)}
+              disabled={!dateFilterActive}
+              onChange={(event) => onChange({
+                ...filters,
+                includeUnknownCapturedDate: event.target.checked,
+              })}
+            />
+            <span className="album-filter-panel__switch" aria-hidden="true" />
+          </label>
           <p id="album-captured-date-help" className="album-filter-panel__note">
-            開始日だけならその日以降、終了日だけならその日以前に絞り込みます。片方だけでも指定できます。撮影日情報がない写真は、日付指定中のみ対象外です。
+            開始日だけならその日以降、終了日だけならその日以前に絞り込みます。片方だけでも指定できます。
           </p>
           {invalidDateRange && <p className="album-filter-panel__error">開始日は終了日以前にしてください。</p>}
 

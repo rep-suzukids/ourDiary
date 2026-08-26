@@ -169,14 +169,30 @@
   right: 0;
   bottom: 0;
   left: 0;
+  display: grid;
   overflow: hidden;
-  padding: 22px 12px 9px;
+  padding: 28px 12px 8px;
   background: linear-gradient(transparent, rgb(0 0 0 / 82%));
   color: #f5f2eb;
-  font-size: 0.72rem;
+  gap: 1px;
+}
+
+.album-photo__caption-name,
+.album-photo__captured-at {
+  display: block;
+  overflow: hidden;
   letter-spacing: 0.02em;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.album-photo__caption-name {
+  font-size: 0.72rem;
+}
+
+.album-photo__captured-at {
+  color: rgb(255 250 253 / 82%);
+  font-size: 0.61rem;
 }
 
 .album-modal {
@@ -578,8 +594,9 @@
   stroke-width: 1.8;
 }
 
-.album-photo__tag-marker + .album-photo__caption {
-  padding-left: 36px;
+.album-photo__tag-marker.has-captured-date,
+.album-photo__favorite-marker.has-captured-date {
+  bottom: 23px;
 }
 
 .album-modal__content--tagging {
@@ -1253,6 +1270,28 @@
   outline-offset: 3px;
 }
 
+.album-filter-panel__unknown-date {
+  margin-top: 12px;
+}
+
+.album-filter-panel__unknown-date .album-filter-panel__favorite-icon svg {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.album-filter-panel__unknown-date.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.album-filter-panel__unknown-date input:disabled + .album-filter-panel__switch {
+  background: #dfd6d9;
+  cursor: not-allowed;
+}
+
 .album-photo__favorite-marker {
   position: absolute;
   z-index: 3;
@@ -1276,12 +1315,12 @@
   fill: currentcolor;
 }
 
-.album-photo__caption.has-markers {
-  padding-left: 36px;
+.album-photo__caption.has-markers .album-photo__caption-name {
+  padding-left: 27px;
 }
 
-.album-photo__caption.has-two-markers {
-  padding-left: 63px;
+.album-photo__caption.has-two-markers .album-photo__caption-name {
+  padding-left: 54px;
 }
 
 .album-modal__photo-actions {

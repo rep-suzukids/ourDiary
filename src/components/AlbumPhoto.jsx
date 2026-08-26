@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { formatPhotoCapturedDate } from '../photoDateUtils.js'
 import { getDrivePhotoUrl } from '../services/albumApi.js'
 
 function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
   const [imageUrl, setImageUrl] = useState('')
   const [failed, setFailed] = useState(false)
   const [failureMessage, setFailureMessage] = useState('')
+  const capturedDate = formatPhotoCapturedDate(photo.capturedAt, photo.capturedOn)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -56,7 +58,7 @@ function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
         {!imageUrl && !failed && <span className="album-photo__placeholder" aria-label="読み込み中" />}
         {failed && <span className="album-photo__error">{failureMessage || '読み込めませんでした'}</span>}
         {photo.tagIds?.length > 0 && (
-          <span className="album-photo__tag-marker" aria-label="タグ設定済み" title="タグ設定済み">
+          <span className={`album-photo__tag-marker${capturedDate ? ' has-captured-date' : ''}`} aria-label="タグ設定済み" title="タグ設定済み">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 5.5V11l8.1 8.1a2 2 0 0 0 2.8 0l4.2-4.2a2 2 0 0 0 0-2.8L11 4H5.5A1.5 1.5 0 0 0 4 5.5Z" />
               <circle cx="8" cy="8" r="1.2" />
@@ -65,7 +67,7 @@ function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
         )}
         {photo.isFavorite && (
           <span
-            className="album-photo__favorite-marker"
+            className={`album-photo__favorite-marker${capturedDate ? ' has-captured-date' : ''}`}
             aria-label="お気に入り"
             title="お気に入り"
             style={photo.tagIds?.length > 0 ? { left: '35px' } : undefined}
@@ -76,7 +78,12 @@ function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
           </span>
         )}
         <span className={`album-photo__caption${photo.tagIds?.length > 0 || photo.isFavorite ? ' has-markers' : ''}${photo.tagIds?.length > 0 && photo.isFavorite ? ' has-two-markers' : ''}`}>
-          {photo.name}
+          <span className="album-photo__caption-name">{photo.name}</span>
+          {capturedDate && (
+            <time className="album-photo__captured-at" dateTime={capturedDate.dateTime}>
+              {capturedDate.label}
+            </time>
+          )}
         </span>
       </button>
     </div>
