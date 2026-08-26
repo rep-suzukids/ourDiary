@@ -11,7 +11,14 @@ import {
 import { getTags } from '../services/tagApi.js'
 import '../Album.css'
 
-const EMPTY_FILTERS = { tagIds: [], tagMode: 'or', favoriteOnly: false, from: '', to: '' }
+const EMPTY_FILTERS = {
+  tagIds: [],
+  tagMode: 'or',
+  favoriteOnly: false,
+  from: '',
+  to: '',
+  includeUnknownCapturedDate: false,
+}
 
 function AlbumPage({ session, onNavigate }) {
   const [albumTitle, setAlbumTitle] = useState('Album')
@@ -133,7 +140,7 @@ function AlbumPage({ session, onNavigate }) {
       if (!matchesTags) return false
 
       if (!filters.from && !filters.to) return true
-      if (!photo.capturedOn) return false
+      if (!photo.capturedOn) return filters.includeUnknownCapturedDate
       if (filters.from && photo.capturedOn < filters.from) return false
       if (filters.to && photo.capturedOn > filters.to) return false
       return true

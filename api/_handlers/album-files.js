@@ -29,6 +29,16 @@ function normalizeCapturedOn(value) {
   return `${year}-${month}-${day}`
 }
 
+function normalizeCapturedAt(value) {
+  if (typeof value !== 'string') return null
+  const match = /^(\d{4})[:-](\d{2})[:-](\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/.exec(value.trim())
+  if (!match || !normalizeCapturedOn(value)) return null
+
+  const [, year, month, day, hour, minute, second = '00'] = match
+  if (Number(hour) > 23 || Number(minute) > 59 || Number(second) > 59) return null
+  return `${year}-${month}-${day}T${hour}:${minute}:${second}`
+}
+
 async function synchronizeDriveFiles(sql, familyId, drivePhotos) {
   const registeredFiles = await sql`
     SELECT google_drive_file_id
@@ -54,17 +64,22 @@ async function synchronizeDriveFiles(sql, familyId, drivePhotos) {
   const driveMetadata = drivePhotos.map((photo) => ({
     id: photo.id,
     captured_on: normalizeCapturedOn(photo.capturedTime),
+    captured_at: normalizeCapturedAt(photo.capturedTime),
   }))
   await sql`
     UPDATE drive_album_files AS album_file
     SET
       captured_on = drive_file.captured_on,
+      captured_at = drive_file.captured_at,
       updated_at = now()
     FROM jsonb_to_recordset(${JSON.stringify(driveMetadata)}::jsonb)
-      AS drive_file(id text, captured_on date)
+      AS drive_file(id text, captured_on date, captured_at timestamp without time zone)
     WHERE album_file.family_id = ${familyId}
       AND album_file.google_drive_file_id = drive_file.id
-      AND album_file.captured_on IS DISTINCT FROM drive_file.captured_on
+      AND (
+        album_file.captured_on IS DISTINCT FROM drive_file.captured_on
+        OR album_file.captured_at IS DISTINCT FROM drive_file.captured_at
+      )
   `
 }
 
@@ -124,14 +139,15 @@ export default async function handler(request, response) {
           ? file.createdTime
           : null
         const capturedOn = normalizeCapturedOn(file.capturedTime)
+        const capturedAt = normalizeCapturedAt(file.capturedTime)
 
         await sql`
           INSERT INTO drive_album_files (
             family_id, album_id, google_drive_file_id, name, mime_type,
-            size_bytes, width, height, drive_created_at, captured_on, created_by
+            size_bytes, width, height, drive_created_at, captured_on, captured_at, created_by
           ) VALUES (
             ${familyId}, ${album.id}, ${file.id}, ${file.name.trim()}, ${file.mimeType},
-            ${size}, ${width}, ${height}, ${createdTime}, ${capturedOn}, ${authorization.userId}
+            ${size}, ${width}, ${height}, ${createdTime}, ${capturedOn}, ${capturedAt}, ${authorization.userId}
           )
           ON CONFLICT (family_id, google_drive_file_id) DO UPDATE SET
             name = EXCLUDED.name,
@@ -141,6 +157,7 @@ export default async function handler(request, response) {
             height = EXCLUDED.height,
             drive_created_at = COALESCE(EXCLUDED.drive_created_at, drive_album_files.drive_created_at),
             captured_on = EXCLUDED.captured_on,
+            captured_at = EXCLUDED.captured_at,
             updated_at = now()
         `
       }
@@ -156,6 +173,7 @@ export default async function handler(request, response) {
           width,
           height,
           captured_on AS "capturedOn",
+          to_char(captured_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS "capturedAt",
           EXISTS (
             SELECT 1
             FROM photo_favorites favorite
@@ -195,6 +213,7 @@ export default async function handler(request, response) {
         width,
         height,
         captured_on AS "capturedOn",
+        to_char(captured_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS "capturedAt",
         EXISTS (
           SELECT 1
           FROM photo_favorites favorite

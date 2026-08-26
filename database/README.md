@@ -18,8 +18,9 @@
 12. 写真タグ管理を追加する `011_photo_tags.sql` を実行します。
 13. 写真の撮影日フィルターを追加する `012_photo_captured_dates.sql` を実行します。
 14. ユーザーごとの写真お気に入りを追加する `013_photo_favorites.sql` を実行します。
-15. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-16. 再デプロイし、登録した管理者Googleアカウントでログインします。
+15. 写真の撮影時刻表示を追加する `014_photo_captured_times.sql` を実行します。
+16. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+17. 再デプロイし、登録した管理者Googleアカウントでログインします。
 
 ## ログインセッション
 
