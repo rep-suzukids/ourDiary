@@ -99,10 +99,8 @@
 }
 
 .reaction-picker {
-  position: absolute;
-  z-index: 75;
-  top: calc(100% + 8px);
-  left: 0;
+  position: fixed;
+  z-index: 100;
   display: grid;
   width: min(320px, calc(100vw - 48px));
   padding: 10px;
@@ -148,15 +146,8 @@
   font-size: 0.66rem;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 760px) {
   .reaction-picker {
-    position: fixed;
-    z-index: 100;
-    top: auto;
-    right: 12px;
-    bottom: 12px;
-    left: 12px;
-    width: auto;
     max-height: 55svh;
     overflow-y: auto;
     grid-template-columns: repeat(5, 1fr);

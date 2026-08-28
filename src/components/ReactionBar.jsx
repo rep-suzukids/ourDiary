@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { REACTION_CATALOG, reactionByKey } from '../reactionCatalog.js'
 import { getReactions, toggleReaction } from '../services/reactionApi.js'
 import '../Reaction.css'
@@ -7,12 +8,15 @@ const LONG_PRESS_DELAY = 550
 
 function ReactionBar({ familyId, targetType, targetId }) {
   const rootRef = useRef(null)
+  const addButtonRef = useRef(null)
+  const pickerRef = useRef(null)
   const longPressTimerRef = useRef(null)
   const suppressClickRef = useRef(false)
   const tooltipTimerRef = useRef(null)
   const [reactions, setReactions] = useState([])
   const [recentReactionKeys, setRecentReactionKeys] = useState([])
   const [isPickerOpen, setIsPickerOpen] = useState(false)
+  const [pickerPosition, setPickerPosition] = useState({})
   const [openReactorsKey, setOpenReactorsKey] = useState('')
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
@@ -39,10 +43,43 @@ function ReactionBar({ familyId, targetType, targetId }) {
   useEffect(() => {
     if (!isPickerOpen) return undefined
     const closeFromOutside = (event) => {
-      if (!rootRef.current?.contains(event.target)) setIsPickerOpen(false)
+      if (!rootRef.current?.contains(event.target) && !pickerRef.current?.contains(event.target)) {
+        setIsPickerOpen(false)
+      }
     }
     document.addEventListener('pointerdown', closeFromOutside)
     return () => document.removeEventListener('pointerdown', closeFromOutside)
+  }, [isPickerOpen])
+
+  useLayoutEffect(() => {
+    if (!isPickerOpen || !addButtonRef.current) return undefined
+
+    const placePicker = () => {
+      const isMobile = window.matchMedia('(max-width: 760px)').matches
+      if (isMobile) {
+        setPickerPosition({ top: 'auto', right: 12, bottom: 12, left: 12, width: 'auto' })
+        return
+      }
+
+      const trigger = addButtonRef.current.getBoundingClientRect()
+      const pickerWidth = Math.min(320, window.innerWidth - 24)
+      const left = Math.min(
+        Math.max(12, trigger.left),
+        Math.max(12, window.innerWidth - pickerWidth - 12),
+      )
+      const hasRoomBelow = window.innerHeight - trigger.bottom >= 290
+      setPickerPosition(hasRoomBelow
+        ? { top: trigger.bottom + 8, right: 'auto', bottom: 'auto', left, width: pickerWidth }
+        : { top: 'auto', right: 'auto', bottom: window.innerHeight - trigger.top + 8, left, width: pickerWidth })
+    }
+
+    placePicker()
+    window.addEventListener('resize', placePicker)
+    window.addEventListener('scroll', placePicker, true)
+    return () => {
+      window.removeEventListener('resize', placePicker)
+      window.removeEventListener('scroll', placePicker, true)
+    }
   }, [isPickerOpen])
 
   useEffect(() => {
@@ -151,6 +188,7 @@ function ReactionBar({ familyId, targetType, targetId }) {
         })}
 
         <button
+          ref={addButtonRef}
           type="button"
           className="reaction-add-button"
           aria-label="リアクションを追加"
@@ -162,8 +200,14 @@ function ReactionBar({ familyId, targetType, targetId }) {
         </button>
       </div>
 
-      {isPickerOpen && (
-        <div className="reaction-picker" aria-label="リアクションを選択">
+      {isPickerOpen && createPortal(
+        <div
+          className="reaction-picker"
+          ref={pickerRef}
+          style={pickerPosition}
+          aria-label="リアクションを選択"
+          onClick={(event) => event.stopPropagation()}
+        >
           {pickerReactions.map((reaction) => {
             const isSelected = reactionState.get(reaction.key)?.reactedByMe ?? false
             return (
@@ -181,7 +225,8 @@ function ReactionBar({ familyId, targetType, targetId }) {
               </button>
             )
           })}
-        </div>
+        </div>,
+        document.body,
       )}
 
       {error && <span className="reaction-bar__error" role="alert">{error}</span>}
