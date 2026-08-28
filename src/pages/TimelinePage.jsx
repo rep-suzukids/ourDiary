@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BottleIcon, PoopIcon } from '../components/CareEventIcons.jsx'
 import {
+  addDate,
   childDisplayName,
   childTone,
   eventTimeLabel,
@@ -182,21 +183,40 @@ function TimelinePage({ session, onNavigate }) {
       </header>
 
       <section className="milk-dashboard timeline-dashboard">
-        <label className="timeline-field">
-          <span>日付</span>
-          <span className="timeline-date-control">
-            <span className="timeline-date-control__label" aria-hidden="true">{formatDateLabel(date)}</span>
-            <input
-              type="date"
-              min="2026-01-01"
-              max="2050-12-31"
-              value={date}
-              aria-label={`日付：${formatDateLabel(date)}`}
-              onClick={openNativePicker}
-              onChange={(event) => changeDate(event.target.value)}
-            />
-          </span>
-        </label>
+        <div className="timeline-field">
+          <span id="timeline-date-label">日付</span>
+          <div className="milk-date-nav timeline-date-nav">
+            <button
+              type="button"
+              aria-label="前の日"
+              disabled={date <= '2026-01-01'}
+              onClick={() => changeDate(addDate(date, -1))}
+            >
+              ‹
+            </button>
+            <label className="timeline-date-control">
+              <span className="timeline-date-control__label" aria-hidden="true">{formatDateLabel(date)}</span>
+              <input
+                type="date"
+                min="2026-01-01"
+                max="2050-12-31"
+                value={date}
+                aria-labelledby="timeline-date-label"
+                aria-label={`日付：${formatDateLabel(date)}`}
+                onClick={openNativePicker}
+                onChange={(event) => changeDate(event.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              aria-label="次の日"
+              disabled={date >= '2050-12-31'}
+              onClick={() => changeDate(addDate(date, 1))}
+            >
+              ›
+            </button>
+          </div>
+        </div>
 
         <fieldset className="milk-fieldset timeline-child-fieldset">
           <legend>どちらの子どもの記録を見ますか？</legend>
