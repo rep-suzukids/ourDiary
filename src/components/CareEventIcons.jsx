@@ -15,3 +15,12 @@ export function PumpIcon() {
     </svg>
   )
 }
+
+export function PoopIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M13 38c-3.5 0-6-2.7-6-6s2.5-6 6-6h1c-1-4 2-8 7-8h1c-1.5-2.5-.6-6.5 2.5-9 0 4 4.5 4.5 6 8.5 4.2.7 6.8 4 5.5 8.5 3 0 5 2.7 5 6s-2.5 6-6 6H13Z" />
+      <path d="M17 29h.1M31 29h.1M18 33c3.5 2.7 8.5 2.7 12 0" />
+    </svg>
+  )
+}

@@ -1,4 +1,5 @@
 import LegalFooter from '../components/LegalFooter.jsx'
+import { PoopIcon } from '../components/CareEventIcons.jsx'
 
 const ROLE_LABELS = {
   member: 'メンバー',
@@ -30,6 +31,17 @@ function MilkIcon() {
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <path d="M18 5h12v6l4 5v23a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V16l4-5V5Z" />
       <path d="M17 20h14M17 27h9M17 34h14" />
+    </svg>
+  )
+}
+
+function TimelineIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M17 7v34M17 14h17M17 24h13M17 34h17" />
+      <circle cx="17" cy="14" r="3" />
+      <circle cx="17" cy="24" r="3" />
+      <circle cx="17" cy="34" r="3" />
     </svg>
   )
 }
@@ -83,17 +95,41 @@ function HomePage({ session, onLogout, onNavigate }) {
         </a>
 
         {['parent', 'admin'].includes(activeFamily.role) && (
-          <a
-            className="album-link home-nav-link home-milk-link"
-            href="/milk/calendar"
-            onClick={(event) => {
-              event.preventDefault()
-              onNavigate('/milk/calendar')
-            }}
-          >
-            <MilkIcon />
-            <span>ミルク</span>
-          </a>
+          <>
+            <a
+              className="album-link home-nav-link home-timeline-link"
+              href="/timeline"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/timeline')
+              }}
+            >
+              <TimelineIcon />
+              <span>タイムライン</span>
+            </a>
+            <a
+              className="album-link home-nav-link home-milk-link"
+              href="/milk/calendar"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/milk/calendar')
+              }}
+            >
+              <MilkIcon />
+              <span>ミルク</span>
+            </a>
+            <a
+              className="album-link home-nav-link home-poop-link"
+              href="/poop/calendar"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/poop/calendar')
+              }}
+            >
+              <PoopIcon />
+              <span>うんち</span>
+            </a>
+          </>
         )}
 
         {activeFamily.role === 'admin' && (

@@ -20,8 +20,9 @@
 14. ユーザーごとの写真お気に入りを追加する `013_photo_favorites.sql` を実行します。
 15. 写真の撮影時刻表示を追加する `014_photo_captured_times.sql` を実行します。
 16. 日記・写真のコメント機能を追加する `015_comments.sql` を実行します。
-17. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-18. 再デプロイし、登録した管理者Googleアカウントでログインします。
+17. うんち記録を追加する `016_bowel_movements.sql` を実行します。
+18. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+19. 再デプロイし、登録した管理者Googleアカウントでログインします。
 
 ## ログインセッション
 

@@ -1,0 +1,133 @@
+.poop-page {
+  --poop-accent: #b97762;
+  --poop-accent-dark: #925947;
+  --poop-soft: #fff1eb;
+}
+
+.poop-add-button,
+.poop-primary-button {
+  background: linear-gradient(135deg, #d38d76, #c87891);
+  box-shadow: 0 10px 24px rgb(166 91 91 / 20%);
+}
+
+.poop-add-button:hover,
+.poop-primary-button:hover {
+  background: linear-gradient(135deg, #c77c66, #b96681);
+}
+
+.poop-calendar-page .milk-calendar-toolbar > span {
+  color: #d99a87;
+}
+
+.poop-calendar-day__records {
+  grid-template-areas: 'tomo yuu';
+}
+
+.poop-page .milk-event-icon svg,
+.poop-page .milk-modal__icon svg,
+.poop-page .milk-calendar-record svg {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+.poop-choice-fieldset {
+  margin-top: 4px;
+}
+
+.poop-choice-options,
+.poop-color-options {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.poop-color-options {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.poop-choice-options label,
+.poop-color-options label {
+  display: flex;
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid #edd1c8;
+  border-radius: 16px;
+  align-items: center;
+  justify-content: center;
+  background: #fffaf8;
+  color: #805e63;
+  cursor: pointer;
+  font-weight: 700;
+  gap: 7px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.poop-choice-options label.is-selected,
+.poop-color-options label.is-selected {
+  border-color: var(--poop-accent);
+  background: var(--poop-soft);
+  box-shadow: inset 0 0 0 1px var(--poop-accent), 0 6px 16px rgb(165 91 91 / 12%);
+  color: var(--poop-accent-dark);
+}
+
+.poop-choice-options label:focus-within,
+.poop-color-options label:focus-within {
+  outline: 3px solid rgb(211 141 118 / 24%);
+  outline-offset: 2px;
+}
+
+.poop-choice-options input,
+.poop-color-options input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.poop-color-dot {
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  border: 1px solid rgb(108 76 77 / 22%);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgb(92 55 60 / 12%);
+}
+
+.poop-color-dot--white { background: #fffdf8; }
+.poop-color-dot--yellow { background: #f2d66b; }
+.poop-color-dot--orange { background: #e9a35e; }
+.poop-color-dot--brown { background: #9a674d; }
+.poop-color-dot--green { background: #83a87a; }
+.poop-color-dot--red { background: #d96b72; }
+.poop-color-dot--black { background: #554b50; }
+
+.poop-detail-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.poop-modal__card {
+  border-color: #e7c8be;
+}
+
+@media (max-width: 760px) {
+  .poop-choice-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .poop-color-options {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .poop-choice-options label,
+  .poop-color-options label {
+    min-height: 46px;
+    padding: 9px 8px;
+  }
+}
