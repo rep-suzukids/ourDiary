@@ -238,7 +238,7 @@
   }
 }
 
-.album-modal__content p {
+.album-modal__footer > p {
   max-width: min(720px, calc(100vw - 72px));
   margin: 12px auto 0;
   overflow: hidden;
@@ -502,7 +502,7 @@
   box-shadow: 0 30px 90px rgb(73 35 53 / 52%);
 }
 
-.album-modal__content p {
+.album-modal__footer > p {
   color: #fff7fa;
 }
 

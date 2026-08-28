@@ -39,6 +39,7 @@ function AlbumPhotoModal({
   onClose,
 }) {
   const closeButtonRef = useRef(null)
+  const onCloseRef = useRef(onClose)
   const [isEditingTags, setIsEditingTags] = useState(false)
   const [isViewingComments, setIsViewingComments] = useState(false)
   const [tags, setTags] = useState([])
@@ -50,18 +51,22 @@ function AlbumPhotoModal({
   const [favoriteError, setFavoriteError] = useState('')
 
   useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  useEffect(() => {
     closeButtonRef.current?.focus()
 
     const handleKeyDown = (event) => {
       if (event.key !== 'Escape') return
       if (isEditingTags) setIsEditingTags(false)
       else if (isViewingComments) setIsViewingComments(false)
-      else onClose()
+      else onCloseRef.current()
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isEditingTags, isViewingComments, onClose])
+  }, [isEditingTags, isViewingComments])
 
   const openTagEditor = () => {
     setIsEditingTags(true)
