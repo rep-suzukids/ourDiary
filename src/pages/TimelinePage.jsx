@@ -243,46 +243,48 @@ function TimelinePage({ session, onNavigate }) {
           </div>
         )}
         {status === 'ready' && visibleEvents.length > 0 && (
-          <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン`}>
-            {visibleEvents.map((event) => {
-              const isMilk = event.recordType === 'milk'
-              const poopDetails = isMilk ? [] : [
-                { label: '量', value: bowelOptionLabel(BOWEL_AMOUNT_OPTIONS, event.amount) },
-                { label: 'かたさ', value: bowelOptionLabel(BOWEL_CONSISTENCY_OPTIONS, event.consistency) },
-                { label: '色', value: bowelOptionLabel(BOWEL_COLOR_OPTIONS, event.color) },
-              ]
-              const summaryLabel = isMilk
-                ? `${formatAmount(event.amountMl)}mL`
-                : poopDetails.map((detail) => `${detail.label} ${detail.value}`).join('、')
-              return (
-                <li key={`${event.recordType}-${event.id}`}>
-                  <time>{eventTimeLabel(event)}</time>
-                  <button
-                    type="button"
-                    className={`milk-event-icon milk-event-icon--${childTone(event.childName)} timeline-event-icon--${event.recordType}`}
-                    aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${isMilk ? 'ミルク' : 'うんち'}、${summaryLabel}。詳細を表示`}
-                    onClick={() => setSelectedEvent(event)}
-                  >
-                    {isMilk ? <BottleIcon /> : <PoopIcon />}
-                  </button>
-                  <div className={`timeline-event-summary timeline-event-summary--${event.recordType} timeline-event-summary--${childTone(event.childName)}`}>
-                    {isMilk ? (
-                      <strong>{formatAmount(event.amountMl)}<small> mL</small></strong>
-                    ) : (
-                      <div className="timeline-event-summary__choices" aria-label={`量、かたさ、色：${summaryLabel}`}>
-                        {poopDetails.map((detail) => (
-                          <span key={detail.label}><small>{detail.label}</small>{detail.value}</span>
-                        ))}
-                      </div>
-                    )}
-                    {!isMilk && event.memo && (
-                      <p title={event.memo}>{event.memo}</p>
-                    )}
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
+          <div className="timeline-scroll" tabIndex="0" aria-label={`${formatDateLabel(date)}の記録一覧`}>
+            <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン`}>
+              {visibleEvents.map((event) => {
+                const isMilk = event.recordType === 'milk'
+                const poopDetails = isMilk ? [] : [
+                  { label: '量', value: bowelOptionLabel(BOWEL_AMOUNT_OPTIONS, event.amount) },
+                  { label: 'かたさ', value: bowelOptionLabel(BOWEL_CONSISTENCY_OPTIONS, event.consistency) },
+                  { label: '色', value: bowelOptionLabel(BOWEL_COLOR_OPTIONS, event.color) },
+                ]
+                const summaryLabel = isMilk
+                  ? `${formatAmount(event.amountMl)}mL`
+                  : poopDetails.map((detail) => `${detail.label} ${detail.value}`).join('、')
+                return (
+                  <li key={`${event.recordType}-${event.id}`}>
+                    <time>{eventTimeLabel(event)}</time>
+                    <button
+                      type="button"
+                      className={`milk-event-icon milk-event-icon--${childTone(event.childName)} timeline-event-icon--${event.recordType}`}
+                      aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${isMilk ? 'ミルク' : 'うんち'}、${summaryLabel}。詳細を表示`}
+                      onClick={() => setSelectedEvent(event)}
+                    >
+                      {isMilk ? <BottleIcon /> : <PoopIcon />}
+                    </button>
+                    <div className={`timeline-event-summary timeline-event-summary--${event.recordType} timeline-event-summary--${childTone(event.childName)}`}>
+                      {isMilk ? (
+                        <strong>{formatAmount(event.amountMl)}<small> mL</small></strong>
+                      ) : (
+                        <div className="timeline-event-summary__choices" aria-label={`量、かたさ、色：${summaryLabel}`}>
+                          {poopDetails.map((detail) => (
+                            <span key={detail.label}><small>{detail.label}</small>{detail.value}</span>
+                          ))}
+                        </div>
+                      )}
+                      {!isMilk && event.memo && (
+                        <p title={event.memo}>{event.memo}</p>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
         )}
       </section>
 
