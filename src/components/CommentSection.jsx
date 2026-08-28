@@ -141,8 +141,8 @@ function CommentSection({ familyId, targetType, targetId, initialComments }) {
               <>
                 <p>{comment.text}</p>
                 <footer>
-                  <span>書いた人：{comment.authorName}</span>
-                  <time dateTime={comment.updatedAt}>最終更新：{formatUpdatedAt(comment.updatedAt)}</time>
+                  <span>{comment.authorName}</span>
+                  <time dateTime={comment.updatedAt}>{formatUpdatedAt(comment.updatedAt)}</time>
                   {comment.canEdit && (
                     <span className="comment-card__actions">
                       <button

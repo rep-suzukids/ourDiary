@@ -158,9 +158,8 @@ function AlbumPhotoModal({
               ×
             </button>
           )}
-          <div className="album-modal__footer">
-            <p>{photo.name}</p>
-            {!isEditingTags && !isViewingComments && (
+          {!isEditingTags && !isViewingComments && (
+            <div className="album-modal__footer">
               <div className="album-modal__photo-actions">
                 <button
                   className={`album-modal__favorite-button${isFavorite ? ' is-favorite' : ''}`}
@@ -183,8 +182,8 @@ function AlbumPhotoModal({
                   </button>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
           {favoriteError && <p className="album-modal__favorite-error" role="alert">{favoriteError}</p>}
         </div>
 
