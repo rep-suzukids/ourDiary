@@ -52,7 +52,24 @@ async function getEntries(sql, familyId, userId, year, month) {
       COALESCE(u.display_name, u.email::text) AS "authorName",
       de.created_at AS "createdAt",
       de.updated_at AS "updatedAt",
-      (de.author_id = ${userId}) AS "canEdit"
+      (de.author_id = ${userId}) AS "canEdit",
+      COALESCE((
+        SELECT json_agg(
+          json_build_object(
+            'id', cmt.id,
+            'text', cmt.body,
+            'authorId', cmt.author_id,
+            'authorName', COALESCE(comment_author.display_name, comment_author.email::text),
+            'updatedAt', cmt.updated_at,
+            'canEdit', cmt.author_id = ${userId}
+          )
+          ORDER BY cmt.created_at ASC
+        )
+        FROM comments cmt
+        INNER JOIN users comment_author ON comment_author.id = cmt.author_id
+        WHERE cmt.family_id = ${familyId}
+          AND cmt.diary_entry_id = de.id
+      ), '[]'::json) AS comments
     FROM diary_entries de
     LEFT JOIN children c ON c.id = de.child_id AND c.family_id = de.family_id
     INNER JOIN users u ON u.id = de.author_id
@@ -172,13 +189,25 @@ export default async function handler(request, response) {
     }
 
     const rows = await sql`
-      UPDATE diary_entries
-      SET deleted_at = now(), updated_at = now()
-      WHERE id = ${entryId}
-        AND family_id = ${familyId}
-        AND author_id = ${authorization.userId}
-        AND deleted_at IS NULL
-      RETURNING id
+      WITH deleted_entry AS (
+        UPDATE diary_entries
+        SET deleted_at = now(), updated_at = now()
+        WHERE id = ${entryId}
+          AND family_id = ${familyId}
+          AND author_id = ${authorization.userId}
+          AND deleted_at IS NULL
+        RETURNING id
+      ), deleted_comments AS (
+        DELETE FROM comments cmt
+        USING deleted_entry
+        WHERE cmt.family_id = ${familyId}
+          AND cmt.diary_entry_id = deleted_entry.id
+        RETURNING cmt.id
+      )
+      SELECT
+        deleted_entry.id,
+        (SELECT COUNT(*)::integer FROM deleted_comments) AS "deletedCommentCount"
+      FROM deleted_entry
     `
     if (rows.length === 0) {
       sendJson(response, 403, { error: '投稿者本人だけが日記を削除できます。' })

@@ -416,6 +416,12 @@
   font-size: 1rem;
 }
 
+.diary-note > .comment-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed #e8cbd6;
+}
+
 .diary-empty {
   padding: 34px 16px;
   color: #b18c9a;

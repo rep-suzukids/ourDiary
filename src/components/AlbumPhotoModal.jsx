@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import CommentSection from './CommentSection.jsx'
 import { updatePhotoFavorite } from '../services/albumApi.js'
 import { getTags, updatePhotoTags } from '../services/tagApi.js'
 
@@ -19,6 +20,14 @@ function HeartIcon() {
   )
 }
 
+function CommentIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M5 5.5h14v10H9l-4 3v-13Z" />
+    </svg>
+  )
+}
+
 function AlbumPhotoModal({
   photo,
   imageUrl,
@@ -31,6 +40,7 @@ function AlbumPhotoModal({
 }) {
   const closeButtonRef = useRef(null)
   const [isEditingTags, setIsEditingTags] = useState(false)
+  const [isViewingComments, setIsViewingComments] = useState(false)
   const [tags, setTags] = useState([])
   const [selectedTagIds, setSelectedTagIds] = useState(photo.tagIds ?? [])
   const [tagStatus, setTagStatus] = useState('idle')
@@ -45,15 +55,17 @@ function AlbumPhotoModal({
     const handleKeyDown = (event) => {
       if (event.key !== 'Escape') return
       if (isEditingTags) setIsEditingTags(false)
+      else if (isViewingComments) setIsViewingComments(false)
       else onClose()
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isEditingTags, onClose])
+  }, [isEditingTags, isViewingComments, onClose])
 
   const openTagEditor = () => {
     setIsEditingTags(true)
+    setIsViewingComments(false)
     setSelectedTagIds(photo.tagIds ?? [])
     setTagError('')
     if (tags.length > 0 || tagStatus === 'loading') return
@@ -67,6 +79,11 @@ function AlbumPhotoModal({
         setTagError(error.message)
         setTagStatus('error')
       })
+  }
+
+  const openComments = () => {
+    setIsViewingComments(true)
+    setIsEditingTags(false)
   }
 
   const toggleTag = (tagId) => {
@@ -117,7 +134,7 @@ function AlbumPhotoModal({
       onDragStart={(event) => event.preventDefault()}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <div className={`album-modal__content${isEditingTags ? ' album-modal__content--tagging' : ''}`} onClick={(event) => event.stopPropagation()}>
+      <div className={`album-modal__content${isEditingTags || isViewingComments ? ' album-modal__content--tagging' : ''}`} onClick={(event) => event.stopPropagation()}>
         <div className="album-modal__photo-area">
           <img
             src={imageUrl}
@@ -125,7 +142,7 @@ function AlbumPhotoModal({
             draggable="false"
             onContextMenu={(event) => event.preventDefault()}
           />
-          {!isEditingTags && (
+          {!isEditingTags && !isViewingComments && (
             <button
               ref={closeButtonRef}
               type="button"
@@ -138,7 +155,7 @@ function AlbumPhotoModal({
           )}
           <div className="album-modal__footer">
             <p>{photo.name}</p>
-            {!isEditingTags && (
+            {!isEditingTags && !isViewingComments && (
               <div className="album-modal__photo-actions">
                 <button
                   className={`album-modal__favorite-button${isFavorite ? ' is-favorite' : ''}`}
@@ -149,6 +166,10 @@ function AlbumPhotoModal({
                 >
                   <HeartIcon />
                   {favoriteStatus === 'saving' ? '更新中…' : 'お気に入り'}
+                </button>
+                <button className="album-modal__comment-button" type="button" onClick={openComments}>
+                  <CommentIcon />
+                  コメント
                 </button>
                 {canEditTags && (
                   <button className="album-modal__tag-button" type="button" onClick={openTagEditor}>
@@ -206,6 +227,20 @@ function AlbumPhotoModal({
                 {tagStatus === 'saving' ? '保存しています…' : '保存する'}
               </button>
             </div>
+          </aside>
+        )}
+
+        {isViewingComments && (
+          <aside className="album-comment-panel" aria-label="写真のコメント">
+            <div className="album-comment-panel__heading">
+              <span>Photo comments</span>
+              <button ref={closeButtonRef} type="button" onClick={() => setIsViewingComments(false)} aria-label="コメントを閉じる">×</button>
+            </div>
+            <CommentSection
+              familyId={familyId}
+              targetType="photo"
+              targetId={photo.albumFileId}
+            />
           </aside>
         )}
       </div>

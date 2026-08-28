@@ -1,6 +1,7 @@
 import albumFilesHandler from './_handlers/album-files.js'
 import authSessionHandler from './_handlers/auth-session.js'
 import careEventsHandler from './_handlers/care-events.js'
+import commentsHandler from './_handlers/comments.js'
 import diaryEntriesHandler from './_handlers/diary-entries.js'
 import driveAccessTokenHandler from './_handlers/drive-access-token.js'
 import driveOwnerInvitationHandler from './_handlers/drive-owner-invitation.js'
@@ -16,6 +17,7 @@ const ROUTES = new Map([
   ['album-files', albumFilesHandler],
   ['auth-session', authSessionHandler],
   ['care-events', careEventsHandler],
+  ['comments', commentsHandler],
   ['diary-entries', diaryEntriesHandler],
   ['drive-access-token', driveAccessTokenHandler],
   ['drive-owner-invitation', driveOwnerInvitationHandler],
