@@ -245,7 +245,7 @@ function TimelinePage({ session, onNavigate }) {
                   >
                     {isMilk ? <BottleIcon /> : <PoopIcon />}
                   </button>
-                  <div className={`timeline-event-summary timeline-event-summary--${event.recordType}`}>
+                  <div className={`timeline-event-summary timeline-event-summary--${event.recordType} timeline-event-summary--${childTone(event.childName)}`}>
                     {isMilk ? (
                       <strong>{formatAmount(event.amountMl)}<small> mL</small></strong>
                     ) : (

@@ -111,8 +111,15 @@
 }
 
 .timeline-event-summary--milk strong {
-  color: #786eaf;
   font-size: 1.05rem;
+}
+
+.timeline-event-summary--milk.timeline-event-summary--tomo strong {
+  color: #786eaf;
+}
+
+.timeline-event-summary--milk.timeline-event-summary--yuu strong {
+  color: #bd5b80;
 }
 
 .timeline-event-summary--milk small {
