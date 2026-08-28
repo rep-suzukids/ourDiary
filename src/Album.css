@@ -631,11 +631,6 @@
   flex: 1 1 auto;
 }
 
-.album-modal__footer .reaction-picker {
-  top: auto;
-  bottom: calc(100% + 8px);
-}
-
 .album-modal__tag-button,
 .album-modal__comment-button {
   display: inline-flex;
