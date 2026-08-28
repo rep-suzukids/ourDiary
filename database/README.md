@@ -19,8 +19,9 @@
 13. 写真の撮影日フィルターを追加する `012_photo_captured_dates.sql` を実行します。
 14. ユーザーごとの写真お気に入りを追加する `013_photo_favorites.sql` を実行します。
 15. 写真の撮影時刻表示を追加する `014_photo_captured_times.sql` を実行します。
-16. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-17. 再デプロイし、登録した管理者Googleアカウントでログインします。
+16. 日記・写真のコメント機能を追加する `015_comments.sql` を実行します。
+17. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+18. 再デプロイし、登録した管理者Googleアカウントでログインします。
 
 ## ログインセッション
 
@@ -39,7 +40,7 @@
 | `parent` | 両親 | 全投稿の閲覧、投稿、編集、削除 |
 | `admin` | 管理者 | 両親の全権限、子どもとメンバーの管理 |
 
-コメント機能を追加するときは `member` に `comment:create` を追加します。ロール名やDBスキーマを変更する必要はありません。
+コメントは全ロールが閲覧・投稿でき、編集・削除は投稿者本人だけが行えます。
 
 ## Entry visibility
 

@@ -584,7 +584,8 @@
 }
 
 .album-photo__tag-marker svg,
-.album-modal__tag-button svg {
+.album-modal__tag-button svg,
+.album-modal__comment-button svg {
   width: 13px;
   height: 13px;
   fill: none;
@@ -638,7 +639,8 @@
   box-sizing: border-box;
 }
 
-.album-modal__tag-button {
+.album-modal__tag-button,
+.album-modal__comment-button {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -655,12 +657,15 @@
 }
 
 .album-modal__tag-button:hover,
-.album-modal__tag-button:focus-visible {
+.album-modal__tag-button:focus-visible,
+.album-modal__comment-button:hover,
+.album-modal__comment-button:focus-visible {
   border-color: #b99098;
   background: #fff;
 }
 
-.album-tag-editor {
+.album-tag-editor,
+.album-comment-panel {
   display: flex;
   min-width: 0;
   max-height: calc(100svh - 72px);
@@ -673,6 +678,42 @@
   color: #76535d;
   flex-direction: column;
   box-sizing: border-box;
+}
+
+.album-comment-panel {
+  overflow-y: auto;
+}
+
+.album-comment-panel__heading {
+  display: flex;
+  margin-bottom: 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.album-comment-panel__heading > span {
+  color: #b17a8c;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.album-comment-panel__heading > button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #e2cbc5;
+  border-radius: 50%;
+  background: #fff;
+  color: #916b72;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.25rem;
+}
+
+.album-comment-panel .comment-section {
+  flex: 1 1 auto;
 }
 
 .album-tag-editor__heading {
@@ -833,7 +874,8 @@
     box-sizing: border-box;
   }
 
-  .album-tag-editor {
+  .album-tag-editor,
+  .album-comment-panel {
     max-height: 43svh;
     padding: 18px 16px 14px;
     border-radius: 0 0 20px 20px;
@@ -1396,7 +1438,8 @@
   }
 
   .album-modal__favorite-button,
-  .album-modal__tag-button {
+  .album-modal__tag-button,
+  .album-modal__comment-button {
     padding: 7px 10px;
     font-size: 0.72rem;
   }

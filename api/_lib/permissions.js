@@ -2,6 +2,10 @@ const ROLE_PERMISSIONS = Object.freeze({
   member: Object.freeze([
     'entry:read_shared',
     'tag:read',
+    'comment:read',
+    'comment:create',
+    'comment:update',
+    'comment:delete',
   ]),
   parent: Object.freeze([
     'entry:read_shared',
@@ -16,6 +20,10 @@ const ROLE_PERMISSIONS = Object.freeze({
     'care:delete',
     'tag:read',
     'tag:assign',
+    'comment:read',
+    'comment:create',
+    'comment:update',
+    'comment:delete',
   ]),
   admin: Object.freeze([
     'entry:read_shared',
@@ -38,6 +46,10 @@ const ROLE_PERMISSIONS = Object.freeze({
     'tag:read',
     'tag:assign',
     'tag:manage',
+    'comment:read',
+    'comment:create',
+    'comment:update',
+    'comment:delete',
   ]),
 })
 
