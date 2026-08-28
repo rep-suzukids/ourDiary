@@ -1,4 +1,5 @@
 import LegalFooter from '../components/LegalFooter.jsx'
+import { PoopIcon } from '../components/CareEventIcons.jsx'
 
 const ROLE_LABELS = {
   member: 'メンバー',
@@ -83,17 +84,30 @@ function HomePage({ session, onLogout, onNavigate }) {
         </a>
 
         {['parent', 'admin'].includes(activeFamily.role) && (
-          <a
-            className="album-link home-nav-link home-milk-link"
-            href="/milk/calendar"
-            onClick={(event) => {
-              event.preventDefault()
-              onNavigate('/milk/calendar')
-            }}
-          >
-            <MilkIcon />
-            <span>ミルク</span>
-          </a>
+          <>
+            <a
+              className="album-link home-nav-link home-milk-link"
+              href="/milk/calendar"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/milk/calendar')
+              }}
+            >
+              <MilkIcon />
+              <span>ミルク</span>
+            </a>
+            <a
+              className="album-link home-nav-link home-poop-link"
+              href="/poop/calendar"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/poop/calendar')
+              }}
+            >
+              <PoopIcon />
+              <span>うんち</span>
+            </a>
+          </>
         )}
 
         {activeFamily.role === 'admin' && (

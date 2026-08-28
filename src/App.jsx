@@ -12,6 +12,9 @@ import LoginPage from './pages/LoginPage.jsx'
 import MilkFormPage from './pages/MilkFormPage.jsx'
 import MilkCalendarPage from './pages/MilkCalendarPage.jsx'
 import MilkPage from './pages/MilkPage.jsx'
+import PoopCalendarPage from './pages/PoopCalendarPage.jsx'
+import PoopFormPage from './pages/PoopFormPage.jsx'
+import PoopPage from './pages/PoopPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx'
 import TagManagementPage from './pages/TagManagementPage.jsx'
@@ -174,6 +177,34 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <MilkFormPage session={session} onNavigate={navigate} mode="edit" />
+  }
+
+  if (pathname === '/poop') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <PoopPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/poop/calendar') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <PoopCalendarPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/poop/new') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <PoopFormPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/poop/edit') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <PoopFormPage session={session} onNavigate={navigate} mode="edit" />
   }
 
   if (pathname !== '/') return <NotFoundPage onNavigate={navigate} />

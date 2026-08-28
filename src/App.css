@@ -504,6 +504,14 @@
   background: linear-gradient(135deg, #a38bc9, #d17c9d);
 }
 
+.home-poop-link {
+  background: linear-gradient(135deg, #d6ad87, #d88fa5);
+}
+
+.home-poop-link:hover {
+  background: linear-gradient(135deg, #c79970, #cb7a95);
+}
+
 .home-nav-link {
   display: flex;
   align-items: center;
