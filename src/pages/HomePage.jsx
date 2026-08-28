@@ -35,6 +35,17 @@ function MilkIcon() {
   )
 }
 
+function TimelineIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M17 7v34M17 14h17M17 24h13M17 34h17" />
+      <circle cx="17" cy="14" r="3" />
+      <circle cx="17" cy="24" r="3" />
+      <circle cx="17" cy="34" r="3" />
+    </svg>
+  )
+}
+
 function HomePage({ session, onLogout, onNavigate }) {
   const activeFamily = session.families[0]
 
@@ -85,6 +96,17 @@ function HomePage({ session, onLogout, onNavigate }) {
 
         {['parent', 'admin'].includes(activeFamily.role) && (
           <>
+            <a
+              className="album-link home-nav-link home-timeline-link"
+              href="/timeline"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/timeline')
+              }}
+            >
+              <TimelineIcon />
+              <span>タイムライン</span>
+            </a>
             <a
               className="album-link home-nav-link home-milk-link"
               href="/milk/calendar"

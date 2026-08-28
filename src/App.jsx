@@ -19,6 +19,7 @@ import NotFoundPage from './pages/NotFoundPage.jsx'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx'
 import TagManagementPage from './pages/TagManagementPage.jsx'
 import TermsOfServicePage from './pages/TermsOfServicePage.jsx'
+import TimelinePage from './pages/TimelinePage.jsx'
 import {
   clearLegacySessionStorage,
   createSession,
@@ -149,6 +150,13 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <DiaryCreatePage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/timeline') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <TimelinePage session={session} onNavigate={navigate} />
   }
 
   if (pathname === '/milk') {
