@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import CommentSection from './CommentSection.jsx'
+import ReactionBar from './ReactionBar.jsx'
 import { updatePhotoFavorite } from '../services/albumApi.js'
 import { getTags, updatePhotoTags } from '../services/tagApi.js'
 
@@ -160,6 +161,11 @@ function AlbumPhotoModal({
           )}
           {!isEditingTags && !isViewingComments && (
             <div className="album-modal__footer">
+              <ReactionBar
+                familyId={familyId}
+                targetType="photo"
+                targetId={photo.albumFileId}
+              />
               <div className="album-modal__photo-actions">
                 <button
                   className={`album-modal__favorite-button${isFavorite ? ' is-favorite' : ''}`}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import CommentSection from '../components/CommentSection.jsx'
+import ReactionBar from '../components/ReactionBar.jsx'
 import {
   diaryDateFromSearch,
   formatDiaryDateLabel,
@@ -128,7 +129,7 @@ function DiaryPage({ session, onNavigate }) {
   }
 
   const removeEntry = async (entry) => {
-    if (!window.confirm('この日記を削除すると、投稿されたコメントも削除されます。よろしいですか？')) return
+    if (!window.confirm('この日記を削除すると、投稿されたコメントとリアクションも削除されます。よろしいですか？')) return
     try {
       await deleteDiaryEntry(activeFamily.id, entry.id)
       setEntries((current) => current.filter((item) => item.id !== entry.id))
@@ -274,6 +275,11 @@ function DiaryPage({ session, onNavigate }) {
                     </time>
                   </header>
                   <p className="diary-note__text">{entry.text}</p>
+                  <ReactionBar
+                    familyId={activeFamily.id}
+                    targetType="diary"
+                    targetId={entry.id}
+                  />
                   <footer>
                     <span>書いた人：{entry.authorName}</span>
                     {entry.canEdit && (

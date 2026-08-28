@@ -68,6 +68,20 @@
   margin-left: auto;
 }
 
+.comment-card > .reaction-bar {
+  margin-top: 8px;
+}
+
+.comment-card .reaction-chip,
+.comment-card .reaction-add-button {
+  height: 27px;
+}
+
+.comment-card .reaction-chip img {
+  width: 21px;
+  height: 21px;
+}
+
 .comment-card__actions {
   display: inline-flex;
   gap: 4px;

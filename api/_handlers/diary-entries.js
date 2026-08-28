@@ -203,10 +203,17 @@ export default async function handler(request, response) {
         WHERE cmt.family_id = ${familyId}
           AND cmt.diary_entry_id = deleted_entry.id
         RETURNING cmt.id
+      ), deleted_reactions AS (
+        DELETE FROM reactions reaction
+        USING deleted_entry
+        WHERE reaction.family_id = ${familyId}
+          AND reaction.diary_entry_id = deleted_entry.id
+        RETURNING reaction.id
       )
       SELECT
         deleted_entry.id,
-        (SELECT COUNT(*)::integer FROM deleted_comments) AS "deletedCommentCount"
+        (SELECT COUNT(*)::integer FROM deleted_comments) AS "deletedCommentCount",
+        (SELECT COUNT(*)::integer FROM deleted_reactions) AS "deletedReactionCount"
       FROM deleted_entry
     `
     if (rows.length === 0) {

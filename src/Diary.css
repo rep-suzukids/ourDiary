@@ -301,7 +301,7 @@
 .diary-note {
   position: relative;
   padding: 24px 26px 19px 48px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid #ebd8df;
   border-radius: 4px 14px 14px 4px;
   background:
@@ -420,6 +420,10 @@
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px dashed #e8cbd6;
+}
+
+.diary-note > .reaction-bar {
+  margin: -8px 0 14px;
 }
 
 .diary-empty {

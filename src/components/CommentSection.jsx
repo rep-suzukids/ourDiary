@@ -5,6 +5,7 @@ import {
   getComments,
   updateComment,
 } from '../services/commentApi.js'
+import ReactionBar from './ReactionBar.jsx'
 import '../Comment.css'
 
 const MAX_COMMENT_LENGTH = 2000
@@ -91,7 +92,7 @@ function CommentSection({ familyId, targetType, targetId, initialComments }) {
   }
 
   const removeComment = async (comment) => {
-    if (!window.confirm('このコメントを削除しますか？')) return
+    if (!window.confirm('このコメントを削除すると、付けられたリアクションも削除されます。よろしいですか？')) return
     setStatus('saving')
     setError('')
     try {
@@ -165,6 +166,11 @@ function CommentSection({ familyId, targetType, targetId, initialComments }) {
                     </span>
                   )}
                 </footer>
+                <ReactionBar
+                  familyId={familyId}
+                  targetType="comment"
+                  targetId={comment.id}
+                />
               </>
             )}
           </article>

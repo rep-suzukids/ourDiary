@@ -12,6 +12,7 @@ import driveUserOauthStartHandler from './_handlers/drive-user-oauth-start.js'
 import googleDriveCallbackHandler from './_handlers/google-drive-callback.js'
 import photoFavoriteHandler from './_handlers/photo-favorite.js'
 import photoTagsHandler from './_handlers/photo-tags.js'
+import reactionsHandler from './_handlers/reactions.js'
 import tagsHandler from './_handlers/tags.js'
 
 const ROUTES = new Map([
@@ -29,6 +30,7 @@ const ROUTES = new Map([
   ['google-drive-callback', googleDriveCallbackHandler],
   ['photo-favorite', photoFavoriteHandler],
   ['photo-tags', photoTagsHandler],
+  ['reactions', reactionsHandler],
   ['tags', tagsHandler],
 ])
 

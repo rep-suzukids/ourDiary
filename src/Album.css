@@ -623,8 +623,17 @@
   width: 100%;
   min-width: 0;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 18px;
+}
+
+.album-modal__footer > .reaction-bar {
+  flex: 1 1 auto;
+}
+
+.album-modal__footer .reaction-picker {
+  top: auto;
+  bottom: calc(100% + 8px);
 }
 
 .album-modal__tag-button,
