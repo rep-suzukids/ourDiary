@@ -17,6 +17,8 @@ import PoopFormPage from './pages/PoopFormPage.jsx'
 import PoopPage from './pages/PoopPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx'
+import ScheduleCreatePage from './pages/ScheduleCreatePage.jsx'
+import SchedulePage from './pages/SchedulePage.jsx'
 import TagManagementPage from './pages/TagManagementPage.jsx'
 import TermsOfServicePage from './pages/TermsOfServicePage.jsx'
 import TimelinePage from './pages/TimelinePage.jsx'
@@ -141,7 +143,9 @@ function AppContent() {
   }
 
   if (pathname === '/diary') {
-    if (!session) return <NotFoundPage onNavigate={navigate} />
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
     return <DiaryPage session={session} onNavigate={navigate} />
   }
 
@@ -150,6 +154,20 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <DiaryCreatePage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/schedule') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <SchedulePage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/schedule/new') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <ScheduleCreatePage session={session} onNavigate={navigate} />
   }
 
   if (pathname === '/timeline') {

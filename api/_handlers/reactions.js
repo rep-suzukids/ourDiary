@@ -43,6 +43,25 @@ async function targetExists(sql, familyId, target) {
   return rows.length > 0
 }
 
+async function targetDomain(sql, familyId, target) {
+  if (target.targetType !== 'comment') return target.targetType
+  const rows = await sql`
+    SELECT CASE WHEN album_file_id IS NOT NULL THEN 'photo' ELSE 'diary' END AS domain
+    FROM comments
+    WHERE id = ${target.targetId} AND family_id = ${familyId}
+    LIMIT 1
+  `
+  return rows[0]?.domain ?? null
+}
+
+function assertReactionPermission(authorization, method, domain) {
+  const action = method === 'GET' ? 'read' : 'use'
+  const prefix = domain === 'photo' ? 'photo:reaction' : 'reaction'
+  if (!authorization.permissions.includes(`${prefix}:${action}`)) {
+    throw new AuthorizationError('この操作を行う権限がありません。')
+  }
+}
+
 async function listReactions(sql, familyId, userId, target) {
   const rows = await sql`
     SELECT
@@ -177,11 +196,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const authorization = await authorizeFamilyRequest(
-      request,
-      familyId,
-      request.method === 'GET' ? 'reaction:read' : 'reaction:use',
-    )
+    const authorization = await authorizeFamilyRequest(request, familyId)
     const target = targetFrom(request)
     if (!target) {
       sendJson(response, 400, { error: 'リアクション対象の指定が正しくありません。' })
@@ -192,6 +207,8 @@ export default async function handler(request, response) {
       sendJson(response, 404, { error: 'リアクション対象が見つかりません。' })
       return
     }
+    const domain = await targetDomain(sql, familyId, target)
+    assertReactionPermission(authorization, request.method, domain)
 
     if (request.method === 'POST') {
       const reactionKey = request.body?.reactionKey

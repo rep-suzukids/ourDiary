@@ -46,6 +46,16 @@ function TimelineIcon() {
   )
 }
 
+function ScheduleIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <rect x="7" y="10" width="34" height="31" rx="5" />
+      <path d="M15 6v8M33 6v8M7 19h34" />
+      <path d="M24 25v7M24 36v.5" />
+    </svg>
+  )
+}
+
 function HomePage({ session, onLogout, onNavigate }) {
   const activeFamily = session.families[0]
 
@@ -82,20 +92,30 @@ function HomePage({ session, onLogout, onNavigate }) {
           <span>アルバム</span>
         </a>
 
-        <a
-          className="album-link home-nav-link home-diary-link"
-          href="/diary"
-          onClick={(event) => {
-            event.preventDefault()
-            onNavigate('/diary')
-          }}
-        >
-          <DiaryIcon />
-          <span>日記</span>
-        </a>
-
         {['parent', 'admin'].includes(activeFamily.role) && (
           <>
+            <a
+              className="album-link home-nav-link home-diary-link"
+              href="/diary"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/diary')
+              }}
+            >
+              <DiaryIcon />
+              <span>日記</span>
+            </a>
+            <a
+              className="album-link home-nav-link home-schedule-link"
+              href="/schedule"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/schedule')
+              }}
+            >
+              <ScheduleIcon />
+              <span>予定</span>
+            </a>
             <a
               className="album-link home-nav-link home-timeline-link"
               href="/timeline"

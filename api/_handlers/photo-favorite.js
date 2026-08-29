@@ -28,7 +28,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const authorization = await authorizeFamilyRequest(request, familyId)
+    const authorization = await authorizeFamilyRequest(request, familyId, 'favorite:use')
     const sql = getDatabase()
     const files = await sql`
       SELECT id
