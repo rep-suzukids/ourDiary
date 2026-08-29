@@ -1209,9 +1209,18 @@
 
   .album-filter-toggle,
   .album-actions .album-upload-link {
+    height: 42px;
     min-height: 42px;
     padding: 9px 12px;
+    box-sizing: border-box;
     font-size: 0.78rem;
+  }
+
+  .album-actions .album-upload-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
   }
 
   .album-filter-panel {
