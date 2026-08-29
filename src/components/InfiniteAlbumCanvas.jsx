@@ -14,6 +14,34 @@ function clamp(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, value))
 }
 
+function createSpiralCoordinates(count) {
+  if (count <= 0) return []
+
+  const coordinates = [{ column: 0, row: 0 }]
+  let column = 0
+  let row = 0
+  let stepLength = 1
+
+  const addSteps = (columnStep, rowStep, steps) => {
+    for (let step = 0; step < steps && coordinates.length < count; step += 1) {
+      column += columnStep
+      row += rowStep
+      coordinates.push({ column, row })
+    }
+  }
+
+  while (coordinates.length < count) {
+    addSteps(1, 0, stepLength)
+    addSteps(0, 1, stepLength)
+    stepLength += 1
+    addSteps(-1, 0, stepLength)
+    addSteps(0, -1, stepLength)
+    stepLength += 1
+  }
+
+  return coordinates
+}
+
 function InfiniteAlbumCanvas({
   photos,
   driveAccessToken,
@@ -42,16 +70,12 @@ function InfiniteAlbumCanvas({
   }, [])
 
   const placements = useMemo(() => {
-    const columns = Math.max(3, Math.ceil(Math.sqrt(photos.length * 1.45)))
-    const rows = Math.ceil(photos.length / columns)
-    const totalWidth = columns * CARD_WIDTH + (columns - 1) * COLUMN_GAP
-    const totalHeight = rows * CARD_HEIGHT + (rows - 1) * ROW_GAP
+    const coordinates = createSpiralCoordinates(photos.length)
 
     return photos.map((photo, index) => {
-      const column = index % columns
-      const row = Math.floor(index / columns)
-      const x = column * (CARD_WIDTH + COLUMN_GAP) - totalWidth / 2
-      const y = row * (CARD_HEIGHT + ROW_GAP) - totalHeight / 2
+      const { column, row } = coordinates[index]
+      const x = column * (CARD_WIDTH + COLUMN_GAP) - CARD_WIDTH / 2
+      const y = row * (CARD_HEIGHT + ROW_GAP) - CARD_HEIGHT / 2
       return {
         photo,
         x,
