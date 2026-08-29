@@ -20,6 +20,27 @@ const EMPTY_FILTERS = {
   includeUnknownCapturedDate: false,
 }
 
+function capturedDateSortValue(photo) {
+  if (photo.capturedAt) return photo.capturedAt
+  if (photo.capturedOn) return `${photo.capturedOn}T00:00:00`
+  return ''
+}
+
+function comparePhotosByCapturedDateDescending(left, right) {
+  const leftCapturedDate = capturedDateSortValue(left)
+  const rightCapturedDate = capturedDateSortValue(right)
+
+  if (leftCapturedDate && rightCapturedDate && leftCapturedDate !== rightCapturedDate) {
+    return rightCapturedDate.localeCompare(leftCapturedDate)
+  }
+  if (leftCapturedDate) return -1
+  if (rightCapturedDate) return 1
+
+  const createdTimeComparison = (right.createdTime ?? '').localeCompare(left.createdTime ?? '')
+  if (createdTimeComparison !== 0) return createdTimeComparison
+  return String(left.id).localeCompare(String(right.id))
+}
+
 function AlbumPage({ session, onNavigate }) {
   const [albumTitle, setAlbumTitle] = useState('Album')
   const [folderId, setFolderId] = useState('')
@@ -144,7 +165,7 @@ function AlbumPage({ session, onNavigate }) {
       if (filters.from && photo.capturedOn < filters.from) return false
       if (filters.to && photo.capturedOn > filters.to) return false
       return true
-    })
+    }).sort(comparePhotosByCapturedDateDescending)
   }, [filters, invalidDateRange, photos])
 
   const filtersAreActive = Boolean(
