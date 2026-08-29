@@ -96,13 +96,13 @@ export default async function handler(request, response) {
   }
 
   try {
-    const requiredPermission = request.method === 'POST'
-      ? 'entry:create'
-      : request.method === 'PATCH'
-        ? 'entry:update'
-        : request.method === 'DELETE'
-          ? 'entry:delete'
-          : undefined
+    const requiredPermission = request.method === 'GET'
+      ? 'entry:read_shared'
+      : request.method === 'POST'
+        ? 'entry:create'
+        : request.method === 'PATCH'
+          ? 'entry:update'
+          : 'entry:delete'
     const authorization = await authorizeFamilyRequest(request, familyId, requiredPermission)
     const sql = getDatabase()
 

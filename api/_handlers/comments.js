@@ -21,6 +21,18 @@ function commentBodyFrom(request) {
   return body && body.length <= MAX_COMMENT_LENGTH ? body : null
 }
 
+function requiredPermission(method, targetType) {
+  const actionByMethod = { GET: 'read', POST: 'create', PATCH: 'update', DELETE: 'delete' }
+  const prefix = targetType === 'photo' ? 'photo:comment' : 'comment'
+  return `${prefix}:${actionByMethod[method]}`
+}
+
+function assertPermission(authorization, permission) {
+  if (!authorization.permissions.includes(permission)) {
+    throw new AuthorizationError('この操作を行う権限がありません。')
+  }
+}
+
 async function targetExists(sql, familyId, target) {
   if (target.targetType === 'diary') {
     const rows = await sql`
@@ -45,7 +57,7 @@ async function targetExists(sql, familyId, target) {
   return rows.length > 0
 }
 
-async function listComments(sql, familyId, userId, target) {
+async function listComments(sql, familyId, userId, canEdit, target) {
   return sql`
     SELECT
       cmt.id,
@@ -53,7 +65,7 @@ async function listComments(sql, familyId, userId, target) {
       cmt.author_id AS "authorId",
       COALESCE(author.display_name, author.email::text) AS "authorName",
       cmt.updated_at AS "updatedAt",
-      (cmt.author_id = ${userId}) AS "canEdit"
+      (cmt.author_id = ${userId} AND ${canEdit}) AS "canEdit"
     FROM comments cmt
     INNER JOIN users author ON author.id = cmt.author_id
     WHERE cmt.family_id = ${familyId}
@@ -65,7 +77,7 @@ async function listComments(sql, familyId, userId, target) {
   `
 }
 
-async function getComment(sql, familyId, userId, commentId) {
+async function getComment(sql, familyId, userId, canEdit, commentId) {
   const rows = await sql`
     SELECT
       cmt.id,
@@ -73,7 +85,8 @@ async function getComment(sql, familyId, userId, commentId) {
       cmt.author_id AS "authorId",
       COALESCE(author.display_name, author.email::text) AS "authorName",
       cmt.updated_at AS "updatedAt",
-      (cmt.author_id = ${userId}) AS "canEdit"
+      CASE WHEN cmt.album_file_id IS NOT NULL THEN 'photo' ELSE 'diary' END AS "targetType",
+      (cmt.author_id = ${userId} AND ${canEdit}) AS "canEdit"
     FROM comments cmt
     INNER JOIN users author ON author.id = cmt.author_id
     WHERE cmt.id = ${commentId}
@@ -97,13 +110,7 @@ export default async function handler(request, response) {
   }
 
   try {
-    const permissionByMethod = {
-      GET: 'comment:read',
-      POST: 'comment:create',
-      PATCH: 'comment:update',
-      DELETE: 'comment:delete',
-    }
-    const authorization = await authorizeFamilyRequest(request, familyId, permissionByMethod[request.method])
+    const authorization = await authorizeFamilyRequest(request, familyId)
     const sql = getDatabase()
 
     if (request.method === 'GET' || request.method === 'POST') {
@@ -112,13 +119,18 @@ export default async function handler(request, response) {
         sendJson(response, 400, { error: 'コメント対象の指定が正しくありません。' })
         return
       }
+      const permission = requiredPermission(request.method, target.targetType)
+      assertPermission(authorization, permission)
       if (!await targetExists(sql, familyId, target)) {
         sendJson(response, 404, { error: 'コメント対象が見つかりません。' })
         return
       }
 
       if (request.method === 'GET') {
-        sendJson(response, 200, { comments: await listComments(sql, familyId, authorization.userId, target) })
+        const canEdit = authorization.permissions.includes(requiredPermission('PATCH', target.targetType))
+        sendJson(response, 200, {
+          comments: await listComments(sql, familyId, authorization.userId, canEdit, target),
+        })
         return
       }
 
@@ -139,7 +151,13 @@ export default async function handler(request, response) {
         RETURNING id
       `
       sendJson(response, 201, {
-        comment: await getComment(sql, familyId, authorization.userId, inserted[0].id),
+        comment: await getComment(
+          sql,
+          familyId,
+          authorization.userId,
+          authorization.permissions.includes(requiredPermission('PATCH', target.targetType)),
+          inserted[0].id,
+        ),
       })
       return
     }
@@ -149,6 +167,13 @@ export default async function handler(request, response) {
       sendJson(response, 400, { error: 'コメントIDが正しくありません。' })
       return
     }
+    const existingComment = await getComment(sql, familyId, authorization.userId, false, commentId)
+    if (!existingComment) {
+      sendJson(response, 404, { error: 'コメントが見つかりません。' })
+      return
+    }
+    const permission = requiredPermission(request.method, existingComment.targetType)
+    assertPermission(authorization, permission)
 
     if (request.method === 'PATCH') {
       const body = commentBodyFrom(request)
@@ -169,7 +194,7 @@ export default async function handler(request, response) {
         return
       }
       sendJson(response, 200, {
-        comment: await getComment(sql, familyId, authorization.userId, commentId),
+        comment: await getComment(sql, familyId, authorization.userId, true, commentId),
       })
       return
     }

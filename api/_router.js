@@ -13,6 +13,7 @@ import googleDriveCallbackHandler from './_handlers/google-drive-callback.js'
 import photoFavoriteHandler from './_handlers/photo-favorite.js'
 import photoTagsHandler from './_handlers/photo-tags.js'
 import reactionsHandler from './_handlers/reactions.js'
+import schedulesHandler from './_handlers/schedules.js'
 import tagsHandler from './_handlers/tags.js'
 
 const ROUTES = new Map([
@@ -31,6 +32,7 @@ const ROUTES = new Map([
   ['photo-favorite', photoFavoriteHandler],
   ['photo-tags', photoTagsHandler],
   ['reactions', reactionsHandler],
+  ['schedules', schedulesHandler],
   ['tags', tagsHandler],
 ])
 

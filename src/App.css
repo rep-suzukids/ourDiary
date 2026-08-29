@@ -496,6 +496,14 @@
   background: linear-gradient(135deg, #c8658e, #777aba);
 }
 
+.home-schedule-link {
+  background: linear-gradient(135deg, #e99a76, #cf6e87);
+}
+
+.home-schedule-link:hover {
+  background: linear-gradient(135deg, #dc8664, #bf5975);
+}
+
 .home-timeline-link {
   background: linear-gradient(135deg, #9b91c9, #d08fa9);
 }
