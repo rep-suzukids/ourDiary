@@ -1392,7 +1392,8 @@
 }
 
 .album-modal__visibility > span.is-active {
-  color: #875966;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(73 38 51 / 28%);
 }
 
 .album-modal__visibility button {
