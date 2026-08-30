@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import CommentSection from './CommentSection.jsx'
 import ReactionBar from './ReactionBar.jsx'
 import { updatePhotoFavorite, updatePhotoVisibility } from '../services/albumApi.js'
@@ -149,7 +150,7 @@ function AlbumPhotoModal({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className="album-modal"
       role="dialog"
@@ -291,7 +292,8 @@ function AlbumPhotoModal({
           </aside>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 
