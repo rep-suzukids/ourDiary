@@ -3,6 +3,8 @@ async function readApiResponse(response) {
   if (!response.ok) {
     const error = new Error(body.error ?? 'アルバムを読み込めませんでした。')
     error.code = body.code
+    error.canReconnect = Boolean(body.canReconnect)
+    error.ownerEmail = body.ownerEmail ?? ''
     throw error
   }
   return body
@@ -68,6 +70,19 @@ export async function updatePhotoFavorite(familyId, albumFileId, isFavorite) {
   return readApiResponse(response)
 }
 
+export async function updatePhotoVisibility(familyId, albumFileId, isPublished) {
+  const response = await fetch('/api/photo-visibility', {
+    method: 'PATCH',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-family-id': familyId,
+    },
+    body: JSON.stringify({ albumFileId, isPublished }),
+  })
+  return readApiResponse(response)
+}
+
 export async function getDrivePhotoUrl(accessToken, photo, signal) {
   let response
   try {
@@ -118,8 +133,8 @@ export async function getDriveOwnerInvitation(token) {
   return readApiResponse(response)
 }
 
-export async function getDriveAccessToken(familyId) {
-  const response = await fetch('/api/drive-access-token', {
+export async function getDriveAccessToken(familyId, purpose = 'read') {
+  const response = await fetch(`/api/drive-access-token?${new URLSearchParams({ purpose })}`, {
     credentials: 'same-origin',
     cache: 'no-store',
     headers: { 'x-family-id': familyId },

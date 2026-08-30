@@ -6,6 +6,7 @@ import {
   exchangeDriveAuthorizationCode,
   getApplicationBaseUrl,
   hashInvitationValue,
+  shareDriveFolderWithServiceAccount,
 } from '../_lib/google-drive.js'
 
 function redirectResult(request, response, status) {
@@ -32,6 +33,31 @@ async function completeUserConnection(sql, state, code) {
   if (authorization.email !== state.email.toLowerCase()) return 'email_mismatch'
 
   const encryptedToken = encryptRefreshToken(authorization.refreshToken)
+  const ownedAlbums = await sql`
+    SELECT a.google_drive_folder_id
+    FROM drive_albums a
+    INNER JOIN google_drive_connections connection ON connection.id = a.connection_id
+    WHERE a.family_id = ${state.family_id}
+      AND lower(connection.owner_email) = ${authorization.email}
+    LIMIT 1
+  `
+  if (ownedAlbums.length > 0) {
+    await shareDriveFolderWithServiceAccount(
+      authorization.accessToken,
+      ownedAlbums[0].google_drive_folder_id,
+    )
+  }
+  await sql`
+    UPDATE google_drive_connections
+    SET
+      owner_google_subject = ${authorization.subject},
+      encrypted_refresh_token = ${encryptedToken.encryptedRefreshToken},
+      refresh_token_iv = ${encryptedToken.refreshTokenIv},
+      refresh_token_auth_tag = ${encryptedToken.refreshTokenAuthTag},
+      updated_at = now()
+    WHERE family_id = ${state.family_id}
+      AND lower(owner_email) = ${authorization.email}
+  `
   await sql`
     INSERT INTO google_drive_user_connections (
       family_id,
@@ -117,7 +143,7 @@ export default async function handler(request, response) {
     const encryptedToken = encryptRefreshToken(authorization.refreshToken)
 
     const existingAlbums = await sql`
-      SELECT a.id, a.connection_id, c.owner_email
+      SELECT a.id, a.connection_id, a.google_drive_folder_id, c.owner_email
       FROM drive_albums a
       INNER JOIN google_drive_connections c ON c.id = a.connection_id
       WHERE a.family_id = ${invitation.family_id}
@@ -132,6 +158,10 @@ export default async function handler(request, response) {
         redirectResult(request, response, 'already_connected')
         return
       }
+      await shareDriveFolderWithServiceAccount(
+        authorization.accessToken,
+        existing.google_drive_folder_id,
+      )
       await sql`
         UPDATE google_drive_connections SET
           owner_google_subject = ${authorization.subject},
@@ -151,6 +181,7 @@ export default async function handler(request, response) {
     }
 
     const folder = await createGoogleDriveFolder(authorization.accessToken, invitation.album_title)
+    await shareDriveFolderWithServiceAccount(authorization.accessToken, folder.id)
     const connections = await sql`
       INSERT INTO google_drive_connections (
         family_id,

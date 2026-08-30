@@ -11,6 +11,7 @@ import driveOwnerOauthStartHandler from './_handlers/drive-owner-oauth-start.js'
 import driveUserOauthStartHandler from './_handlers/drive-user-oauth-start.js'
 import googleDriveCallbackHandler from './_handlers/google-drive-callback.js'
 import photoFavoriteHandler from './_handlers/photo-favorite.js'
+import photoVisibilityHandler from './_handlers/photo-visibility.js'
 import photoTagsHandler from './_handlers/photo-tags.js'
 import reactionsHandler from './_handlers/reactions.js'
 import schedulesHandler from './_handlers/schedules.js'
@@ -30,6 +31,7 @@ const ROUTES = new Map([
   ['drive-user-oauth-start', driveUserOauthStartHandler],
   ['google-drive-callback', googleDriveCallbackHandler],
   ['photo-favorite', photoFavoriteHandler],
+  ['photo-visibility', photoVisibilityHandler],
   ['photo-tags', photoTagsHandler],
   ['reactions', reactionsHandler],
   ['schedules', schedulesHandler],

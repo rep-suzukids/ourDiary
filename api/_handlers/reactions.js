@@ -17,7 +17,7 @@ function targetFrom(request) {
   return { targetType, targetId }
 }
 
-async function targetExists(sql, familyId, target) {
+async function targetExists(sql, familyId, target, role) {
   if (target.targetType === 'diary') {
     const rows = await sql`
       SELECT id FROM diary_entries
@@ -31,13 +31,21 @@ async function targetExists(sql, familyId, target) {
     const rows = await sql`
       SELECT id FROM drive_album_files
       WHERE id = ${target.targetId} AND family_id = ${familyId}
+        AND (${role} <> 'member' OR is_published = true)
       LIMIT 1
     `
     return rows.length > 0
   }
   const rows = await sql`
-    SELECT id FROM comments
-    WHERE id = ${target.targetId} AND family_id = ${familyId}
+    SELECT cmt.id
+    FROM comments cmt
+    LEFT JOIN drive_album_files album_file ON album_file.id = cmt.album_file_id
+    WHERE cmt.id = ${target.targetId} AND cmt.family_id = ${familyId}
+      AND (
+        cmt.album_file_id IS NULL
+        OR ${role} <> 'member'
+        OR album_file.is_published = true
+      )
     LIMIT 1
   `
   return rows.length > 0
@@ -203,7 +211,7 @@ export default async function handler(request, response) {
       return
     }
     const sql = getDatabase()
-    if (!await targetExists(sql, familyId, target)) {
+    if (!await targetExists(sql, familyId, target, authorization.role)) {
       sendJson(response, 404, { error: 'リアクション対象が見つかりません。' })
       return
     }

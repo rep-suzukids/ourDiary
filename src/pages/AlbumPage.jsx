@@ -50,6 +50,8 @@ function AlbumPage({ session, onNavigate }) {
   const [errorCode, setErrorCode] = useState('')
   const [driveAccessToken, setDriveAccessToken] = useState('')
   const [driveStatus, setDriveStatus] = useState('loading')
+  const [canReconnectDrive, setCanReconnectDrive] = useState(false)
+  const [driveOwnerEmail, setDriveOwnerEmail] = useState('')
   const [tags, setTags] = useState([])
   const [tagStatus, setTagStatus] = useState('loading')
   const [tagError, setTagError] = useState('')
@@ -57,6 +59,7 @@ function AlbumPage({ session, onNavigate }) {
   const syncAttempted = useRef(false)
   const activeFamily = session.families[0]
   const canEditTags = ['parent', 'admin'].includes(activeFamily.role)
+  const canPublishPhotos = ['parent', 'admin'].includes(activeFamily.role)
 
   useEffect(() => {
     let isActive = true
@@ -72,6 +75,8 @@ function AlbumPage({ session, onNavigate }) {
         if (!isActive) return
         setError(requestError.message)
         setErrorCode(requestError.code)
+        setCanReconnectDrive(Boolean(requestError.canReconnect))
+        setDriveOwnerEmail(requestError.ownerEmail ?? '')
         setStatus('error')
       })
     return () => { isActive = false }
@@ -110,14 +115,27 @@ function AlbumPage({ session, onNavigate }) {
       })
       .catch((requestError) => {
         if (!isActive) return
-        setDriveStatus(requestError.code === 'DRIVE_USER_NOT_CONNECTED' ? 'not-connected' : 'error')
+        setDriveStatus(requestError.code === 'DRIVE_USER_NOT_CONNECTED'
+          ? 'not-connected'
+          : requestError.code === 'DRIVE_SERVICE_ACCOUNT_ACCESS_REQUIRED'
+            ? 'reconnect-required'
+            : 'error')
+        setCanReconnectDrive(Boolean(requestError.canReconnect))
+        setDriveOwnerEmail(requestError.ownerEmail ?? '')
         if (requestError.code !== 'DRIVE_USER_NOT_CONNECTED') setError(requestError.message)
       })
     return () => { isActive = false }
   }, [activeFamily.id, session.user.email])
 
   useEffect(() => {
-    if (status !== 'ready' || photos.length > 0 || !folderId || !driveAccessToken || syncAttempted.current) return
+    if (
+      !canPublishPhotos
+      || status !== 'ready'
+      || photos.length > 0
+      || !folderId
+      || !driveAccessToken
+      || syncAttempted.current
+    ) return
     syncAttempted.current = true
     listDrivePhotosDirectly(driveAccessToken, folderId)
       .then((drivePhotos) => {
@@ -128,7 +146,7 @@ function AlbumPage({ session, onNavigate }) {
         if (result?.photos) setPhotos(result.photos)
       })
       .catch((syncError) => setError(syncError.message))
-  }, [activeFamily.id, driveAccessToken, folderId, photos.length, status])
+  }, [activeFamily.id, canPublishPhotos, driveAccessToken, folderId, photos.length, status])
 
   const navigateLink = (path) => (event) => {
     event.preventDefault()
@@ -144,6 +162,12 @@ function AlbumPage({ session, onNavigate }) {
   const updatePhotoFavorite = (albumFileId, isFavorite) => {
     setPhotos((current) => current.map((photo) => (
       photo.albumFileId === albumFileId ? { ...photo, isFavorite } : photo
+    )))
+  }
+
+  const updatePhotoVisibility = (albumFileId, isPublished) => {
+    setPhotos((current) => current.map((photo) => (
+      photo.albumFileId === albumFileId ? { ...photo, isPublished } : photo
     )))
   }
 
@@ -213,11 +237,24 @@ function AlbumPage({ session, onNavigate }) {
           {errorCode === 'ALBUM_NOT_CONNECTED' && activeFamily.role === 'admin' && (
             <a href="/album/setup" onClick={navigateLink('/album/setup')}>アルバムを作成する</a>
           )}
+          {errorCode === 'DRIVE_SERVICE_ACCOUNT_ACCESS_REQUIRED' && canReconnectDrive && (
+            <div>
+              <p>初回設定のため、アルバム所有者のGoogleアカウント{driveOwnerEmail ? `（${driveOwnerEmail}）` : ''}を選択してください。</p>
+              <a className="album-link album-link--button" href={getDriveConnectUrl(activeFamily.id, '/album')}>
+                写真閲覧用アカウントを接続する
+              </a>
+            </div>
+          )}
+          {errorCode === 'DRIVE_SERVICE_ACCOUNT_ACCESS_REQUIRED' && !canReconnectDrive && driveOwnerEmail && (
+            <p>{driveOwnerEmail} でOur Diaryにログインしている方に、アルバム画面から初回設定を行ってもらってください。</p>
+          )}
         </div>
       )}
       {status === 'ready' && photos.length === 0 && driveAccessToken && (
         <div className="album-state">
-          <p>Google Driveアルバムには写真がまだありません。</p>
+          <p>{activeFamily.role === 'member'
+            ? '公開されている写真はまだありません。'
+            : 'Google Driveアルバムには写真がまだありません。'}</p>
           {error && <p className="upload-error">{error}</p>}
           {['parent', 'admin'].includes(activeFamily.role) && (
             <a href="/album/upload" onClick={navigateLink('/album/upload')}>最初の写真を追加する</a>
@@ -239,6 +276,22 @@ function AlbumPage({ session, onNavigate }) {
       {status === 'ready' && driveStatus === 'error' && (
         <div className="album-state album-state--error">{error}</div>
       )}
+      {status === 'ready' && driveStatus === 'reconnect-required' && (
+        <div className="album-state album-state--error">
+          <p>{error}</p>
+          {canReconnectDrive && (
+            <div>
+              <p>初回設定のため、アルバム所有者のGoogleアカウント{driveOwnerEmail ? `（${driveOwnerEmail}）` : ''}を選択してください。</p>
+              <a className="album-link album-link--button" href={getDriveConnectUrl(activeFamily.id, '/album')}>
+                写真閲覧用アカウントを接続する
+              </a>
+            </div>
+          )}
+          {!canReconnectDrive && driveOwnerEmail && (
+            <p>{driveOwnerEmail} でOur Diaryにログインしている方に、アルバム画面から初回設定を行ってもらってください。</p>
+          )}
+        </div>
+      )}
       {status === 'ready' && photos.length > 0 && driveAccessToken && (
         <InfiniteAlbumCanvas
           photos={filteredPhotos}
@@ -246,8 +299,10 @@ function AlbumPage({ session, onNavigate }) {
           familyId={activeFamily.id}
           canEditTags={canEditTags}
           canManageTags={activeFamily.role === 'admin'}
+          canPublishPhotos={canPublishPhotos}
           onPhotoTagsChange={updatePhotoTags}
           onPhotoFavoriteChange={updatePhotoFavorite}
+          onPhotoVisibilityChange={updatePhotoVisibility}
         />
       )}
       {status === 'ready' && photos.length > 0 && filteredPhotos.length === 0 && driveAccessToken && (

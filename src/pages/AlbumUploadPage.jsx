@@ -18,6 +18,7 @@ function AlbumUploadPage({ session, onNavigate }) {
   const [error, setError] = useState('')
   const [driveAccessToken, setDriveAccessToken] = useState('')
   const [driveStatus, setDriveStatus] = useState('loading')
+  const [canReconnectDrive, setCanReconnectDrive] = useState(false)
   const previewUrls = useRef([])
 
   useEffect(() => {
@@ -39,7 +40,7 @@ function AlbumUploadPage({ session, onNavigate }) {
     if (oauthStatus === 'email_mismatch') {
       setError(`${session.user.email}のGoogleアカウントを選択してください。`)
     }
-    getDriveAccessToken(activeFamily.id)
+    getDriveAccessToken(activeFamily.id, 'upload')
       .then((driveAccess) => {
         if (!isActive) return
         setDriveAccessToken(driveAccess.accessToken)
@@ -47,7 +48,12 @@ function AlbumUploadPage({ session, onNavigate }) {
       })
       .catch((requestError) => {
         if (!isActive) return
-        setDriveStatus(requestError.code === 'DRIVE_USER_NOT_CONNECTED' ? 'not-connected' : 'error')
+        setDriveStatus(requestError.code === 'DRIVE_USER_NOT_CONNECTED'
+          ? 'not-connected'
+          : requestError.code === 'DRIVE_USER_RECONNECT_REQUIRED'
+            ? 'reconnect-required'
+            : 'error')
+        setCanReconnectDrive(Boolean(requestError.canReconnect))
         if (requestError.code !== 'DRIVE_USER_NOT_CONNECTED') setError(requestError.message)
       })
     return () => { isActive = false }
@@ -130,6 +136,15 @@ function AlbumUploadPage({ session, onNavigate }) {
           <a className="album-link album-link--button" href={getDriveConnectUrl(activeFamily.id, '/album/upload')}>
             Google Driveに接続
           </a>
+        )}
+
+        {driveStatus === 'reconnect-required' && canReconnectDrive && (
+          <div>
+            <p className="info-text">現在Our Diaryへログインしている、ご自身のGoogleアカウントを選択してください。</p>
+            <a className="album-link album-link--button" href={getDriveConnectUrl(activeFamily.id, '/album/upload')}>
+              Google Driveへ再接続する
+            </a>
+          </div>
         )}
 
         {driveAccessToken && (
