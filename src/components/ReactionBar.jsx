@@ -150,6 +150,12 @@ function ReactionBar({ familyId, targetType, targetId }) {
     applyReaction(reactionKey)
   }
 
+  const handlePickerReactionClick = (reactionKey) => {
+    setIsPickerOpen(false)
+    addButtonRef.current?.focus()
+    applyReaction(reactionKey)
+  }
+
   return (
     <div className="reaction-bar" ref={rootRef} onClick={(event) => event.stopPropagation()}>
       <div className="reaction-bar__items">
@@ -218,7 +224,7 @@ function ReactionBar({ familyId, targetType, targetId }) {
                 aria-pressed={isSelected}
                 title={reaction.label}
                 key={reaction.key}
-                onClick={() => applyReaction(reaction.key)}
+                onClick={() => handlePickerReactionClick(reaction.key)}
                 disabled={status === 'saving'}
               >
                 <img src={reaction.imageUrl} alt="" />
