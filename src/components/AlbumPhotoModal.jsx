@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import CommentSection from './CommentSection.jsx'
 import ReactionBar from './ReactionBar.jsx'
-import { updatePhotoFavorite } from '../services/albumApi.js'
+import { updatePhotoFavorite, updatePhotoVisibility } from '../services/albumApi.js'
 import { getTags, updatePhotoTags } from '../services/tagApi.js'
 
 function TagIcon() {
@@ -35,8 +35,10 @@ function AlbumPhotoModal({
   familyId,
   canEditTags,
   canManageTags,
+  canPublishPhotos,
   onTagsChange,
   onFavoriteChange,
+  onVisibilityChange,
   onClose,
 }) {
   const closeButtonRef = useRef(null)
@@ -50,6 +52,9 @@ function AlbumPhotoModal({
   const [isFavorite, setIsFavorite] = useState(Boolean(photo.isFavorite))
   const [favoriteStatus, setFavoriteStatus] = useState('idle')
   const [favoriteError, setFavoriteError] = useState('')
+  const [isPublished, setIsPublished] = useState(Boolean(photo.isPublished))
+  const [visibilityStatus, setVisibilityStatus] = useState('idle')
+  const [visibilityError, setVisibilityError] = useState('')
 
   useEffect(() => {
     onCloseRef.current = onClose
@@ -129,6 +134,21 @@ function AlbumPhotoModal({
     }
   }
 
+  const toggleVisibility = async () => {
+    const nextPublished = !isPublished
+    setVisibilityStatus('saving')
+    setVisibilityError('')
+    try {
+      const result = await updatePhotoVisibility(familyId, photo.albumFileId, nextPublished)
+      setIsPublished(result.isPublished)
+      onVisibilityChange(photo.albumFileId, result.isPublished)
+      setVisibilityStatus('idle')
+    } catch (error) {
+      setVisibilityError(error.message)
+      setVisibilityStatus('error')
+    }
+  }
+
   return (
     <div
       className="album-modal"
@@ -167,6 +187,22 @@ function AlbumPhotoModal({
                 targetId={photo.albumFileId}
               />
               <div className="album-modal__photo-actions">
+                {canPublishPhotos && (
+                  <div className="album-modal__visibility" aria-label="写真の公開設定">
+                    <span className={!isPublished ? 'is-active' : ''}>非公開</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={isPublished}
+                      aria-label={isPublished ? '公開中。非公開に変更' : '非公開。公開に変更'}
+                      onClick={toggleVisibility}
+                      disabled={visibilityStatus === 'saving'}
+                    >
+                      <span />
+                    </button>
+                    <span className={isPublished ? 'is-active' : ''}>公開</span>
+                  </div>
+                )}
                 <button
                   className={`album-modal__favorite-button${isFavorite ? ' is-favorite' : ''}`}
                   type="button"
@@ -191,6 +227,7 @@ function AlbumPhotoModal({
             </div>
           )}
           {favoriteError && <p className="album-modal__favorite-error" role="alert">{favoriteError}</p>}
+          {visibilityError && <p className="album-modal__favorite-error" role="alert">{visibilityError}</p>}
         </div>
 
         {isEditingTags && (

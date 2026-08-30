@@ -31,13 +31,13 @@ export default async function handler(request, response) {
     const authorization = await authorizeFamilyRequest(request, familyId, 'favorite:use')
     const sql = getDatabase()
     const files = await sql`
-      SELECT id
+      SELECT id, is_published AS "isPublished"
       FROM drive_album_files
       WHERE family_id = ${familyId} AND id = ${albumFileId}
       LIMIT 1
     `
-    if (files.length === 0) {
-      sendJson(response, 404, { error: '写真が見つかりません。' })
+    if (files.length === 0 || (authorization.role === 'member' && !files[0].isPublished)) {
+      sendJson(response, 404, { error: '写真が見つからないか、公開されていません。' })
       return
     }
 

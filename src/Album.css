@@ -1382,6 +1382,63 @@
   gap: 8px;
 }
 
+.album-modal__visibility {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #b99ca6;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.album-modal__visibility > span.is-active {
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(73 38 51 / 28%);
+}
+
+.album-modal__visibility button {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid #dcb8c5;
+  border-radius: 999px;
+  background: #eadde1;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.album-modal__visibility button > span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgb(93 55 68 / 22%);
+  transition: transform 160ms ease;
+}
+
+.album-modal__visibility button[aria-checked='true'] {
+  border-color: #d46e98;
+  background: #df7fa4;
+}
+
+.album-modal__visibility button[aria-checked='true'] > span {
+  transform: translateX(18px);
+}
+
+.album-modal__visibility button:focus-visible {
+  outline: 3px solid rgb(218 124 159 / 30%);
+  outline-offset: 2px;
+}
+
+.album-modal__visibility button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 .album-modal__favorite-button {
   display: inline-flex;
   padding: 8px 13px;

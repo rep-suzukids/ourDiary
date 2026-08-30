@@ -1,10 +1,11 @@
 import { AuthorizationError, authorizeFamilyRequest } from '../_lib/authorization.js'
 import { getDatabase } from '../_lib/db.js'
 import {
-  ensureDriveFolderPermission,
   GoogleDriveConfigurationError,
   GoogleDriveNotConnectedError,
   GoogleDriveRequestError,
+  GoogleDriveServiceAccountAccessError,
+  getFamilyDriveOwnerEmail,
   listGoogleDrivePhotos,
 } from '../_lib/google-drive.js'
 
@@ -95,8 +96,9 @@ export default async function handler(request, response) {
     return
   }
 
+  let authorization
   try {
-    const authorization = await authorizeFamilyRequest(
+    authorization = await authorizeFamilyRequest(
       request,
       familyId,
       request.method === 'POST' ? 'album:upload' : undefined,
@@ -174,6 +176,7 @@ export default async function handler(request, response) {
           height,
           captured_on AS "capturedOn",
           to_char(captured_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS "capturedAt",
+          is_published AS "isPublished",
           EXISTS (
             SELECT 1
             FROM photo_favorites favorite
@@ -194,11 +197,6 @@ export default async function handler(request, response) {
       return
     }
 
-    await ensureDriveFolderPermission(
-      familyId,
-      authorization.googleUser.email,
-      authorization.role,
-    )
     const driveAlbum = await listGoogleDrivePhotos(familyId)
     await synchronizeDriveFiles(sql, familyId, driveAlbum.photos)
 
@@ -214,6 +212,7 @@ export default async function handler(request, response) {
         height,
         captured_on AS "capturedOn",
         to_char(captured_at, 'YYYY-MM-DD"T"HH24:MI:SS') AS "capturedAt",
+        is_published AS "isPublished",
         EXISTS (
           SELECT 1
           FROM photo_favorites favorite
@@ -228,12 +227,14 @@ export default async function handler(request, response) {
         ), '[]'::json) AS "tagIds"
       FROM drive_album_files daf
       WHERE daf.family_id = ${familyId}
+        AND (${authorization.role} <> 'member' OR daf.is_published = true)
       ORDER BY daf.drive_created_at DESC NULLS LAST, daf.created_at DESC
     `
     response.setHeader('Cache-Control', 'private, no-store')
     sendJson(response, 200, {
       title: album.title,
       folderId: album.google_drive_folder_id,
+      driveCredentialSource: 'service-account',
       photos,
     })
   } catch (error) {
@@ -245,9 +246,29 @@ export default async function handler(request, response) {
       sendJson(response, error.status, { error: error.message, code: 'ALBUM_NOT_CONNECTED' })
       return
     }
+    if (error instanceof GoogleDriveServiceAccountAccessError) {
+      const ownerEmail = await getFamilyDriveOwnerEmail(familyId).catch(() => null)
+      const canConfigure = Boolean(
+        ownerEmail
+        && authorization?.googleUser?.email
+        && ownerEmail.toLowerCase() === authorization.googleUser.email.toLowerCase(),
+      )
+      sendJson(response, error.status, {
+        error: canConfigure
+          ? '写真閲覧用アカウントをGoogle Driveフォルダへ接続してください。'
+          : `写真閲覧用の設定が必要です。アルバム所有者（${ownerEmail ?? '作成者'}）に設定を依頼してください。`,
+        code: 'DRIVE_SERVICE_ACCOUNT_ACCESS_REQUIRED',
+        canReconnect: canConfigure,
+        ownerEmail,
+      })
+      return
+    }
     if (error instanceof GoogleDriveConfigurationError) {
-      console.error('Google Drive configuration failed', error)
-      sendJson(response, 503, { error: 'Google Driveの接続設定が完了していません。' })
+      console.error('Google Drive service account configuration failed', error.message)
+      sendJson(response, 503, {
+        error: '写真閲覧用のGoogle Drive設定が完了していません。管理者に確認してください。',
+        code: 'DRIVE_SERVICE_ACCOUNT_NOT_CONFIGURED',
+      })
       return
     }
     if (error instanceof GoogleDriveRequestError) {

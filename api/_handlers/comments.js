@@ -33,7 +33,7 @@ function assertPermission(authorization, permission) {
   }
 }
 
-async function targetExists(sql, familyId, target) {
+async function targetExists(sql, familyId, target, role) {
   if (target.targetType === 'diary') {
     const rows = await sql`
       SELECT id
@@ -52,6 +52,7 @@ async function targetExists(sql, familyId, target) {
     FROM drive_album_files
     WHERE id = ${target.targetId}
       AND family_id = ${familyId}
+      AND (${role} <> 'member' OR is_published = true)
     LIMIT 1
   `
   return rows.length > 0
@@ -85,6 +86,7 @@ async function getComment(sql, familyId, userId, canEdit, commentId) {
       cmt.author_id AS "authorId",
       COALESCE(author.display_name, author.email::text) AS "authorName",
       cmt.updated_at AS "updatedAt",
+      cmt.album_file_id AS "albumFileId",
       CASE WHEN cmt.album_file_id IS NOT NULL THEN 'photo' ELSE 'diary' END AS "targetType",
       (cmt.author_id = ${userId} AND ${canEdit}) AS "canEdit"
     FROM comments cmt
@@ -121,7 +123,7 @@ export default async function handler(request, response) {
       }
       const permission = requiredPermission(request.method, target.targetType)
       assertPermission(authorization, permission)
-      if (!await targetExists(sql, familyId, target)) {
+      if (!await targetExists(sql, familyId, target, authorization.role)) {
         sendJson(response, 404, { error: 'コメント対象が見つかりません。' })
         return
       }
@@ -174,6 +176,16 @@ export default async function handler(request, response) {
     }
     const permission = requiredPermission(request.method, existingComment.targetType)
     assertPermission(authorization, permission)
+    if (
+      existingComment.targetType === 'photo'
+      && !await targetExists(sql, familyId, {
+        targetType: 'photo',
+        targetId: existingComment.albumFileId,
+      }, authorization.role)
+    ) {
+      sendJson(response, 404, { error: 'コメント対象が見つからないか、公開されていません。' })
+      return
+    }
 
     if (request.method === 'PATCH') {
       const body = commentBodyFrom(request)

@@ -31,11 +31,17 @@ Google Drive APIを利用して、指定したオーナーのGoogle DriveにOur 
    - `https://<本番ドメイン>/api/google-drive-callback`
 4. 承認済みJavaScript生成元にローカルと本番のオリジンを登録します。
 5. `.env.local`とVercel Environment Variablesに環境別の値を設定します。
+6. Google Cloudの同じプロジェクトで、写真閲覧専用のサービスアカウントとJSON鍵を作成します。
+   - サービスアカウントにプロジェクトロールを付ける必要はありません。
+   - JSON鍵の`client_email`を`GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL`へ設定します。
+   - JSON鍵の`private_key`を`GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY`へ設定します。
 
 ```dotenv
 GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
 GOOGLE_DRIVE_REDIRECT_URI=http://localhost:3000/api/google-drive-callback
 GOOGLE_DRIVE_TOKEN_ENCRYPTION_KEY=32-byte-base64-value
+GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL=our-diary-reader@your-project.iam.gserviceaccount.com
+GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 APP_BASE_URL=http://localhost:3000
 ```
 
@@ -47,7 +53,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 管理者は「Google Driveアルバム設定」でオーナーのメールアドレスとフォルダ名を入力し、24時間有効な招待URLを発行します。メール・LINE送信機能は持たず、URLだけを表示します。
 
-オーナーが招待URLから承認すると、そのアカウント内にフォルダを作成します。家族メンバーには閲覧権限、両親と管理者には編集権限を設定します。リフレッシュトークンはAES-256-GCMで暗号化してDBに保存します。
+オーナーが招待URLから承認すると、そのアカウント内にフォルダを作成します。写真閲覧用サービスアカウントには閲覧権限、両親と管理者には編集権限を設定します。利用者のリフレッシュトークンはAES-256-GCMで暗号化してDBに保存します。既存アルバムへサービスアカウントを初めて接続する場合は、環境変数を設定した後、アルバム所有者が画面の案内から一度だけGoogle Driveへ再接続します。
 
 写真本体の経路は次のとおりです。
 
@@ -55,7 +61,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 - 閲覧: Google Drive → ブラウザ
 - Vercel Function: フォルダ作成、共有設定、DriveファイルIDなどの小さなメタデータだけ
 
-アップロード完了時にファイルID・名前・サイズ等だけをPostgresへ登録し、アルバム一覧はそのメタデータから生成します。Vercel Functionは写真・動画のバイト列を中継しません。非公開ファイルを表示するため、各利用者はアルバム画面でOur Diaryが管理するDriveファイルへのアクセスを承認します。`drive.file`スコープだけを使い、利用者自身のDrive全体にはアクセスしません。閲覧・編集の違いはDrive側のreader/writer権限で制御します。
+アップロード完了時にファイルID・名前・サイズ等だけをPostgresへ登録し、アルバム一覧はそのメタデータから生成します。Vercel Functionは写真・動画のバイト列を中継しません。閲覧には、対象フォルダだけを共有されたサービスアカウントの短時間アクセストークンを使用します。memberを含む閲覧者個人のGoogle Drive接続は不要です。アップロード時だけparent/admin本人が`drive.file`スコープでGoogle Driveへ接続します。
 
 ## 開発と検証
 

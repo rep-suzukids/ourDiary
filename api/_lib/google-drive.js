@@ -4,11 +4,14 @@ import {
   createHash,
   randomBytes,
 } from 'node:crypto'
-import { OAuth2Client } from 'google-auth-library'
+import { GoogleAuth, OAuth2Client } from 'google-auth-library'
 import { getDatabase } from './db.js'
 
 const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file'
+const DRIVE_READONLY_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
 const DRIVE_SCOPES = ['openid', 'email', DRIVE_FILE_SCOPE]
+
+let serviceAccountAuth
 
 export class GoogleDriveConfigurationError extends Error {
   constructor(message) {
@@ -62,6 +65,40 @@ function createOAuthClient() {
     requireEnvironment('GOOGLE_CLIENT_SECRET'),
     requireEnvironment('GOOGLE_DRIVE_REDIRECT_URI'),
   )
+}
+
+function getServiceAccountAuth() {
+  if (serviceAccountAuth) return serviceAccountAuth
+  serviceAccountAuth = new GoogleAuth({
+    credentials: {
+      client_email: requireEnvironment('GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL'),
+      private_key: requireEnvironment('GOOGLE_DRIVE_SERVICE_ACCOUNT_PRIVATE_KEY').replaceAll('\\n', '\n'),
+    },
+    scopes: [DRIVE_READONLY_SCOPE],
+  })
+  return serviceAccountAuth
+}
+
+async function getServiceAccountAccessToken() {
+  try {
+    const client = await getServiceAccountAuth().getClient()
+    const accessToken = await client.getAccessToken()
+    const token = typeof accessToken === 'string' ? accessToken : accessToken?.token
+    if (!token) throw new Error('Access token was not returned')
+    return {
+      token,
+      expiresAt: Number(client.credentials.expiry_date ?? Date.now() + 55 * 60 * 1000),
+    }
+  } catch (error) {
+    if (error instanceof GoogleDriveConfigurationError) throw error
+    console.error('Google Drive service account authentication failed', {
+      name: error?.name,
+      code: error?.code,
+      status: error?.response?.status ?? error?.status,
+      message: error?.message,
+    })
+    throw new GoogleDriveConfigurationError('Google Drive service account authentication failed')
+  }
 }
 
 export function hashInvitationValue(value) {
@@ -140,8 +177,22 @@ async function refreshDriveAccessToken(connection) {
     const expiresAt = Number(oauthClient.credentials.expiry_date ?? Date.now() + 55 * 60 * 1000)
     return { token, expiresAt }
   } catch (error) {
-    console.error('Google Drive token refresh failed', error)
+    console.error('Google Drive token refresh failed', {
+      name: error?.name,
+      code: error?.code,
+      status: error?.response?.status ?? error?.status,
+      oauthError: error?.response?.data?.error,
+      message: error?.message,
+    })
     throw new GoogleDriveRequestError('Google Driveの認証を更新できませんでした。', 401)
+  }
+}
+
+export class GoogleDriveServiceAccountAccessError extends Error {
+  constructor() {
+    super('写真閲覧用アカウントからGoogle Driveフォルダへアクセスできません。')
+    this.name = 'GoogleDriveServiceAccountAccessError'
+    this.status = 503
   }
 }
 
@@ -182,6 +233,92 @@ export async function createGoogleDriveFolder(accessToken, title) {
   return response.json()
 }
 
+export async function shareDriveFolderWithServiceAccount(accessToken, folderId) {
+  const serviceAccountEmail = requireEnvironment('GOOGLE_DRIVE_SERVICE_ACCOUNT_EMAIL')
+  const fields = encodeURIComponent('permissions(id,emailAddress,role,type)')
+  const permissionsResponse = await driveFetch(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}/permissions?fields=${fields}`,
+    accessToken,
+  )
+  const permissions = (await permissionsResponse.json()).permissions ?? []
+  const existing = permissions.find((permission) => (
+    permission.type === 'user'
+    && permission.emailAddress?.toLowerCase() === serviceAccountEmail.toLowerCase()
+  ))
+  if (existing?.role === 'reader') return
+  if (existing) {
+    await driveFetch(
+      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}/permissions/${encodeURIComponent(existing.id)}`,
+      accessToken,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'reader' }),
+      },
+    )
+    return
+  }
+  await driveFetch(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(folderId)}/permissions?sendNotificationEmail=false`,
+    accessToken,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'user', role: 'reader', emailAddress: serviceAccountEmail }),
+    },
+  )
+}
+
+async function getFamilyDriveAlbum(familyId) {
+  const sql = getDatabase()
+  const rows = await sql`
+    SELECT google_drive_folder_id, title
+    FROM drive_albums
+    WHERE family_id = ${familyId}
+    LIMIT 1
+  `
+  if (rows.length === 0) throw new GoogleDriveNotConnectedError()
+  return {
+    folderId: rows[0].google_drive_folder_id,
+    title: rows[0].title,
+  }
+}
+
+export async function getFamilyDriveReadAccess(familyId) {
+  const [album, access] = await Promise.all([
+    getFamilyDriveAlbum(familyId),
+    getServiceAccountAccessToken(),
+  ])
+  try {
+    await driveFetch(
+      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(album.folderId)}?fields=id&supportsAllDrives=true`,
+      access.token,
+    )
+  } catch (error) {
+    if (error instanceof GoogleDriveRequestError) {
+      throw new GoogleDriveServiceAccountAccessError()
+    }
+    throw error
+  }
+  return { ...album, ...access }
+}
+
+export async function getUserDriveUploadAccess(familyId, userId) {
+  const sql = getDatabase()
+  const rows = await sql`
+    SELECT encrypted_refresh_token, refresh_token_iv, refresh_token_auth_tag
+    FROM google_drive_user_connections
+    WHERE family_id = ${familyId} AND user_id = ${userId}
+    LIMIT 1
+  `
+  if (rows.length === 0) throw new GoogleDriveUserNotConnectedError()
+  const [album, access] = await Promise.all([
+    getFamilyDriveAlbum(familyId),
+    refreshDriveAccessToken(rows[0]),
+  ])
+  return { ...album, ...access }
+}
+
 async function getFamilyDriveAccess(familyId) {
   const sql = getDatabase()
   const rows = await sql`
@@ -208,6 +345,18 @@ async function getFamilyDriveAccess(familyId) {
     ownerEmail: rows[0].owner_email,
     title: rows[0].title,
   }
+}
+
+export async function getFamilyDriveOwnerEmail(familyId) {
+  if (!familyId) return null
+  const sql = getDatabase()
+  const rows = await sql`
+    SELECT owner_email
+    FROM google_drive_connections
+    WHERE family_id = ${familyId}
+    LIMIT 1
+  `
+  return rows[0]?.owner_email ?? null
 }
 
 export async function ensureDriveFolderPermission(familyId, email, role) {
@@ -252,7 +401,7 @@ export async function ensureDriveFolderPermission(familyId, email, role) {
 }
 
 export async function listGoogleDrivePhotos(familyId) {
-  const access = await getFamilyDriveAccess(familyId)
+  const access = await getFamilyDriveReadAccess(familyId)
   const photos = []
   let pageToken = ''
   const query = `'${access.folderId.replaceAll("'", "\\'")}' in parents and trashed = false`
@@ -265,10 +414,18 @@ export async function listGoogleDrivePhotos(familyId) {
       fields: 'nextPageToken,files(id,name,mimeType,createdTime,size,imageMediaMetadata(width,height,rotation,time))',
       ...(pageToken && { pageToken }),
     })
-    const response = await driveFetch(
-      `https://www.googleapis.com/drive/v3/files?${parameters}`,
-      access.token,
-    )
+    let response
+    try {
+      response = await driveFetch(
+        `https://www.googleapis.com/drive/v3/files?${parameters}`,
+        access.token,
+      )
+    } catch (error) {
+      if (error instanceof GoogleDriveRequestError && error.status === 401) {
+        throw new GoogleDriveServiceAccountAccessError()
+      }
+      throw error
+    }
     const page = await response.json()
     for (const item of page.files ?? []) {
       if (!item.mimeType?.startsWith('image/')) continue

@@ -48,8 +48,10 @@ function InfiniteAlbumCanvas({
   familyId,
   canEditTags,
   canManageTags,
+  canPublishPhotos,
   onPhotoTagsChange,
   onPhotoFavoriteChange,
+  onPhotoVisibilityChange,
 }) {
   const [camera, setCamera] = useState({ x: 0, y: 0, scale: 1 })
   const [selectedPhoto, setSelectedPhoto] = useState(null)
@@ -171,6 +173,14 @@ function InfiniteAlbumCanvas({
     } : current)
   }
 
+  const handleVisibilityChange = (albumFileId, isPublished) => {
+    onPhotoVisibilityChange(albumFileId, isPublished)
+    setSelectedPhoto((current) => current ? {
+      ...current,
+      photo: { ...current.photo, isPublished },
+    } : current)
+  }
+
   return (
     <section
       className="album-canvas"
@@ -228,8 +238,10 @@ function InfiniteAlbumCanvas({
           familyId={familyId}
           canEditTags={canEditTags}
           canManageTags={canManageTags}
+          canPublishPhotos={canPublishPhotos}
           onTagsChange={handleTagsChange}
           onFavoriteChange={handleFavoriteChange}
+          onVisibilityChange={handleVisibilityChange}
           onClose={() => setSelectedPhoto(null)}
         />
       )}
