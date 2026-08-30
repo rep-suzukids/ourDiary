@@ -742,6 +742,14 @@
   font-size: 1.25rem;
 }
 
+.album-comment-panel__heading > button,
+.album-tag-editor__heading > button {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  right: 14px;
+}
+
 .album-tag-editor__choices {
   display: flex;
   min-height: 0;
