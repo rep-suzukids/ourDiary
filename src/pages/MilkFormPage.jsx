@@ -27,10 +27,16 @@ function initialType() {
   return queryValue('type') === 'pumping' ? 'pumping' : 'feeding'
 }
 
+function requestedChildTone() {
+  const requested = queryValue('child')
+  return requested === 'tomo' || requested === 'yuu' ? requested : ''
+}
+
 function MilkFormPage({ session, onNavigate, mode = 'create' }) {
   const activeFamily = session.families[0]
   const eventId = mode === 'edit' ? queryValue('id') : ''
   const initializedEdit = useRef(false)
+  const initializedRequestedChild = useRef(false)
   const [children, setChildren] = useState([])
   const [recentAmounts, setRecentAmounts] = useState({ pumping: [], children: {} })
   const [eventType, setEventType] = useState(initialType)
@@ -50,6 +56,12 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
       .then((result) => {
         if (!isActive) return
         setChildren(result.children)
+        if (mode === 'create' && !initializedRequestedChild.current) {
+          const tone = requestedChildTone()
+          const requestedChild = result.children.find((child) => childTone(child.name) === tone)
+          if (requestedChild) setChildId(requestedChild.id)
+          initializedRequestedChild.current = true
+        }
         setRecentAmounts(result.recentAmounts)
         if (mode === 'edit' && !initializedEdit.current) {
           const target = result.events.find((event) => event.id === eventId)
