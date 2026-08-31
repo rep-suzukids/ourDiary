@@ -28,10 +28,16 @@ function initialDate() {
     : localDateString()
 }
 
+function requestedChildTone() {
+  const requested = queryValue('child')
+  return requested === 'tomo' || requested === 'yuu' ? requested : ''
+}
+
 function PoopFormPage({ session, onNavigate, mode = 'create' }) {
   const activeFamily = session.families[0]
   const eventId = mode === 'edit' ? queryValue('id') : ''
   const initializedEdit = useRef(false)
+  const initializedRequestedChild = useRef(false)
   const [children, setChildren] = useState([])
   const [childId, setChildId] = useState('')
   const [amount, setAmount] = useState('')
@@ -51,6 +57,12 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
       .then((result) => {
         if (!isActive) return
         setChildren(result.children)
+        if (mode === 'create' && !initializedRequestedChild.current) {
+          const tone = requestedChildTone()
+          const requestedChild = result.children.find((child) => childTone(child.name) === tone)
+          if (requestedChild) setChildId(requestedChild.id)
+          initializedRequestedChild.current = true
+        }
         if (mode === 'edit' && !initializedEdit.current) {
           const target = result.events.find((event) => event.id === eventId)
           if (!target) throw new Error('編集する記録が見つかりませんでした。')

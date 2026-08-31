@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { BottleIcon, PoopIcon } from '../components/CareEventIcons.jsx'
 import {
   addDate,
@@ -113,8 +113,10 @@ function TimelinePage({ session, onNavigate }) {
   const [children, setChildren] = useState([])
   const [events, setEvents] = useState([])
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
+  const quickAddRef = useRef(null)
 
   useEffect(() => {
     let isActive = true
@@ -146,6 +148,23 @@ function TimelinePage({ session, onNavigate }) {
     return () => { isActive = false }
   }, [activeFamily.id, date])
 
+  useEffect(() => {
+    if (!isQuickAddOpen) return undefined
+
+    const closeQuickAdd = (event) => {
+      if (event.type === 'keydown' && event.key !== 'Escape') return
+      if (event.type === 'pointerdown' && quickAddRef.current?.contains(event.target)) return
+      setIsQuickAddOpen(false)
+    }
+
+    document.addEventListener('pointerdown', closeQuickAdd)
+    document.addEventListener('keydown', closeQuickAdd)
+    return () => {
+      document.removeEventListener('pointerdown', closeQuickAdd)
+      document.removeEventListener('keydown', closeQuickAdd)
+    }
+  }, [isQuickAddOpen])
+
   const selectedChild = children.find((child) => childTone(child.name) === selectedTone)
   const visibleEvents = useMemo(() => events.filter((event) => (
     selectedChild && event.childId === selectedChild.id
@@ -158,13 +177,25 @@ function TimelinePage({ session, onNavigate }) {
   const changeDate = (nextDate) => {
     setDate(nextDate)
     setSelectedEvent(null)
+    setIsQuickAddOpen(false)
     updateLocation(nextDate, selectedTone)
   }
 
   const changeChild = (nextTone) => {
     setSelectedTone(nextTone)
     setSelectedEvent(null)
+    setIsQuickAddOpen(false)
     updateLocation(date, nextTone)
+  }
+
+  const quickAddPath = (recordType) => (
+    `/${recordType}/new?${new URLSearchParams({ date, child: selectedTone })}`
+  )
+
+  const navigateQuickAdd = (recordType) => (event) => {
+    event.preventDefault()
+    setIsQuickAddOpen(false)
+    onNavigate(quickAddPath(recordType))
   }
 
   const navigateTop = (event) => {
@@ -287,6 +318,47 @@ function TimelinePage({ session, onNavigate }) {
           </div>
         )}
       </section>
+
+      <nav
+        ref={quickAddRef}
+        className={`timeline-quick-add${isQuickAddOpen ? ' is-open' : ''}`}
+        aria-label="育児記録を追加"
+      >
+        <a
+          className="timeline-quick-add__item timeline-quick-add__item--milk"
+          href={quickAddPath('milk')}
+          onClick={navigateQuickAdd('milk')}
+          aria-label={`${selectedChild ? childDisplayName(selectedChild.name) : '選択中の子ども'}のミルクを記録`}
+          aria-hidden={!isQuickAddOpen}
+          tabIndex={isQuickAddOpen ? 0 : -1}
+        >
+          <BottleIcon />
+          <span>ミルク</span>
+        </a>
+        <a
+          className="timeline-quick-add__item timeline-quick-add__item--poop"
+          href={quickAddPath('poop')}
+          onClick={navigateQuickAdd('poop')}
+          aria-label={`${selectedChild ? childDisplayName(selectedChild.name) : '選択中の子ども'}のうんちを記録`}
+          aria-hidden={!isQuickAddOpen}
+          tabIndex={isQuickAddOpen ? 0 : -1}
+        >
+          <PoopIcon />
+          <span>うんち</span>
+        </a>
+        <button
+          className="timeline-quick-add__toggle"
+          type="button"
+          aria-label={isQuickAddOpen ? '記録追加メニューを閉じる' : '記録を追加'}
+          aria-expanded={isQuickAddOpen}
+          disabled={!selectedChild || status !== 'ready'}
+          onClick={() => setIsQuickAddOpen((current) => !current)}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+        </button>
+      </nav>
 
       {selectedEvent && <TimelineDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />}
     </main>

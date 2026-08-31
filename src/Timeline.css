@@ -1,4 +1,5 @@
 .timeline-page {
+  position: relative;
   display: grid;
   width: 100%;
   height: 100svh;
@@ -110,10 +111,125 @@
 .timeline-scroll {
   width: 100%;
   min-height: 0;
+  padding-bottom: 86px;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-color: #dfacc0 transparent;
   scrollbar-gutter: stable;
+  box-sizing: border-box;
+}
+
+.timeline-quick-add {
+  position: absolute;
+  z-index: 20;
+  right: 28px;
+  bottom: 26px;
+  width: 58px;
+  height: 58px;
+}
+
+.timeline-quick-add__toggle,
+.timeline-quick-add__item {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border-radius: 50%;
+  place-items: center;
+  box-sizing: border-box;
+}
+
+.timeline-quick-add__toggle {
+  z-index: 2;
+  border: 1px solid #d96f99;
+  background: linear-gradient(145deg, #e989ad, #d56894);
+  box-shadow: 0 12px 28px rgb(152 73 104 / 28%);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 280ms ease, box-shadow 280ms ease;
+}
+
+.timeline-quick-add__toggle svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-width: 2;
+  transition: transform 280ms ease;
+}
+
+.timeline-quick-add.is-open .timeline-quick-add__toggle {
+  box-shadow: 0 8px 20px rgb(152 73 104 / 22%);
+}
+
+.timeline-quick-add.is-open .timeline-quick-add__toggle svg {
+  transform: rotate(45deg);
+}
+
+.timeline-quick-add__toggle:focus-visible,
+.timeline-quick-add__item:focus-visible {
+  outline: 3px solid rgb(215 109 151 / 30%);
+  outline-offset: 3px;
+}
+
+.timeline-quick-add__toggle:disabled {
+  cursor: wait;
+  opacity: 0.48;
+}
+
+.timeline-quick-add__item {
+  z-index: 1;
+  border: 1px solid #ebc3d2;
+  background: #fffafd;
+  box-shadow: 0 10px 24px rgb(132 82 102 / 18%);
+  color: #8c5b6e;
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(0, 0) scale(0.38) rotate(-24deg);
+  transition:
+    transform 380ms cubic-bezier(0.2, 0.9, 0.25, 1.18),
+    opacity 220ms ease,
+    background 180ms ease;
+}
+
+.timeline-quick-add__item svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.1;
+}
+
+.timeline-quick-add__item span {
+  margin-top: -8px;
+}
+
+.timeline-quick-add__item:hover {
+  background: #fff0f6;
+}
+
+.timeline-quick-add.is-open .timeline-quick-add__item {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.timeline-quick-add.is-open .timeline-quick-add__item--milk {
+  transform: translate(-92px, -10px) scale(1) rotate(0);
+  transition-delay: 30ms;
+}
+
+.timeline-quick-add.is-open .timeline-quick-add__item--poop {
+  transform: translate(-58px, -78px) scale(1) rotate(0);
+  transition-delay: 80ms;
 }
 
 .timeline-scroll:focus-visible {
@@ -271,5 +387,26 @@
   .timeline-event-summary p {
     margin-top: 5px;
     font-size: 0.64rem;
+  }
+
+  .timeline-quick-add {
+    right: 18px;
+    bottom: 18px;
+  }
+
+  .timeline-quick-add.is-open .timeline-quick-add__item--milk {
+    transform: translate(-84px, -8px) scale(1) rotate(0);
+  }
+
+  .timeline-quick-add.is-open .timeline-quick-add__item--poop {
+    transform: translate(-54px, -72px) scale(1) rotate(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .timeline-quick-add__toggle,
+  .timeline-quick-add__toggle svg,
+  .timeline-quick-add__item {
+    transition-duration: 0.01ms;
   }
 }
