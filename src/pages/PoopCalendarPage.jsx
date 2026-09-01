@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { PoopIcon } from '../components/CareEventIcons.jsx'
+import CalendarMonthNavigation from '../components/CalendarMonthNavigation.jsx'
 import {
   childDisplayName,
   childTone,
   localDateString,
-  openNativePicker,
 } from '../careEventUtils.js'
 import { getMonthlyBowelSummary } from '../services/bowelEventApi.js'
 import '../Milk.css'
@@ -91,19 +91,11 @@ function PoopCalendarPage({ session, onNavigate }) {
 
       <section className="milk-calendar-card" aria-label={`${year}年${month}月のうんちカレンダー`}>
         <div className="milk-calendar-toolbar">
-          <span aria-hidden="true">♡</span>
-          <label className="milk-month-picker">
-            <span className="visually-hidden">表示する年月</span>
-            <input
-              type="month"
-              min="2026-01"
-              max="2050-12"
-              value={monthValue}
-              onClick={openNativePicker}
-              onChange={(event) => setMonthValue(event.target.value)}
-            />
-          </label>
-          <span aria-hidden="true">♡</span>
+          <CalendarMonthNavigation
+            value={monthValue}
+            onChange={setMonthValue}
+            pickerClassName="milk-month-picker"
+          />
         </div>
 
         {status === 'loading' && <p className="milk-calendar-status">記録を読み込んでいます…</p>}
