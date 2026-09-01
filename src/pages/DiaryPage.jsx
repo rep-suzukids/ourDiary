@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import CalendarMonthNavigation from '../components/CalendarMonthNavigation.jsx'
 import CommentSection from '../components/CommentSection.jsx'
 import ReactionBar from '../components/ReactionBar.jsx'
 import {
@@ -21,10 +22,6 @@ import {
 import '../Diary.css'
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土']
-
-function openNativePicker(event) {
-  if (typeof event.currentTarget.showPicker === 'function') event.currentTarget.showPicker()
-}
 
 function normalizeDate(value) {
   return String(value).slice(0, 10)
@@ -92,8 +89,7 @@ function DiaryPage({ session, onNavigate }) {
     onNavigate(path)
   }
 
-  const handleMonthChange = (event) => {
-    const nextMonth = event.target.value
+  const handleMonthChange = (nextMonth) => {
     setMonthValue(nextMonth)
     setSelectedDate(`${nextMonth}-01`)
     setEditingId('')
@@ -153,19 +149,11 @@ function DiaryPage({ session, onNavigate }) {
 
       <section className="diary-calendar-card" aria-label={`${year}年${month}月の日記カレンダー`}>
         <div className="diary-calendar-toolbar">
-          <span aria-hidden="true">✿</span>
-          <label className="diary-month-picker">
-            <span className="visually-hidden">表示する年月</span>
-            <input
-              type="month"
-              min="2026-01"
-              max="2050-12"
-              value={monthValue}
-              onClick={openNativePicker}
-              onChange={handleMonthChange}
-            />
-          </label>
-          <span aria-hidden="true">✿</span>
+          <CalendarMonthNavigation
+            value={monthValue}
+            onChange={handleMonthChange}
+            pickerClassName="diary-month-picker"
+          />
         </div>
 
         <div className="diary-weekdays" aria-hidden="true">
