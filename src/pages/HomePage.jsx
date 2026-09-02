@@ -1,5 +1,5 @@
 import LegalFooter from '../components/LegalFooter.jsx'
-import { PoopIcon } from '../components/CareEventIcons.jsx'
+import { PoopIcon, ThermometerIcon } from '../components/CareEventIcons.jsx'
 
 const ROLE_LABELS = {
   member: 'メンバー',
@@ -148,6 +148,17 @@ function HomePage({ session, onLogout, onNavigate }) {
             >
               <PoopIcon />
               <span>うんち</span>
+            </a>
+            <a
+              className="album-link home-nav-link home-temperature-link"
+              href="/temperature/calendar"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/temperature/calendar')
+              }}
+            >
+              <ThermometerIcon />
+              <span>体温</span>
             </a>
           </>
         )}

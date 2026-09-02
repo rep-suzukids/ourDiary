@@ -24,3 +24,12 @@ export function PoopIcon() {
     </svg>
   )
 }
+
+export function ThermometerIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M20 29.5V10a6 6 0 0 1 12 0v19.5a10 10 0 1 1-12 0Z" />
+      <path d="M26 14v19M26 33a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" />
+    </svg>
+  )
+}

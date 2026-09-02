@@ -16,6 +16,7 @@ import photoTagsHandler from './_handlers/photo-tags.js'
 import reactionsHandler from './_handlers/reactions.js'
 import schedulesHandler from './_handlers/schedules.js'
 import tagsHandler from './_handlers/tags.js'
+import temperatureEventsHandler from './_handlers/temperature-events.js'
 
 const ROUTES = new Map([
   ['album-files', albumFilesHandler],
@@ -36,6 +37,7 @@ const ROUTES = new Map([
   ['reactions', reactionsHandler],
   ['schedules', schedulesHandler],
   ['tags', tagsHandler],
+  ['temperature-events', temperatureEventsHandler],
 ])
 
 function firstValue(value) {
