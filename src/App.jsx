@@ -22,6 +22,9 @@ import SchedulePage from './pages/SchedulePage.jsx'
 import TagManagementPage from './pages/TagManagementPage.jsx'
 import TermsOfServicePage from './pages/TermsOfServicePage.jsx'
 import TimelinePage from './pages/TimelinePage.jsx'
+import TemperatureCalendarPage from './pages/TemperatureCalendarPage.jsx'
+import TemperatureFormPage from './pages/TemperatureFormPage.jsx'
+import TemperaturePage from './pages/TemperaturePage.jsx'
 import {
   clearLegacySessionStorage,
   createSession,
@@ -231,6 +234,34 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <PoopFormPage session={session} onNavigate={navigate} mode="edit" />
+  }
+
+  if (pathname === '/temperature') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <TemperaturePage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/temperature/calendar') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <TemperatureCalendarPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/temperature/new') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <TemperatureFormPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/temperature/edit') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <TemperatureFormPage session={session} onNavigate={navigate} mode="edit" />
   }
 
   if (pathname !== '/') return <NotFoundPage onNavigate={navigate} />

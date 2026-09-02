@@ -528,6 +528,14 @@
   background: linear-gradient(135deg, #c79970, #cb7a95);
 }
 
+.home-temperature-link {
+  background: linear-gradient(135deg, #e58b98, #b985bd);
+}
+
+.home-temperature-link:hover {
+  background: linear-gradient(135deg, #d77989, #a873ad);
+}
+
 .home-nav-link {
   display: flex;
   align-items: center;

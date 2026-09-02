@@ -1,0 +1,153 @@
+.temperature-page {
+  --temperature-accent: #d77d8d;
+  --temperature-accent-dark: #a85065;
+  --temperature-soft: #fff0f2;
+}
+
+.temperature-add-button,
+.temperature-primary-button {
+  background: linear-gradient(135deg, #e58b98, #c979a5);
+  box-shadow: 0 10px 24px rgb(177 86 111 / 20%);
+}
+
+.temperature-add-button:hover,
+.temperature-primary-button:hover {
+  background: linear-gradient(135deg, #d77989, #b96794);
+}
+
+.temperature-calendar-day__records {
+  grid-template-areas: 'tomo yuu';
+}
+
+.temperature-page .milk-event-icon svg,
+.temperature-page .milk-modal__icon svg,
+.temperature-page .milk-calendar-record svg {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
+.temperature-field {
+  gap: 8px;
+}
+
+.temperature-field > label {
+  color: #774e5e;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.temperature-control {
+  display: grid;
+  grid-template-columns: 48px minmax(150px, 220px) 48px;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+}
+
+.temperature-control > button {
+  display: grid;
+  min-height: 52px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #e6b9c7;
+  border-radius: 16px;
+  background: #fff7fa;
+  color: var(--temperature-accent-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.temperature-control > button:hover,
+.temperature-control > button:focus-visible {
+  border-color: var(--temperature-accent);
+  background: var(--temperature-soft);
+}
+
+.temperature-control__input {
+  position: relative;
+}
+
+.temperature-control__input input {
+  min-height: 52px;
+  padding: 8px 48px 8px 16px;
+  border-width: 2px;
+  border-color: #e6b9c7;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+.temperature-control__input input:focus {
+  border-color: var(--temperature-accent);
+  outline: 3px solid rgb(215 125 141 / 16%);
+}
+
+.temperature-control__input strong {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  color: #9c6877;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.temperature-previous-note {
+  color: #9b7583;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+.temperature-timeline li {
+  grid-template-columns: 42% 56px minmax(74px, 1fr);
+}
+
+.temperature-timeline__value {
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+
+.temperature-timeline__value.is-tomo,
+.temperature-modal__value.is-tomo {
+  color: #696db1;
+}
+
+.temperature-timeline__value.is-yuu,
+.temperature-modal__value.is-yuu {
+  color: #b45277;
+}
+
+.temperature-modal__card {
+  border-color: #e9c1cc;
+}
+
+.temperature-modal__value {
+  margin: 8px 0 20px;
+  font-size: 2.45rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.temperature-modal__value small {
+  margin-left: 4px;
+  font-size: 1rem;
+}
+
+@media (max-width: 520px) {
+  .temperature-control {
+    grid-template-columns: 44px minmax(135px, 1fr) 44px;
+    gap: 7px;
+  }
+
+  .temperature-control > button {
+    min-height: 50px;
+  }
+
+  .temperature-timeline li {
+    grid-template-columns: 35% 56px minmax(68px, 1fr);
+  }
+}
