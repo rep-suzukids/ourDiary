@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import CalendarMonthNavigation from '../components/CalendarMonthNavigation.jsx'
+import { openNativePicker } from '../careEventUtils.js'
 import {
   diaryDateFromSearch,
   formatDiaryDateLabel,
