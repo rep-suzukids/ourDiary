@@ -68,6 +68,13 @@ function ScheduleText({ text }) {
   )
 }
 
+function scheduleTimeLabel(schedule) {
+  if (schedule.startTime && schedule.endTime) return `${schedule.startTime} 〜 ${schedule.endTime}`
+  if (schedule.startTime) return `${schedule.startTime} 〜`
+  if (schedule.endTime) return `〜 ${schedule.endTime}`
+  return ''
+}
+
 function SchedulePage({ session, onNavigate }) {
   const activeFamily = session.families[0]
   const canCreate = ['parent', 'admin'].includes(activeFamily.role)
@@ -78,7 +85,7 @@ function SchedulePage({ session, onNavigate }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [editingId, setEditingId] = useState('')
-  const [editValues, setEditValues] = useState({ date: '', text: '' })
+  const [editValues, setEditValues] = useState({ date: '', startTime: '', endTime: '', text: '' })
   const [year, month] = monthValue.split('-').map(Number)
   const calendarDays = useMemo(() => buildCalendar(year, month), [month, year])
 
@@ -121,7 +128,12 @@ function SchedulePage({ session, onNavigate }) {
 
   const startEditing = (schedule) => {
     setEditingId(schedule.id)
-    setEditValues({ date: schedule.date, text: schedule.text })
+    setEditValues({
+      date: schedule.date,
+      startTime: schedule.startTime ?? '',
+      endTime: schedule.endTime ?? '',
+      text: schedule.text,
+    })
   }
 
   const saveEdit = async (event) => {
@@ -130,6 +142,8 @@ function SchedulePage({ session, onNavigate }) {
       await updateSchedule(activeFamily.id, {
         id: editingId,
         date: editValues.date,
+        startTime: editValues.startTime,
+        endTime: editValues.endTime,
         text: editValues.text,
       })
       setEditingId('')
@@ -245,6 +259,29 @@ function SchedulePage({ session, onNavigate }) {
                       required
                     />
                   </span>
+                  <fieldset className="schedule-time-fieldset schedule-time-fieldset--edit">
+                    <legend>時間 <small>任意</small></legend>
+                    <div className="schedule-time-fields">
+                      <label>
+                        <span>From（開始）</span>
+                        <input
+                          type="time"
+                          value={editValues.startTime}
+                          onClick={openNativePicker}
+                          onChange={(event) => setEditValues((current) => ({ ...current, startTime: event.target.value }))}
+                        />
+                      </label>
+                      <label>
+                        <span>To（終了）</span>
+                        <input
+                          type="time"
+                          value={editValues.endTime}
+                          onClick={openNativePicker}
+                          onChange={(event) => setEditValues((current) => ({ ...current, endTime: event.target.value }))}
+                        />
+                      </label>
+                    </div>
+                  </fieldset>
                   <textarea
                     rows="6"
                     maxLength="10000"
@@ -263,6 +300,12 @@ function SchedulePage({ session, onNavigate }) {
                     <span aria-hidden="true">!</span>
                     <strong>予定</strong>
                   </header>
+                  {scheduleTimeLabel(schedule) && (
+                    <p className="schedule-entry__time">
+                      <span aria-hidden="true">◷</span>
+                      {scheduleTimeLabel(schedule)}
+                    </p>
+                  )}
                   <ScheduleText text={schedule.text} />
                   <footer className="schedule-entry__footer">
                     <span>{schedule.authorName}</span>

@@ -19,6 +19,8 @@ function initialDate() {
 function ScheduleCreatePage({ session, onNavigate }) {
   const activeFamily = session.families[0]
   const [date, setDate] = useState(initialDate)
+  const [startTime, setStartTime] = useState('')
+  const [endTime, setEndTime] = useState('')
   const [text, setText] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -38,7 +40,7 @@ function ScheduleCreatePage({ session, onNavigate }) {
     setIsSubmitting(true)
     setError('')
     try {
-      await createSchedule(activeFamily.id, { date, text })
+      await createSchedule(activeFamily.id, { date, startTime, endTime, text })
       onNavigate(`/schedule?date=${encodeURIComponent(date)}`)
     } catch (requestError) {
       setError(requestError.message)
@@ -74,6 +76,31 @@ function ScheduleCreatePage({ session, onNavigate }) {
             />
           </span>
         </label>
+
+        <fieldset className="schedule-time-fieldset">
+          <legend>時間 <small>任意</small></legend>
+          <div className="schedule-time-fields">
+            <label>
+              <span>From（開始）</span>
+              <input
+                type="time"
+                value={startTime}
+                onClick={openNativePicker}
+                onChange={(event) => setStartTime(event.target.value)}
+              />
+            </label>
+            <label>
+              <span>To（終了）</span>
+              <input
+                type="time"
+                value={endTime}
+                onClick={openNativePicker}
+                onChange={(event) => setEndTime(event.target.value)}
+              />
+            </label>
+          </div>
+          <p>片方だけの入力や、両方とも未入力での登録もできます。</p>
+        </fieldset>
 
         <label className="diary-field">
           <span>予定の内容</span>
