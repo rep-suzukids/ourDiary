@@ -11,13 +11,24 @@ function isValidDate(value) {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
+function optionalTime(value) {
+  if (value === undefined || value === null || value === '') return null
+  if (typeof value !== 'string' || !/^\d{2}:\d{2}$/.test(value)) return undefined
+  const [hour, minute] = value.split(':').map(Number)
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return undefined
+  return value
+}
+
 function validateScheduleInput(body) {
   const scheduleDate = body?.date
   const text = typeof body?.text === 'string' ? body.text.trim() : ''
+  const startTime = optionalTime(body?.startTime)
+  const endTime = optionalTime(body?.endTime)
   if (!isValidDate(scheduleDate) || !text || text.length > 10_000) return null
+  if (startTime === undefined || endTime === undefined) return null
   const year = Number(scheduleDate.slice(0, 4))
   if (year < 2026 || year > 2050) return null
-  return { scheduleDate, text }
+  return { scheduleDate, startTime, endTime, text }
 }
 
 async function getSchedules(sql, familyId, userId, canModify, year, month) {
@@ -25,6 +36,8 @@ async function getSchedules(sql, familyId, userId, canModify, year, month) {
     SELECT
       schedule.id,
       to_char(schedule.schedule_date, 'YYYY-MM-DD') AS date,
+      CASE WHEN schedule.start_time IS NULL THEN NULL ELSE to_char(schedule.start_time, 'HH24:MI') END AS "startTime",
+      CASE WHEN schedule.end_time IS NULL THEN NULL ELSE to_char(schedule.end_time, 'HH24:MI') END AS "endTime",
       schedule.body AS text,
       schedule.author_id AS "authorId",
       COALESCE(author.display_name, author.email::text) AS "authorName",
@@ -37,7 +50,10 @@ async function getSchedules(sql, familyId, userId, canModify, year, month) {
       AND schedule.deleted_at IS NULL
       AND EXTRACT(YEAR FROM schedule.schedule_date) = ${year}
       AND EXTRACT(MONTH FROM schedule.schedule_date) = ${month}
-    ORDER BY schedule.schedule_date ASC, schedule.created_at ASC
+    ORDER BY
+      schedule.schedule_date ASC,
+      COALESCE(schedule.start_time, schedule.end_time) ASC NULLS LAST,
+      schedule.created_at ASC
   `
 }
 
@@ -87,15 +103,21 @@ export default async function handler(request, response) {
     if (request.method === 'POST') {
       const input = validateScheduleInput(request.body)
       if (!input) {
-        sendJson(response, 400, { error: '予定の日付と内容を正しく入力してください。' })
+        sendJson(response, 400, { error: '予定の日付・時刻・内容を正しく入力してください。' })
         return
       }
       const rows = await sql`
-        INSERT INTO family_schedules (family_id, schedule_date, body, author_id)
-        VALUES (${familyId}, ${input.scheduleDate}, ${input.text}, ${authorization.userId})
-        RETURNING id
+        INSERT INTO family_schedules (
+          family_id, schedule_date, start_time, end_time, body, author_id
+        ) VALUES (
+          ${familyId}, ${input.scheduleDate}, ${input.startTime}, ${input.endTime}, ${input.text}, ${authorization.userId}
+        )
+        RETURNING
+          id,
+          CASE WHEN start_time IS NULL THEN NULL ELSE to_char(start_time, 'HH24:MI') END AS "startTime",
+          CASE WHEN end_time IS NULL THEN NULL ELSE to_char(end_time, 'HH24:MI') END AS "endTime"
       `
-      sendJson(response, 201, { id: rows[0].id })
+      sendJson(response, 201, rows[0])
       return
     }
 
@@ -108,26 +130,31 @@ export default async function handler(request, response) {
     if (request.method === 'PATCH') {
       const input = validateScheduleInput(request.body)
       if (!input) {
-        sendJson(response, 400, { error: '予定の日付と内容を正しく入力してください。' })
+        sendJson(response, 400, { error: '予定の日付・時刻・内容を正しく入力してください。' })
         return
       }
       const rows = await sql`
         UPDATE family_schedules
         SET
           schedule_date = ${input.scheduleDate},
+          start_time = ${input.startTime},
+          end_time = ${input.endTime},
           body = ${input.text},
           updated_at = now()
         WHERE id = ${scheduleId}
           AND family_id = ${familyId}
           AND author_id = ${authorization.userId}
           AND deleted_at IS NULL
-        RETURNING id
+        RETURNING
+          id,
+          CASE WHEN start_time IS NULL THEN NULL ELSE to_char(start_time, 'HH24:MI') END AS "startTime",
+          CASE WHEN end_time IS NULL THEN NULL ELSE to_char(end_time, 'HH24:MI') END AS "endTime"
       `
       if (rows.length === 0) {
         sendJson(response, 403, { error: '登録した本人だけが予定を編集できます。' })
         return
       }
-      sendJson(response, 200, { id: rows[0].id })
+      sendJson(response, 200, rows[0])
       return
     }
 

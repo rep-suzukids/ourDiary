@@ -68,6 +68,13 @@ function ScheduleText({ text }) {
   )
 }
 
+function scheduleTimeLabel(schedule) {
+  if (schedule.startTime && schedule.endTime) return `${schedule.startTime} 〜 ${schedule.endTime}`
+  if (schedule.startTime) return `${schedule.startTime} 〜`
+  if (schedule.endTime) return `〜 ${schedule.endTime}`
+  return ''
+}
+
 function SchedulePage({ session, onNavigate }) {
   const activeFamily = session.families[0]
   const canCreate = ['parent', 'admin'].includes(activeFamily.role)
@@ -78,7 +85,7 @@ function SchedulePage({ session, onNavigate }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [editingId, setEditingId] = useState('')
-  const [editValues, setEditValues] = useState({ date: '', text: '' })
+  const [editValues, setEditValues] = useState({ date: '', startTime: '', endTime: '', text: '' })
   const [year, month] = monthValue.split('-').map(Number)
   const calendarDays = useMemo(() => buildCalendar(year, month), [month, year])
 
@@ -121,23 +128,46 @@ function SchedulePage({ session, onNavigate }) {
 
   const startEditing = (schedule) => {
     setEditingId(schedule.id)
-    setEditValues({ date: schedule.date, text: schedule.text })
+    setEditValues({
+      date: schedule.date,
+      startTime: schedule.startTime ?? '',
+      endTime: schedule.endTime ?? '',
+      text: schedule.text,
+    })
   }
 
   const saveEdit = async (event) => {
     event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const submittedStartTime = String(formData.get('startTime') ?? '')
+    const submittedEndTime = String(formData.get('endTime') ?? '')
     try {
-      await updateSchedule(activeFamily.id, {
+      const result = await updateSchedule(activeFamily.id, {
         id: editingId,
         date: editValues.date,
+        startTime: submittedStartTime,
+        endTime: submittedEndTime,
         text: editValues.text,
       })
+      const savedStartTime = result.startTime ?? ''
+      const savedEndTime = result.endTime ?? ''
       setEditingId('')
       if (editValues.date.slice(0, 7) !== monthValue) {
         setMonthValue(editValues.date.slice(0, 7))
         setSelectedDate(editValues.date)
       } else {
         setSelectedDate(editValues.date)
+        setSchedules((current) => current.map((schedule) => (
+          schedule.id === editingId
+            ? {
+                ...schedule,
+                date: editValues.date,
+                startTime: savedStartTime,
+                endTime: savedEndTime,
+                text: editValues.text.trim(),
+              }
+            : schedule
+        )))
         loadSchedules()
       }
     } catch (requestError) {
@@ -245,6 +275,29 @@ function SchedulePage({ session, onNavigate }) {
                       required
                     />
                   </span>
+                  <fieldset className="schedule-time-fieldset schedule-time-fieldset--edit">
+                    <legend>時間 <small>任意</small></legend>
+                    <div className="schedule-time-fields">
+                      <label>
+                        <span>From（開始）</span>
+                        <input
+                          type="time"
+                          name="startTime"
+                          value={editValues.startTime}
+                          onChange={(event) => setEditValues((current) => ({ ...current, startTime: event.target.value }))}
+                        />
+                      </label>
+                      <label>
+                        <span>To（終了）</span>
+                        <input
+                          type="time"
+                          name="endTime"
+                          value={editValues.endTime}
+                          onChange={(event) => setEditValues((current) => ({ ...current, endTime: event.target.value }))}
+                        />
+                      </label>
+                    </div>
+                  </fieldset>
                   <textarea
                     rows="6"
                     maxLength="10000"
@@ -263,6 +316,12 @@ function SchedulePage({ session, onNavigate }) {
                     <span aria-hidden="true">!</span>
                     <strong>予定</strong>
                   </header>
+                  {scheduleTimeLabel(schedule) && (
+                    <p className="schedule-entry__time">
+                      <span aria-hidden="true">◷</span>
+                      {scheduleTimeLabel(schedule)}
+                    </p>
+                  )}
                   <ScheduleText text={schedule.text} />
                   <footer className="schedule-entry__footer">
                     <span>{schedule.authorName}</span>
