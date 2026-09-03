@@ -32,6 +32,9 @@ function ScheduleCreatePage({ session, onNavigate }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const submittedStartTime = String(formData.get('startTime') ?? '')
+    const submittedEndTime = String(formData.get('endTime') ?? '')
     if (!text.trim()) {
       setError('予定の内容を入力してください。')
       return
@@ -40,7 +43,12 @@ function ScheduleCreatePage({ session, onNavigate }) {
     setIsSubmitting(true)
     setError('')
     try {
-      await createSchedule(activeFamily.id, { date, startTime, endTime, text })
+      await createSchedule(activeFamily.id, {
+        date,
+        startTime: submittedStartTime,
+        endTime: submittedEndTime,
+        text,
+      })
       onNavigate(`/schedule?date=${encodeURIComponent(date)}`)
     } catch (requestError) {
       setError(requestError.message)
@@ -84,8 +92,8 @@ function ScheduleCreatePage({ session, onNavigate }) {
               <span>From（開始）</span>
               <input
                 type="time"
+                name="startTime"
                 value={startTime}
-                onClick={openNativePicker}
                 onChange={(event) => setStartTime(event.target.value)}
               />
             </label>
@@ -93,8 +101,8 @@ function ScheduleCreatePage({ session, onNavigate }) {
               <span>To（終了）</span>
               <input
                 type="time"
+                name="endTime"
                 value={endTime}
-                onClick={openNativePicker}
                 onChange={(event) => setEndTime(event.target.value)}
               />
             </label>

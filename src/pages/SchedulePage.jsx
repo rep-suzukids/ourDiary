@@ -138,20 +138,36 @@ function SchedulePage({ session, onNavigate }) {
 
   const saveEdit = async (event) => {
     event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const submittedStartTime = String(formData.get('startTime') ?? '')
+    const submittedEndTime = String(formData.get('endTime') ?? '')
     try {
-      await updateSchedule(activeFamily.id, {
+      const result = await updateSchedule(activeFamily.id, {
         id: editingId,
         date: editValues.date,
-        startTime: editValues.startTime,
-        endTime: editValues.endTime,
+        startTime: submittedStartTime,
+        endTime: submittedEndTime,
         text: editValues.text,
       })
+      const savedStartTime = result.startTime ?? ''
+      const savedEndTime = result.endTime ?? ''
       setEditingId('')
       if (editValues.date.slice(0, 7) !== monthValue) {
         setMonthValue(editValues.date.slice(0, 7))
         setSelectedDate(editValues.date)
       } else {
         setSelectedDate(editValues.date)
+        setSchedules((current) => current.map((schedule) => (
+          schedule.id === editingId
+            ? {
+                ...schedule,
+                date: editValues.date,
+                startTime: savedStartTime,
+                endTime: savedEndTime,
+                text: editValues.text.trim(),
+              }
+            : schedule
+        )))
         loadSchedules()
       }
     } catch (requestError) {
@@ -266,8 +282,8 @@ function SchedulePage({ session, onNavigate }) {
                         <span>From（開始）</span>
                         <input
                           type="time"
+                          name="startTime"
                           value={editValues.startTime}
-                          onClick={openNativePicker}
                           onChange={(event) => setEditValues((current) => ({ ...current, startTime: event.target.value }))}
                         />
                       </label>
@@ -275,8 +291,8 @@ function SchedulePage({ session, onNavigate }) {
                         <span>To（終了）</span>
                         <input
                           type="time"
+                          name="endTime"
                           value={editValues.endTime}
-                          onClick={openNativePicker}
                           onChange={(event) => setEditValues((current) => ({ ...current, endTime: event.target.value }))}
                         />
                       </label>

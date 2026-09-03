@@ -112,9 +112,12 @@ export default async function handler(request, response) {
         ) VALUES (
           ${familyId}, ${input.scheduleDate}, ${input.startTime}, ${input.endTime}, ${input.text}, ${authorization.userId}
         )
-        RETURNING id
+        RETURNING
+          id,
+          CASE WHEN start_time IS NULL THEN NULL ELSE to_char(start_time, 'HH24:MI') END AS "startTime",
+          CASE WHEN end_time IS NULL THEN NULL ELSE to_char(end_time, 'HH24:MI') END AS "endTime"
       `
-      sendJson(response, 201, { id: rows[0].id })
+      sendJson(response, 201, rows[0])
       return
     }
 
@@ -142,13 +145,16 @@ export default async function handler(request, response) {
           AND family_id = ${familyId}
           AND author_id = ${authorization.userId}
           AND deleted_at IS NULL
-        RETURNING id
+        RETURNING
+          id,
+          CASE WHEN start_time IS NULL THEN NULL ELSE to_char(start_time, 'HH24:MI') END AS "startTime",
+          CASE WHEN end_time IS NULL THEN NULL ELSE to_char(end_time, 'HH24:MI') END AS "endTime"
       `
       if (rows.length === 0) {
         sendJson(response, 403, { error: '登録した本人だけが予定を編集できます。' })
         return
       }
-      sendJson(response, 200, { id: rows[0].id })
+      sendJson(response, 200, rows[0])
       return
     }
 
