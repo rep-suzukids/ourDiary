@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BottleIcon, PoopIcon } from '../components/CareEventIcons.jsx'
+import { BottleIcon, NoteIcon, PoopIcon } from '../components/CareEventIcons.jsx'
 import {
   addDate,
   childDisplayName,
@@ -18,6 +18,7 @@ import {
 } from '../bowelEventUtils.js'
 import { getBowelEvents } from '../services/bowelEventApi.js'
 import { getCareEvents } from '../services/careEventApi.js'
+import { deleteTimelineNote, getTimelineNotes } from '../services/timelineNoteApi.js'
 import '../Milk.css'
 import '../Poop.css'
 import '../Timeline.css'
@@ -51,7 +52,7 @@ function eventOrder(event) {
   return 2000
 }
 
-function TimelineDetailModal({ event, onClose }) {
+function TimelineDetailModal({ event, onClose, onDelete, onNavigate }) {
   useEffect(() => {
     const closeOnEscape = (keyboardEvent) => {
       if (keyboardEvent.key === 'Escape') onClose()
@@ -61,6 +62,7 @@ function TimelineDetailModal({ event, onClose }) {
   }, [onClose])
 
   const isMilk = event.recordType === 'milk'
+  const isNote = event.recordType === 'note'
 
   return (
     <div
@@ -72,12 +74,12 @@ function TimelineDetailModal({ event, onClose }) {
     >
       <section className="milk-modal__card timeline-modal__card" role="dialog" aria-modal="true" aria-labelledby="timeline-detail-title">
         <button className="milk-modal__close" type="button" aria-label="閉じる" onClick={onClose}>×</button>
-        <div className={`milk-modal__icon milk-event-icon--${childTone(event.childName)}`}>
-          {isMilk ? <BottleIcon /> : <PoopIcon />}
+        <div className={`milk-modal__icon milk-event-icon--${childTone(event.childName)}${isNote ? ' timeline-event-icon--note' : ''}`}>
+          {isMilk ? <BottleIcon /> : isNote ? <NoteIcon /> : <PoopIcon />}
         </div>
         <p className="milk-modal__eyebrow">{eventTimeLabel(event)}の記録</p>
-        <h2 id="timeline-detail-title">{childDisplayName(event.childName)}の{isMilk ? 'ミルク' : 'うんち'}</h2>
-        <dl className="milk-detail-list">
+        <h2 id="timeline-detail-title">{childDisplayName(event.childName)}の{isMilk ? 'ミルク' : isNote ? 'その他' : 'うんち'}</h2>
+        {!isNote && <dl className="milk-detail-list">
           {isMilk ? (
             <div><dt>量</dt><dd>{formatAmount(event.amountMl)} mL</dd></div>
           ) : (
@@ -96,11 +98,30 @@ function TimelineDetailModal({ event, onClose }) {
           <div><dt>日付</dt><dd>{formatDateLabel(event.date)}</dd></div>
           <div><dt>時刻</dt><dd>{eventTimeLabel(event)}</dd></div>
           <div><dt>記録した人</dt><dd>{event.authorName}</dd></div>
-        </dl>
+        </dl>}
         <div className="milk-detail-memo">
-          <span>メモ</span>
-          <p>{event.memo || 'メモはありません。'}</p>
+          <span>{isNote ? '本文' : 'メモ'}</span>
+          <p>{isNote ? event.text : event.memo || 'メモはありません。'}</p>
         </div>
+        {isNote && (
+          <dl className="milk-detail-list timeline-note-detail-meta">
+            <div><dt>日付</dt><dd>{formatDateLabel(event.date)}</dd></div>
+            <div><dt>時刻</dt><dd>{eventTimeLabel(event)}</dd></div>
+            <div><dt>記録した人</dt><dd>{event.authorName}</dd></div>
+          </dl>
+        )}
+        {isNote && event.canEdit && (
+          <div className="milk-modal__actions">
+            <button className="milk-secondary-button milk-danger-button" type="button" onClick={() => onDelete(event)}>削除</button>
+            <button
+              className="milk-primary-button timeline-note-primary-button"
+              type="button"
+              onClick={() => onNavigate(`/timeline/note/edit?id=${encodeURIComponent(event.id)}&date=${event.date}&child=${childTone(event.childName)}`)}
+            >
+              編集する
+            </button>
+          </div>
+        )}
       </section>
     </div>
   )
@@ -125,8 +146,9 @@ function TimelinePage({ session, onNavigate }) {
     Promise.all([
       getCareEvents(activeFamily.id, date),
       getBowelEvents(activeFamily.id, date),
+      getTimelineNotes(activeFamily.id, date),
     ])
-      .then(([careResult, bowelResult]) => {
+      .then(([careResult, bowelResult, noteResult]) => {
         if (!isActive) return
         setChildren(careResult.children.length > 0 ? careResult.children : bowelResult.children)
         setEvents([
@@ -134,6 +156,7 @@ function TimelinePage({ session, onNavigate }) {
             .filter((event) => event.eventType === 'feeding')
             .map((event) => ({ ...event, recordType: 'milk' })),
           ...bowelResult.events.map((event) => ({ ...event, recordType: 'poop' })),
+          ...noteResult.notes.map((event) => ({ ...event, recordType: 'note' })),
         ].sort((left, right) => (
           eventOrder(left) - eventOrder(right)
           || new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
@@ -201,6 +224,18 @@ function TimelinePage({ session, onNavigate }) {
   const navigateTop = (event) => {
     event.preventDefault()
     onNavigate('/')
+  }
+
+  const handleDeleteNote = async (note) => {
+    if (!window.confirm('このその他記録を削除しますか？')) return
+    try {
+      await deleteTimelineNote(activeFamily.id, note.id)
+      setEvents((current) => current.filter((event) => !(event.recordType === 'note' && event.id === note.id)))
+      setSelectedEvent(null)
+    } catch (requestError) {
+      setError(requestError.message)
+      setStatus('error')
+    }
   }
 
   return (
@@ -278,28 +313,39 @@ function TimelinePage({ session, onNavigate }) {
             <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン`}>
               {visibleEvents.map((event) => {
                 const isMilk = event.recordType === 'milk'
-                const poopDetails = isMilk ? [] : [
+                const isNote = event.recordType === 'note'
+                const poopDetails = isMilk || isNote ? [] : [
                   { label: '量', value: bowelOptionLabel(BOWEL_AMOUNT_OPTIONS, event.amount) },
                   { label: 'かたさ', value: bowelOptionLabel(BOWEL_CONSISTENCY_OPTIONS, event.consistency) },
                   { label: '色', value: bowelOptionLabel(BOWEL_COLOR_OPTIONS, event.color) },
                 ]
                 const summaryLabel = isMilk
                   ? `${formatAmount(event.amountMl)}mL`
-                  : poopDetails.map((detail) => `${detail.label} ${detail.value}`).join('、')
+                  : isNote
+                    ? event.text
+                    : poopDetails.map((detail) => `${detail.label} ${detail.value}`).join('、')
+                const noteCharacters = isNote ? Array.from(event.text) : []
+                const noteSummary = noteCharacters.length > 20
+                  ? `${noteCharacters.slice(0, 20).join('')}…`
+                  : event.text
                 return (
                   <li key={`${event.recordType}-${event.id}`}>
                     <time>{eventTimeLabel(event)}</time>
                     <button
                       type="button"
                       className={`milk-event-icon milk-event-icon--${childTone(event.childName)} timeline-event-icon--${event.recordType}`}
-                      aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${isMilk ? 'ミルク' : 'うんち'}、${summaryLabel}。詳細を表示`}
+                      aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${isMilk ? 'ミルク' : isNote ? 'その他' : 'うんち'}、${summaryLabel}。詳細を表示`}
                       onClick={() => setSelectedEvent(event)}
                     >
-                      {isMilk ? <BottleIcon /> : <PoopIcon />}
+                      {isMilk ? <BottleIcon /> : isNote ? <NoteIcon /> : <PoopIcon />}
                     </button>
                     <div className={`timeline-event-summary timeline-event-summary--${event.recordType} timeline-event-summary--${childTone(event.childName)}`}>
                       {isMilk ? (
                         <strong>{formatAmount(event.amountMl)}<small> mL</small></strong>
+                      ) : isNote ? (
+                        <button className="timeline-event-summary__note" type="button" title={event.text} onClick={() => setSelectedEvent(event)}>
+                          {noteSummary}
+                        </button>
                       ) : (
                         <div className="timeline-event-summary__choices" aria-label={`量、かたさ、色：${summaryLabel}`}>
                           {poopDetails.map((detail) => (
@@ -307,7 +353,7 @@ function TimelinePage({ session, onNavigate }) {
                           ))}
                         </div>
                       )}
-                      {!isMilk && event.memo && (
+                      {!isMilk && !isNote && event.memo && (
                         <p title={event.memo}>{event.memo}</p>
                       )}
                     </div>
@@ -346,6 +392,17 @@ function TimelinePage({ session, onNavigate }) {
           <PoopIcon />
           <span>うんち</span>
         </a>
+        <a
+          className="timeline-quick-add__item timeline-quick-add__item--note"
+          href={quickAddPath('timeline/note')}
+          onClick={navigateQuickAdd('timeline/note')}
+          aria-label={`${selectedChild ? childDisplayName(selectedChild.name) : '選択中の子ども'}のその他を記録`}
+          aria-hidden={!isQuickAddOpen}
+          tabIndex={isQuickAddOpen ? 0 : -1}
+        >
+          <NoteIcon />
+          <span>その他</span>
+        </a>
         <button
           className="timeline-quick-add__toggle"
           type="button"
@@ -360,7 +417,14 @@ function TimelinePage({ session, onNavigate }) {
         </button>
       </nav>
 
-      {selectedEvent && <TimelineDetailModal event={selectedEvent} onClose={() => setSelectedEvent(null)} />}
+      {selectedEvent && (
+        <TimelineDetailModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onDelete={handleDeleteNote}
+          onNavigate={onNavigate}
+        />
+      )}
     </main>
   )
 }

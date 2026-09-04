@@ -22,6 +22,7 @@ import SchedulePage from './pages/SchedulePage.jsx'
 import TagManagementPage from './pages/TagManagementPage.jsx'
 import TermsOfServicePage from './pages/TermsOfServicePage.jsx'
 import TimelinePage from './pages/TimelinePage.jsx'
+import TimelineNoteFormPage from './pages/TimelineNoteFormPage.jsx'
 import TemperatureCalendarPage from './pages/TemperatureCalendarPage.jsx'
 import TemperatureFormPage from './pages/TemperatureFormPage.jsx'
 import TemperaturePage from './pages/TemperaturePage.jsx'
@@ -178,6 +179,20 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <TimelinePage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/timeline/note/new') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <TimelineNoteFormPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/timeline/note/edit') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return <TimelineNoteFormPage session={session} onNavigate={navigate} mode="edit" />
   }
 
   if (pathname === '/milk') {

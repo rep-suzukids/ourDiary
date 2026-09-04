@@ -33,3 +33,12 @@ export function ThermometerIcon() {
     </svg>
   )
 }
+
+export function NoteIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M10 8h28v32H10V8Z" />
+      <path d="M17 17h14M17 24h14M17 31h9" />
+    </svg>
+  )
+}

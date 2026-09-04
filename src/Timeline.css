@@ -223,13 +223,18 @@
 }
 
 .timeline-quick-add.is-open .timeline-quick-add__item--milk {
-  transform: translate(-92px, -10px) scale(1) rotate(0);
+  transform: translate(-98px, -2px) scale(1) rotate(0);
   transition-delay: 30ms;
 }
 
 .timeline-quick-add.is-open .timeline-quick-add__item--poop {
-  transform: translate(-58px, -78px) scale(1) rotate(0);
+  transform: translate(-78px, -76px) scale(1) rotate(0);
   transition-delay: 80ms;
+}
+
+.timeline-quick-add.is-open .timeline-quick-add__item--note {
+  transform: translate(-8px, -102px) scale(1) rotate(0);
+  transition-delay: 130ms;
 }
 
 .timeline-scroll:focus-visible {
@@ -331,12 +336,63 @@
 
 .timeline-event-icon--milk svg,
 .timeline-event-icon--poop svg,
+.timeline-event-icon--note svg,
 .timeline-modal__card .milk-modal__icon svg {
   fill: none;
   stroke: currentcolor;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.2;
+}
+
+.timeline-event-icon--note {
+  box-shadow: 0 0 0 4px rgb(121 164 139 / 13%), 0 7px 18px rgb(88 111 97 / 20%);
+}
+
+.timeline-event-summary__note {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  overflow: hidden;
+  border: 1px solid #d7e6dc;
+  border-radius: 12px;
+  background: #f3faf5;
+  color: #5f7768;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-event-summary__note:hover {
+  background: #eaf6ed;
+}
+
+.timeline-note-detail-meta {
+  margin-top: 16px;
+}
+
+.timeline-note-primary-button {
+  background: linear-gradient(135deg, #8eb29a, #719780);
+  box-shadow: 0 8px 18px rgb(79 119 93 / 18%);
+}
+
+.timeline-note-form-page .milk-page-header small {
+  display: block;
+  margin-top: 3px;
+  color: #9b7886;
+  font-size: 0.74rem;
+}
+
+.timeline-note-form__time-preview {
+  display: block;
+  margin-top: 10px;
+  color: #a28590;
+  font-weight: 500;
 }
 
 .timeline-event-icon--poop {
@@ -395,11 +451,15 @@
   }
 
   .timeline-quick-add.is-open .timeline-quick-add__item--milk {
-    transform: translate(-84px, -8px) scale(1) rotate(0);
+    transform: translate(-90px, -2px) scale(1) rotate(0);
   }
 
   .timeline-quick-add.is-open .timeline-quick-add__item--poop {
-    transform: translate(-54px, -72px) scale(1) rotate(0);
+    transform: translate(-72px, -70px) scale(1) rotate(0);
+  }
+
+  .timeline-quick-add.is-open .timeline-quick-add__item--note {
+    transform: translate(-6px, -94px) scale(1) rotate(0);
   }
 }
 

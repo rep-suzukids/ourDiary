@@ -26,8 +26,9 @@
 20. 写真の公開設定を追加する `019_photo_visibility.sql` を実行します。
 21. 子どもの体温記録を追加する `020_temperature_readings.sql` を実行します。
 22. 予定の開始・終了時刻を追加する `021_schedule_times.sql` を実行します。
-23. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-24. 再デプロイし、登録した管理者Googleアカウントでログインします。
+23. タイムラインのその他記録を追加する `022_timeline_notes.sql` を実行します。
+24. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+25. 再デプロイし、登録した管理者Googleアカウントでログインします。
 
 ## ログインセッション
 
