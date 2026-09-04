@@ -37,6 +37,24 @@
   margin-top: 4px;
 }
 
+.poop-form-note {
+  margin: -4px 0 0;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: #fff3ee;
+  color: #8e6870;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.poop-choice-help {
+  margin: -2px 0 10px;
+  color: #a1848b;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
 .poop-choice-options,
 .poop-color-options {
   display: grid;
@@ -46,6 +64,10 @@
 
 .poop-color-options {
   grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.poop-choice-options--bowel-amount {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .poop-choice-options label,

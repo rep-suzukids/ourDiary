@@ -5,6 +5,12 @@ export const BOWEL_AMOUNT_OPTIONS = [
   { value: 'large', label: '多め' },
 ]
 
+export const URINE_AMOUNT_OPTIONS = [
+  { value: 'small', label: '少なめ' },
+  { value: 'normal', label: 'ふつう' },
+  { value: 'large', label: '多め' },
+]
+
 export const BOWEL_CONSISTENCY_OPTIONS = [
   { value: 'diarrhea', label: '下痢' },
   { value: 'soft', label: 'やわらかめ' },
