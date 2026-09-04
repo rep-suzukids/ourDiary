@@ -12,6 +12,7 @@ import {
   BOWEL_AMOUNT_OPTIONS,
   BOWEL_COLOR_OPTIONS,
   BOWEL_CONSISTENCY_OPTIONS,
+  URINE_AMOUNT_OPTIONS,
 } from '../bowelEventUtils.js'
 import { createBowelEvent, getBowelEvents, updateBowelEvent } from '../services/bowelEventApi.js'
 import '../Milk.css'
@@ -43,6 +44,7 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
   const [amount, setAmount] = useState('')
   const [consistency, setConsistency] = useState('')
   const [color, setColor] = useState('')
+  const [urineAmount, setUrineAmount] = useState('')
   const [date, setDate] = useState(initialDate)
   const [timeType, setTimeType] = useState('exact')
   const [time, setTime] = useState(localTimeString)
@@ -68,9 +70,10 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
           if (!target) throw new Error('編集する記録が見つかりませんでした。')
           initializedEdit.current = true
           setChildId(target.childId)
-          setAmount(target.amount)
-          setConsistency(target.consistency)
-          setColor(target.color)
+          setAmount(target.amount ?? '')
+          setConsistency(target.consistency ?? '')
+          setColor(target.color ?? '')
+          setUrineAmount(target.urineAmount ?? '')
           setDate(target.date)
           setTimeType(target.timeType)
           setTime(target.time ?? localTimeString())
@@ -99,8 +102,12 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
       setError('対象の子どもを選択してください。')
       return
     }
-    if (!amount || !consistency || !color) {
-      setError('量・かたさ・色をすべて選択してください。')
+    if (!urineAmount && !amount) {
+      setError('おしっこ・うんちのどちらか一方以上を入力してください。')
+      return
+    }
+    if (amount && (!consistency || !color)) {
+      setError('うんちを記録する場合は、量・かたさ・色をすべて選択してください。')
       return
     }
     if (timeType === 'period' && !timePeriod) {
@@ -115,6 +122,7 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
       amount,
       consistency,
       color,
+      urineAmount,
       date,
       timeType,
       time: timeType === 'exact' ? time : null,
@@ -142,10 +150,10 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
   return (
     <main className="milk-page milk-form-page poop-page poop-form-page">
       <header className="milk-page-header milk-page-header--compact">
-        <a href={`/poop?date=${date}`} onClick={navigateLink(`/poop?date=${date}`)} aria-label="うんちの記録へ戻る">←</a>
+        <a href={`/poop?date=${date}`} onClick={navigateLink(`/poop?date=${date}`)} aria-label="おむつの記録へ戻る">←</a>
         <div>
           <p>Our Diary</p>
-          <h1>{mode === 'edit' ? 'うんち記録を編集' : 'うんちを記録'}</h1>
+          <h1>{mode === 'edit' ? 'おむつ記録を編集' : 'おむつを記録'}</h1>
         </div>
       </header>
 
@@ -164,8 +172,42 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
         </fieldset>
 
         <fieldset className="milk-fieldset poop-choice-fieldset">
-          <legend>量</legend>
+          <legend>おしっこの量</legend>
+          <p className="poop-choice-help">おしっこがなかった場合は「なし」を選んでください。</p>
           <div className="poop-choice-options">
+            <label className={urineAmount === '' ? 'is-selected' : ''}>
+              <input type="radio" name="urineAmount" value="" checked={urineAmount === ''} onChange={() => setUrineAmount('')} />
+              なし
+            </label>
+            {URINE_AMOUNT_OPTIONS.map((option) => (
+              <label className={urineAmount === option.value ? 'is-selected' : ''} key={option.value}>
+                <input type="radio" name="urineAmount" value={option.value} checked={urineAmount === option.value} onChange={() => setUrineAmount(option.value)} />
+                {option.label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+
+        <p className="poop-form-note">おしっこ・うんちのどちらか一方以上を記録してください。両方あった場合は、続けて両方を選べます。</p>
+
+        <fieldset className="milk-fieldset poop-choice-fieldset">
+          <legend>うんちの量</legend>
+          <p className="poop-choice-help">うんちがなかった場合は「なし」を選んでください。</p>
+          <div className="poop-choice-options poop-choice-options--bowel-amount">
+            <label className={amount === '' ? 'is-selected' : ''}>
+              <input
+                type="radio"
+                name="amount"
+                value=""
+                checked={amount === ''}
+                onChange={() => {
+                  setAmount('')
+                  setConsistency('')
+                  setColor('')
+                }}
+              />
+              なし
+            </label>
             {BOWEL_AMOUNT_OPTIONS.map((option) => (
               <label className={amount === option.value ? 'is-selected' : ''} key={option.value}>
                 <input type="radio" name="amount" value={option.value} checked={amount === option.value} onChange={() => setAmount(option.value)} />
@@ -175,7 +217,7 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
           </div>
         </fieldset>
 
-        <fieldset className="milk-fieldset poop-choice-fieldset">
+        {amount && <fieldset className="milk-fieldset poop-choice-fieldset">
           <legend>かたさ</legend>
           <div className="poop-choice-options">
             {BOWEL_CONSISTENCY_OPTIONS.map((option) => (
@@ -185,9 +227,9 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
               </label>
             ))}
           </div>
-        </fieldset>
+        </fieldset>}
 
-        <fieldset className="milk-fieldset poop-choice-fieldset">
+        {amount && <fieldset className="milk-fieldset poop-choice-fieldset">
           <legend>色</legend>
           <div className="poop-color-options">
             {BOWEL_COLOR_OPTIONS.map((option) => (
@@ -198,7 +240,7 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
               </label>
             ))}
           </div>
-        </fieldset>
+        </fieldset>}
 
         <label className="milk-field">
           <span>日付</span>
@@ -242,7 +284,7 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
 
         <label className="milk-field">
           <span>フリーメモ</span>
-          <textarea rows="5" maxLength="5000" value={memo} placeholder="色や消化の様子など、気になったことを自由に残せます。" onChange={(event) => setMemo(event.target.value)} />
+          <textarea rows="5" maxLength="5000" value={memo} placeholder="回数や様子など、気になったことを自由に残せます。" onChange={(event) => setMemo(event.target.value)} />
         </label>
 
         {error && <div className="milk-error">{error}</div>}

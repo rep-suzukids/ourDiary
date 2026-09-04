@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { PoopIcon } from '../components/CareEventIcons.jsx'
+import { DiaperIcon } from '../components/CareEventIcons.jsx'
 import {
   addDate,
   childDisplayName,
@@ -13,6 +13,7 @@ import {
   BOWEL_AMOUNT_OPTIONS,
   BOWEL_COLOR_OPTIONS,
   BOWEL_CONSISTENCY_OPTIONS,
+  URINE_AMOUNT_OPTIONS,
   bowelOptionLabel,
 } from '../bowelEventUtils.js'
 import { deleteBowelEvent, getBowelEvents } from '../services/bowelEventApi.js'
@@ -45,19 +46,22 @@ function BowelEventModal({ event, onClose, onDelete, onNavigate }) {
     >
       <section className="milk-modal__card poop-modal__card" role="dialog" aria-modal="true" aria-labelledby="poop-detail-title">
         <button className="milk-modal__close" type="button" aria-label="閉じる" onClick={onClose}>×</button>
-        <div className={`milk-modal__icon milk-event-icon--${childTone(event.childName)}`}><PoopIcon /></div>
+        <div className={`milk-modal__icon milk-event-icon--${childTone(event.childName)}`}><DiaperIcon /></div>
         <p className="milk-modal__eyebrow">{eventTimeLabel(event)}の記録</p>
-        <h2 id="poop-detail-title">{childDisplayName(event.childName)}のうんち</h2>
+        <h2 id="poop-detail-title">{childDisplayName(event.childName)}のおむつ</h2>
         <dl className="milk-detail-list">
-          <div><dt>量</dt><dd>{bowelOptionLabel(BOWEL_AMOUNT_OPTIONS, event.amount)}</dd></div>
-          <div><dt>かたさ</dt><dd>{bowelOptionLabel(BOWEL_CONSISTENCY_OPTIONS, event.consistency)}</dd></div>
-          <div>
-            <dt>色</dt>
-            <dd className="poop-detail-color">
-              <span className={`poop-color-dot poop-color-dot--${event.color}`} aria-hidden="true" />
-              {bowelOptionLabel(BOWEL_COLOR_OPTIONS, event.color)}
-            </dd>
-          </div>
+          {event.urineAmount && <div><dt>おしっこの量</dt><dd>{bowelOptionLabel(URINE_AMOUNT_OPTIONS, event.urineAmount)}</dd></div>}
+          {event.amount && <>
+            <div><dt>うんちの量</dt><dd>{bowelOptionLabel(BOWEL_AMOUNT_OPTIONS, event.amount)}</dd></div>
+            <div><dt>かたさ</dt><dd>{bowelOptionLabel(BOWEL_CONSISTENCY_OPTIONS, event.consistency)}</dd></div>
+            <div>
+              <dt>色</dt>
+              <dd className="poop-detail-color">
+                <span className={`poop-color-dot poop-color-dot--${event.color}`} aria-hidden="true" />
+                {bowelOptionLabel(BOWEL_COLOR_OPTIONS, event.color)}
+              </dd>
+            </div>
+          </>}
           <div><dt>日付</dt><dd>{formatDateLabel(event.date)}</dd></div>
           <div><dt>時刻</dt><dd>{eventTimeLabel(event)}</dd></div>
           <div><dt>記録した人</dt><dd>{event.authorName}</dd></div>
@@ -121,7 +125,7 @@ function PoopPage({ session, onNavigate }) {
   }
 
   const removeEvent = async (event) => {
-    if (!window.confirm('このうんち記録を削除しますか？')) return
+    if (!window.confirm('このおむつ記録を削除しますか？')) return
     try {
       await deleteBowelEvent(activeFamily.id, event.id)
       setSelectedEvent(null)
@@ -148,7 +152,7 @@ function PoopPage({ session, onNavigate }) {
         </a>
         <div>
           <p>{activeFamily.name}</p>
-          <h1>うんちの記録</h1>
+          <h1>おむつの記録</h1>
         </div>
         <a className="milk-add-button poop-add-button" href={`/poop/new?date=${date}`} onClick={navigateLink(`/poop/new?date=${date}`)}>
           ＋ 記録
@@ -192,22 +196,22 @@ function PoopPage({ session, onNavigate }) {
         {status === 'ready' && visibleEvents.length === 0 && (
           <div className="milk-empty">
             <span aria-hidden="true">♡</span>
-            <p>この日のうんち記録はまだありません。</p>
+            <p>この日のおむつ記録はまだありません。</p>
           </div>
         )}
 
         {status === 'ready' && visibleEvents.length > 0 && (
-          <ol className="milk-timeline" aria-label={`${formatDateLabel(date)}のうんちタイムライン`}>
+          <ol className="milk-timeline" aria-label={`${formatDateLabel(date)}のおむつタイムライン`}>
             {visibleEvents.map((event) => (
               <li key={event.id}>
                 <time>{eventTimeLabel(event)}</time>
                 <button
                   type="button"
                   className={`milk-event-icon milk-event-icon--${childTone(event.childName)}`}
-                  aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}のうんち。詳細を表示`}
+                  aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}のおむつ。詳細を表示`}
                   onClick={() => setSelectedEvent(event)}
                 >
-                  <PoopIcon />
+                  <DiaperIcon />
                 </button>
               </li>
             ))}

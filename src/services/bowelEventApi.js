@@ -1,10 +1,10 @@
 async function readResponse(response) {
   const contentType = response.headers.get('Content-Type') ?? ''
   if (!contentType.includes('application/json')) {
-    throw new Error('うんち記録APIに接続できませんでした。開発サーバーを再起動してください。')
+    throw new Error('おむつ記録APIに接続できませんでした。開発サーバーを再起動してください。')
   }
   const body = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(body.error ?? 'うんち記録の処理に失敗しました。')
+  if (!response.ok) throw new Error(body.error ?? 'おむつ記録の処理に失敗しました。')
   return body
 }
 

@@ -1,5 +1,5 @@
 import LegalFooter from '../components/LegalFooter.jsx'
-import { PoopIcon, ThermometerIcon } from '../components/CareEventIcons.jsx'
+import { DiaperIcon, ThermometerIcon } from '../components/CareEventIcons.jsx'
 
 const ROLE_LABELS = {
   member: 'メンバー',
@@ -146,8 +146,8 @@ function HomePage({ session, onLogout, onNavigate }) {
                 onNavigate('/poop/calendar')
               }}
             >
-              <PoopIcon />
-              <span>うんち</span>
+              <DiaperIcon />
+              <span>おむつ</span>
             </a>
             <a
               className="album-link home-nav-link home-temperature-link"

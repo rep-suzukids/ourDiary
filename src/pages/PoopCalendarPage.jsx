@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { PoopIcon } from '../components/CareEventIcons.jsx'
+import { DiaperIcon } from '../components/CareEventIcons.jsx'
 import CalendarMonthNavigation from '../components/CalendarMonthNavigation.jsx'
 import {
   childDisplayName,
@@ -78,7 +78,7 @@ function PoopCalendarPage({ session, onNavigate }) {
         <a href="/" onClick={navigateLink('/')} aria-label="TOPへ戻る">←</a>
         <div>
           <p>{activeFamily.name}</p>
-          <h1>うんちカレンダー</h1>
+          <h1>おむつカレンダー</h1>
         </div>
         <a
           className="milk-add-button poop-add-button"
@@ -89,7 +89,7 @@ function PoopCalendarPage({ session, onNavigate }) {
         </a>
       </header>
 
-      <section className="milk-calendar-card" aria-label={`${year}年${month}月のうんちカレンダー`}>
+      <section className="milk-calendar-card" aria-label={`${year}年${month}月のおむつカレンダー`}>
         <div className="milk-calendar-toolbar">
           <CalendarMonthNavigation
             value={monthValue}
@@ -114,7 +114,7 @@ function PoopCalendarPage({ session, onNavigate }) {
                 type="button"
                 key={key}
                 className={`milk-calendar-day${key === today ? ' is-today' : ''}`}
-                aria-label={`${month}月${day}日のうんち記録を見る`}
+                aria-label={`${month}月${day}日のおむつ記録を見る`}
                 onClick={() => onNavigate(`/poop?date=${key}`)}
               >
                 <span className="milk-calendar-day__number">{day}</span>
@@ -125,7 +125,7 @@ function PoopCalendarPage({ session, onNavigate }) {
                       .reduce((total, summary) => total + summary.count, 0)
                     return count > 0 ? (
                       <span className={`milk-calendar-record milk-calendar-record--${childTone(child.name)}`} key={child.id}>
-                        <PoopIcon />
+                        <DiaperIcon />
                         <small>{count}</small>
                         <span className="visually-hidden">{childDisplayName(child.name)} {count}件</span>
                       </span>

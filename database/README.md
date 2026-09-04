@@ -27,8 +27,9 @@
 21. 子どもの体温記録を追加する `020_temperature_readings.sql` を実行します。
 22. 予定の開始・終了時刻を追加する `021_schedule_times.sql` を実行します。
 23. タイムラインのその他記録を追加する `022_timeline_notes.sql` を実行します。
-24. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-25. 再デプロイし、登録した管理者Googleアカウントでログインします。
+24. うんち記録をおしっこにも対応したおむつ記録へ拡張する `023_diaper_records.sql` を実行します。
+25. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+26. 再デプロイし、登録した管理者Googleアカウントでログインします。
 
 ## ログインセッション
 

@@ -4,6 +4,7 @@ import { getDatabase } from '../_lib/db.js'
 const AMOUNTS = new Set(['tiny', 'small', 'normal', 'large'])
 const CONSISTENCIES = new Set(['diarrhea', 'soft', 'normal', 'hard'])
 const COLORS = new Set(['white', 'yellow', 'orange', 'brown', 'green', 'red', 'black'])
+const URINE_AMOUNTS = new Set(['small', 'normal', 'large'])
 const TIME_TYPES = new Set(['exact', 'period', 'unknown'])
 const TIME_PERIODS = new Set(['late_night', 'early_morning', 'morning', 'noon', 'evening', 'night'])
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -43,6 +44,7 @@ function validateInput(body) {
   const amount = typeof body?.amount === 'string' ? body.amount : ''
   const consistency = typeof body?.consistency === 'string' ? body.consistency : ''
   const color = typeof body?.color === 'string' ? body.color : ''
+  const urineAmount = typeof body?.urineAmount === 'string' ? body.urineAmount : ''
   const date = body?.date
   const timeType = typeof body?.timeType === 'string' ? body.timeType : ''
   const time = typeof body?.time === 'string' ? body.time : ''
@@ -50,16 +52,21 @@ function validateInput(body) {
   const memo = typeof body?.memo === 'string' ? body.memo.trim() : ''
 
   if (!UUID_PATTERN.test(childId) || !isValidDate(date)) return null
-  if (!AMOUNTS.has(amount) || !CONSISTENCIES.has(consistency) || !COLORS.has(color)) return null
+  const hasBowel = amount !== '' || consistency !== '' || color !== ''
+  const hasUrine = urineAmount !== ''
+  if (!hasBowel && !hasUrine) return null
+  if (hasBowel && (!AMOUNTS.has(amount) || !CONSISTENCIES.has(consistency) || !COLORS.has(color))) return null
+  if (hasUrine && !URINE_AMOUNTS.has(urineAmount)) return null
   if (!TIME_TYPES.has(timeType) || memo.length > 5000) return null
   if (timeType === 'exact' && !isValidTime(time)) return null
   if (timeType === 'period' && !TIME_PERIODS.has(timePeriod)) return null
 
   return {
     childId,
-    amount,
-    consistency,
-    color,
+    amount: hasBowel ? amount : null,
+    consistency: hasBowel ? consistency : null,
+    color: hasBowel ? color : null,
+    urineAmount: hasUrine ? urineAmount : null,
     date,
     timeType,
     time: timeType === 'exact' ? time : null,
@@ -92,6 +99,7 @@ async function getEvents(sql, familyId, userId, date) {
       bm.amount_code AS amount,
       bm.consistency_code AS consistency,
       bm.color_code AS color,
+      bm.urine_amount_code AS "urineAmount",
       bm.memo,
       bm.author_id AS "authorId",
       COALESCE(u.display_name, u.email::text) AS "authorName",
@@ -207,10 +215,10 @@ export default async function handler(request, response) {
       const rows = await sql`
         INSERT INTO bowel_movements (
           family_id, child_id, event_date, time_type, event_time, time_period,
-          amount_code, consistency_code, color_code, memo, author_id
+          amount_code, consistency_code, color_code, urine_amount_code, memo, author_id
         ) VALUES (
           ${familyId}, ${input.childId}, ${input.date}, ${input.timeType}, ${input.time}, ${input.timePeriod},
-          ${input.amount}, ${input.consistency}, ${input.color}, ${input.memo}, ${authorization.userId}
+          ${input.amount}, ${input.consistency}, ${input.color}, ${input.urineAmount}, ${input.memo}, ${authorization.userId}
         )
         RETURNING id
       `
@@ -246,6 +254,7 @@ export default async function handler(request, response) {
           amount_code = ${input.amount},
           consistency_code = ${input.consistency},
           color_code = ${input.color},
+          urine_amount_code = ${input.urineAmount},
           memo = ${input.memo},
           updated_at = now()
         WHERE id = ${eventId}
@@ -282,6 +291,6 @@ export default async function handler(request, response) {
       return
     }
     console.error('Bowel event operation failed', error)
-    sendJson(response, 500, { error: 'うんち記録の処理に失敗しました。' })
+    sendJson(response, 500, { error: 'おむつ記録の処理に失敗しました。' })
   }
 }
