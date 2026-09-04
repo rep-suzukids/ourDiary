@@ -52,7 +52,9 @@ function validateInput(body) {
   const memo = typeof body?.memo === 'string' ? body.memo.trim() : ''
 
   if (!UUID_PATTERN.test(childId) || !isValidDate(date)) return null
-  const hasBowel = amount !== '' || consistency !== '' || color !== ''
+  // うんちの有無は量で確定する。量を「なし」に戻した場合、画面に残った
+  // かたさ・色の値は無視して、おしっこのみの記録を許可する。
+  const hasBowel = amount !== ''
   const hasUrine = urineAmount !== ''
   if (!hasBowel && !hasUrine) return null
   if (hasBowel && (!AMOUNTS.has(amount) || !CONSISTENCIES.has(consistency) || !COLORS.has(color))) return null

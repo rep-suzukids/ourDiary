@@ -120,8 +120,8 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
     const values = {
       childId,
       amount,
-      consistency,
-      color,
+      consistency: amount ? consistency : '',
+      color: amount ? color : '',
       urineAmount,
       date,
       timeType,
