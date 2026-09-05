@@ -110,13 +110,89 @@
 
 .timeline-scroll {
   width: 100%;
+  height: 100%;
   min-height: 0;
   padding-bottom: 86px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-color: #dfacc0 transparent;
-  scrollbar-gutter: stable;
+  scrollbar-width: none;
   box-sizing: border-box;
+}
+
+.timeline-scroll-shell {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.timeline-scroll-shell::before,
+.timeline-scroll-shell::after {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  left: 0;
+  height: 64px;
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+
+.timeline-scroll-shell::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgb(255 250 252 / 98%), rgb(255 250 252 / 0%));
+}
+
+.timeline-scroll-shell::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgb(255 250 252 / 98%), rgb(255 250 252 / 0%));
+}
+
+.timeline-scroll-shell.has-content-above::before,
+.timeline-scroll-shell.has-content-below::after {
+  opacity: 1;
+}
+
+.timeline-scroll-hint {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  display: inline-flex;
+  padding: 6px 12px;
+  border: 1px solid #ecc8d5;
+  border-radius: 999px;
+  align-items: center;
+  background: rgb(255 252 253 / 94%);
+  box-shadow: 0 5px 16px rgb(127 74 95 / 13%);
+  color: #9b6077;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  gap: 5px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.timeline-scroll-hint--up {
+  top: 7px;
+}
+
+.timeline-scroll-hint--down {
+  bottom: 12px;
+}
+
+.timeline-scroll-hint span {
+  font-size: 0.82rem;
+}
+
+.timeline-scroll-hint:hover {
+  background: #fff2f7;
+}
+
+.timeline-scroll-hint:focus-visible {
+  outline: 3px solid rgb(215 109 151 / 25%);
+  outline-offset: 2px;
 }
 
 .timeline-quick-add {
@@ -244,14 +320,7 @@
 }
 
 .timeline-scroll::-webkit-scrollbar {
-  width: 8px;
-}
-
-.timeline-scroll::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background: #dfacc0;
-  background-clip: padding-box;
+  display: none;
 }
 
 .timeline-date-nav {

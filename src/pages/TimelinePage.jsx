@@ -165,7 +165,9 @@ function TimelinePage({ session, onNavigate }) {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
+  const [scrollEdges, setScrollEdges] = useState({ above: false, below: false })
   const quickAddRef = useRef(null)
+  const scrollRef = useRef(null)
 
   useEffect(() => {
     let isActive = true
@@ -220,6 +222,41 @@ function TimelinePage({ session, onNavigate }) {
   const visibleEvents = useMemo(() => events.filter((event) => (
     selectedChild && event.childId === selectedChild.id
   )), [events, selectedChild])
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0
+  }, [date, selectedTone])
+
+  useEffect(() => {
+    const scrollElement = scrollRef.current
+    if (!scrollElement || status !== 'ready') {
+      setScrollEdges({ above: false, below: false })
+      return undefined
+    }
+
+    const updateScrollEdges = () => {
+      const above = scrollElement.scrollTop > 2
+      const below = scrollElement.scrollTop + scrollElement.clientHeight < scrollElement.scrollHeight - 2
+      setScrollEdges((current) => (
+        current.above === above && current.below === below ? current : { above, below }
+      ))
+    }
+
+    const animationFrame = window.requestAnimationFrame(updateScrollEdges)
+    const resizeObserver = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(updateScrollEdges)
+      : null
+    resizeObserver?.observe(scrollElement)
+    scrollElement.addEventListener('scroll', updateScrollEdges, { passive: true })
+    window.addEventListener('resize', updateScrollEdges)
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      resizeObserver?.disconnect()
+      scrollElement.removeEventListener('scroll', updateScrollEdges)
+      window.removeEventListener('resize', updateScrollEdges)
+    }
+  }, [status, visibleEvents.length])
 
   const updateLocation = (nextDate, nextTone) => {
     window.history.replaceState({}, '', `/timeline?date=${nextDate}&child=${nextTone}`)
@@ -278,6 +315,15 @@ function TimelinePage({ session, onNavigate }) {
       setError(requestError.message)
       setStatus('error')
     }
+  }
+
+  const scrollTimeline = (direction) => {
+    const scrollElement = scrollRef.current
+    if (!scrollElement) return
+    scrollElement.scrollBy({
+      top: direction * Math.max(160, scrollElement.clientHeight * 0.65),
+      behavior: 'smooth',
+    })
   }
 
   return (
@@ -351,8 +397,9 @@ function TimelinePage({ session, onNavigate }) {
           </div>
         )}
         {status === 'ready' && visibleEvents.length > 0 && (
-          <div className="timeline-scroll" tabIndex="0" aria-label={`${formatDateLabel(date)}の記録一覧`}>
-            <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン`}>
+          <div className={`timeline-scroll-shell${scrollEdges.above ? ' has-content-above' : ''}${scrollEdges.below ? ' has-content-below' : ''}`}>
+            <div ref={scrollRef} className="timeline-scroll" tabIndex="0" aria-label={`${formatDateLabel(date)}の記録一覧`}>
+              <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン`}>
               {visibleEvents.map((event) => {
                 const isMilk = event.recordType === 'milk'
                 const isNote = event.recordType === 'note'
@@ -405,7 +452,18 @@ function TimelinePage({ session, onNavigate }) {
                   </li>
                 )
               })}
-            </ol>
+              </ol>
+            </div>
+            {scrollEdges.above && (
+              <button className="timeline-scroll-hint timeline-scroll-hint--up" type="button" onClick={() => scrollTimeline(-1)}>
+                <span aria-hidden="true">↑</span> 上にもあります
+              </button>
+            )}
+            {scrollEdges.below && (
+              <button className="timeline-scroll-hint timeline-scroll-hint--down" type="button" onClick={() => scrollTimeline(1)}>
+                <span aria-hidden="true">↓</span> 続きがあります
+              </button>
+            )}
           </div>
         )}
       </section>
