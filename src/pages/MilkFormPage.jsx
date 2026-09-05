@@ -32,9 +32,23 @@ function requestedChildTone() {
   return requested === 'tomo' || requested === 'yuu' ? requested : ''
 }
 
+function requestedTimelineReturnPath() {
+  const requested = queryValue('returnTo')
+  if (!requested) return ''
+  try {
+    const url = new URL(requested, window.location.origin)
+    return url.origin === window.location.origin && url.pathname === '/timeline'
+      ? `${url.pathname}${url.search}`
+      : ''
+  } catch {
+    return ''
+  }
+}
+
 function MilkFormPage({ session, onNavigate, mode = 'create' }) {
   const activeFamily = session.families[0]
   const eventId = mode === 'edit' ? queryValue('id') : ''
+  const timelineReturnPath = requestedTimelineReturnPath()
   const initializedEdit = useRef(false)
   const initializedRequestedChild = useRef(false)
   const [children, setChildren] = useState([])
@@ -130,7 +144,9 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
       } else {
         await createCareEvent(activeFamily.id, values)
       }
-      onNavigate(`/milk?date=${date}&tab=${eventType}`, { replace: mode === 'create' })
+      onNavigate(timelineReturnPath || `/milk?date=${date}&tab=${eventType}`, {
+        replace: mode === 'create' || Boolean(timelineReturnPath),
+      })
     } catch (requestError) {
       setError(requestError.message)
       setStatus('ready')
@@ -142,10 +158,12 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
     onNavigate(path)
   }
 
+  const backPath = timelineReturnPath || `/milk?date=${date}&tab=${eventType}`
+
   return (
     <main className="milk-page milk-form-page">
       <header className="milk-page-header milk-page-header--compact">
-        <a href={`/milk?date=${date}&tab=${eventType}`} onClick={navigateLink(`/milk?date=${date}&tab=${eventType}`)} aria-label="ミルクの記録へ戻る">←</a>
+        <a href={backPath} onClick={navigateLink(backPath)} aria-label={timelineReturnPath ? 'タイムラインへ戻る' : 'ミルクの記録へ戻る'}>←</a>
         <div>
           <p>Our Diary</p>
           <h1>{mode === 'edit' ? '記録を編集' : 'ミルクを記録'}</h1>

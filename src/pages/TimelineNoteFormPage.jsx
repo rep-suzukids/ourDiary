@@ -29,14 +29,30 @@ function initialDate() {
 }
 
 function requestedChildTone() {
-  return queryValue('child') === 'yuu' ? 'yuu' : 'tomo'
+  const requested = queryValue('child')
+  return requested === 'tomo' || requested === 'yuu' ? requested : ''
+}
+
+function requestedTimelineReturnPath() {
+  const requested = queryValue('returnTo')
+  if (!requested) return ''
+  try {
+    const url = new URL(requested, window.location.origin)
+    return url.origin === window.location.origin && url.pathname === '/timeline'
+      ? `${url.pathname}${url.search}`
+      : ''
+  } catch {
+    return ''
+  }
 }
 
 function TimelineNoteFormPage({ session, onNavigate, mode = 'create' }) {
   const activeFamily = session.families[0]
   const noteId = mode === 'edit' ? queryValue('id') : ''
+  const timelineReturnPath = requestedTimelineReturnPath()
   const initialized = useRef(false)
   const [date] = useState(initialDate)
+  const [children, setChildren] = useState([])
   const [child, setChild] = useState(null)
   const [timeType, setTimeType] = useState('exact')
   const [time, setTime] = useState(localTimeString)
@@ -57,12 +73,15 @@ function TimelineNoteFormPage({ session, onNavigate, mode = 'create' }) {
           throw new Error('編集するその他記録が見つかりませんでした。')
         }
 
+        const requestedTone = requestedChildTone()
         const targetChild = mode === 'edit'
           ? result.children.find((item) => item.id === targetNote.childId)
-          : result.children.find((item) => childTone(item.name) === requestedChildTone())
-        if (!targetChild) throw new Error('対象の子どもが見つかりませんでした。')
+          : result.children.find((item) => childTone(item.name) === requestedTone) ?? null
+        if (mode === 'edit' && !targetChild) throw new Error('対象の子どもが見つかりませんでした。')
+        if (mode === 'create' && requestedTone && !targetChild) throw new Error('対象の子どもが見つかりませんでした。')
 
         initialized.current = true
+        setChildren(result.children)
         setChild(targetChild)
         if (targetNote) {
           setTimeType(targetNote.timeType)
@@ -89,7 +108,7 @@ function TimelineNoteFormPage({ session, onNavigate, mode = 'create' }) {
     event.preventDefault()
     const normalizedText = text.trim()
     if (!child || !normalizedText || normalizedText.length > 5000) {
-      setError('本文を1文字以上5000文字以内で入力してください。')
+      setError(child ? '本文を1文字以上5000文字以内で入力してください。' : '対象の子どもを選択してください。')
       return
     }
     if (timeType === 'period' && !timePeriod) {
@@ -113,14 +132,16 @@ function TimelineNoteFormPage({ session, onNavigate, mode = 'create' }) {
       } else {
         await createTimelineNote(activeFamily.id, values)
       }
-      onNavigate(`/timeline?date=${date}&child=${childTone(child.name)}`, { replace: mode === 'create' })
+      onNavigate(timelineReturnPath || `/timeline?date=${date}&child=${childTone(child.name)}`, {
+        replace: mode === 'create' || Boolean(timelineReturnPath),
+      })
     } catch (requestError) {
       setError(requestError.message)
       setStatus('ready')
     }
   }
 
-  const backPath = `/timeline?date=${date}&child=${child ? childTone(child.name) : requestedChildTone()}`
+  const backPath = timelineReturnPath || `/timeline?date=${date}&child=${child ? childTone(child.name) : requestedChildTone() || 'both'}`
   const navigateBack = (event) => {
     event.preventDefault()
     onNavigate(backPath)
@@ -140,6 +161,21 @@ function TimelineNoteFormPage({ session, onNavigate, mode = 'create' }) {
       </header>
 
       <form className="milk-form-card" onSubmit={handleSubmit}>
+        {!requestedChildTone() && mode === 'create' && (
+          <fieldset className="milk-fieldset">
+            <legend>どちらの子どもの記録ですか？</legend>
+            <div className="milk-child-options">
+              {children.map((item) => (
+                <label className={`milk-child-option milk-child-option--${childTone(item.name)}${child?.id === item.id ? ' is-selected' : ''}`} key={item.id}>
+                  <input type="radio" name="child" value={item.id} checked={child?.id === item.id} onChange={() => setChild(item)} />
+                  <span aria-hidden="true">{childTone(item.name) === 'tomo' ? '智' : '結'}</span>
+                  {childDisplayName(item.name)}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+
         <fieldset className="milk-fieldset">
           <legend>時間</legend>
           <button className="milk-now-button" type="button" onClick={chooseNow}>今の時刻を使う</button>

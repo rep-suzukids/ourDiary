@@ -34,9 +34,23 @@ function requestedChildTone() {
   return requested === 'tomo' || requested === 'yuu' ? requested : ''
 }
 
+function requestedTimelineReturnPath() {
+  const requested = queryValue('returnTo')
+  if (!requested) return ''
+  try {
+    const url = new URL(requested, window.location.origin)
+    return url.origin === window.location.origin && url.pathname === '/timeline'
+      ? `${url.pathname}${url.search}`
+      : ''
+  } catch {
+    return ''
+  }
+}
+
 function PoopFormPage({ session, onNavigate, mode = 'create' }) {
   const activeFamily = session.families[0]
   const eventId = mode === 'edit' ? queryValue('id') : ''
+  const timelineReturnPath = requestedTimelineReturnPath()
   const initializedEdit = useRef(false)
   const initializedRequestedChild = useRef(false)
   const [children, setChildren] = useState([])
@@ -135,7 +149,9 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
       } else {
         await createBowelEvent(activeFamily.id, values)
       }
-      onNavigate(`/poop?date=${date}`, { replace: mode === 'create' })
+      onNavigate(timelineReturnPath || `/poop?date=${date}`, {
+        replace: mode === 'create' || Boolean(timelineReturnPath),
+      })
     } catch (requestError) {
       setError(requestError.message)
       setStatus('ready')
@@ -147,10 +163,12 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
     onNavigate(path)
   }
 
+  const backPath = timelineReturnPath || `/poop?date=${date}`
+
   return (
     <main className="milk-page milk-form-page poop-page poop-form-page">
       <header className="milk-page-header milk-page-header--compact">
-        <a href={`/poop?date=${date}`} onClick={navigateLink(`/poop?date=${date}`)} aria-label="おむつの記録へ戻る">←</a>
+        <a href={backPath} onClick={navigateLink(backPath)} aria-label={timelineReturnPath ? 'タイムラインへ戻る' : 'おむつの記録へ戻る'}>←</a>
         <div>
           <p>Our Diary</p>
           <h1>{mode === 'edit' ? 'おむつ記録を編集' : 'おむつを記録'}</h1>
