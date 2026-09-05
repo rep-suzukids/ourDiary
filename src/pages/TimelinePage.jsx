@@ -17,8 +17,8 @@ import {
   URINE_AMOUNT_OPTIONS,
   bowelOptionLabel,
 } from '../bowelEventUtils.js'
-import { getBowelEvents } from '../services/bowelEventApi.js'
-import { getCareEvents } from '../services/careEventApi.js'
+import { deleteBowelEvent, getBowelEvents } from '../services/bowelEventApi.js'
+import { deleteCareEvent, getCareEvents } from '../services/careEventApi.js'
 import { deleteTimelineNote, getTimelineNotes } from '../services/timelineNoteApi.js'
 import '../Milk.css'
 import '../Poop.css'
@@ -64,6 +64,16 @@ function TimelineDetailModal({ event, onClose, onDelete, onNavigate }) {
 
   const isMilk = event.recordType === 'milk'
   const isNote = event.recordType === 'note'
+  const editPath = isMilk
+    ? `/milk/edit?id=${encodeURIComponent(event.id)}&date=${event.date}`
+    : isNote
+      ? `/timeline/note/edit?id=${encodeURIComponent(event.id)}&date=${event.date}&child=${childTone(event.childName)}`
+      : `/poop/edit?id=${encodeURIComponent(event.id)}&date=${event.date}`
+  const editButtonClass = isNote
+    ? 'timeline-note-primary-button'
+    : isMilk
+      ? ''
+      : 'poop-primary-button'
 
   return (
     <div
@@ -114,15 +124,15 @@ function TimelineDetailModal({ event, onClose, onDelete, onNavigate }) {
             <div><dt>記録した人</dt><dd>{event.authorName}</dd></div>
           </dl>
         )}
-        {isNote && event.canEdit && (
+        {event.canEdit && (
           <div className="milk-modal__actions">
             <button className="milk-secondary-button milk-danger-button" type="button" onClick={() => onDelete(event)}>削除</button>
             <button
-              className="milk-primary-button timeline-note-primary-button"
+              className={`milk-primary-button ${editButtonClass}`.trim()}
               type="button"
-              onClick={() => onNavigate(`/timeline/note/edit?id=${encodeURIComponent(event.id)}&date=${event.date}&child=${childTone(event.childName)}`)}
+              onClick={() => onNavigate(editPath)}
             >
-              編集する
+              編集
             </button>
           </div>
         )}
@@ -230,11 +240,24 @@ function TimelinePage({ session, onNavigate }) {
     onNavigate('/')
   }
 
-  const handleDeleteNote = async (note) => {
-    if (!window.confirm('このその他記録を削除しますか？')) return
+  const handleDeleteEvent = async (targetEvent) => {
+    const recordLabel = targetEvent.recordType === 'milk'
+      ? 'ミルク'
+      : targetEvent.recordType === 'note'
+        ? 'その他'
+        : 'おむつ'
+    if (!window.confirm(`この${recordLabel}記録を削除しますか？`)) return
     try {
-      await deleteTimelineNote(activeFamily.id, note.id)
-      setEvents((current) => current.filter((event) => !(event.recordType === 'note' && event.id === note.id)))
+      if (targetEvent.recordType === 'milk') {
+        await deleteCareEvent(activeFamily.id, targetEvent.id)
+      } else if (targetEvent.recordType === 'note') {
+        await deleteTimelineNote(activeFamily.id, targetEvent.id)
+      } else {
+        await deleteBowelEvent(activeFamily.id, targetEvent.id)
+      }
+      setEvents((current) => current.filter((event) => !(
+        event.recordType === targetEvent.recordType && event.id === targetEvent.id
+      )))
       setSelectedEvent(null)
     } catch (requestError) {
       setError(requestError.message)
@@ -428,7 +451,7 @@ function TimelinePage({ session, onNavigate }) {
         <TimelineDetailModal
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
-          onDelete={handleDeleteNote}
+          onDelete={handleDeleteEvent}
           onNavigate={onNavigate}
         />
       )}
