@@ -64,11 +64,25 @@ function TimelineDetailModal({ event, onClose, onDelete, onNavigate }) {
 
   const isMilk = event.recordType === 'milk'
   const isNote = event.recordType === 'note'
+  const timelinePath = `/timeline?${new URLSearchParams({
+    date: event.date,
+    child: childTone(event.childName),
+  })}`
+  const editQuery = new URLSearchParams({
+    id: event.id,
+    date: event.date,
+    returnTo: timelinePath,
+  })
   const editPath = isMilk
-    ? `/milk/edit?id=${encodeURIComponent(event.id)}&date=${event.date}`
+    ? `/milk/edit?${editQuery}`
     : isNote
-      ? `/timeline/note/edit?id=${encodeURIComponent(event.id)}&date=${event.date}&child=${childTone(event.childName)}`
-      : `/poop/edit?id=${encodeURIComponent(event.id)}&date=${event.date}`
+      ? `/timeline/note/edit?${new URLSearchParams({
+        id: event.id,
+        date: event.date,
+        child: childTone(event.childName),
+        returnTo: timelinePath,
+      })}`
+      : `/poop/edit?${editQuery}`
   const editButtonClass = isNote
     ? 'timeline-note-primary-button'
     : isMilk
@@ -225,9 +239,10 @@ function TimelinePage({ session, onNavigate }) {
     updateLocation(date, nextTone)
   }
 
-  const quickAddPath = (recordType) => (
-    `/${recordType}/new?${new URLSearchParams({ date, child: selectedTone })}`
-  )
+  const quickAddPath = (recordType) => {
+    const returnTo = `/timeline?${new URLSearchParams({ date, child: selectedTone })}`
+    return `/${recordType}/new?${new URLSearchParams({ date, child: selectedTone, returnTo })}`
+  }
 
   const navigateQuickAdd = (recordType) => (event) => {
     event.preventDefault()

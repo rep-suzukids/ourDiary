@@ -32,9 +32,23 @@ function requestedChildTone() {
   return queryValue('child') === 'yuu' ? 'yuu' : 'tomo'
 }
 
+function requestedTimelineReturnPath() {
+  const requested = queryValue('returnTo')
+  if (!requested) return ''
+  try {
+    const url = new URL(requested, window.location.origin)
+    return url.origin === window.location.origin && url.pathname === '/timeline'
+      ? `${url.pathname}${url.search}`
+      : ''
+  } catch {
+    return ''
+  }
+}
+
 function TimelineNoteFormPage({ session, onNavigate, mode = 'create' }) {
   const activeFamily = session.families[0]
   const noteId = mode === 'edit' ? queryValue('id') : ''
+  const timelineReturnPath = requestedTimelineReturnPath()
   const initialized = useRef(false)
   const [date] = useState(initialDate)
   const [child, setChild] = useState(null)
@@ -113,14 +127,16 @@ function TimelineNoteFormPage({ session, onNavigate, mode = 'create' }) {
       } else {
         await createTimelineNote(activeFamily.id, values)
       }
-      onNavigate(`/timeline?date=${date}&child=${childTone(child.name)}`, { replace: mode === 'create' })
+      onNavigate(timelineReturnPath || `/timeline?date=${date}&child=${childTone(child.name)}`, {
+        replace: mode === 'create' || Boolean(timelineReturnPath),
+      })
     } catch (requestError) {
       setError(requestError.message)
       setStatus('ready')
     }
   }
 
-  const backPath = `/timeline?date=${date}&child=${child ? childTone(child.name) : requestedChildTone()}`
+  const backPath = timelineReturnPath || `/timeline?date=${date}&child=${child ? childTone(child.name) : requestedChildTone()}`
   const navigateBack = (event) => {
     event.preventDefault()
     onNavigate(backPath)
