@@ -20,6 +20,7 @@ import {
 import { deleteBowelEvent, getBowelEvents } from '../services/bowelEventApi.js'
 import { deleteCareEvent, getCareEvents } from '../services/careEventApi.js'
 import { deleteTimelineNote, getTimelineNotes } from '../services/timelineNoteApi.js'
+import { TIMELINE_BUCKET_MINUTES } from '../timelineConfig.js'
 import '../Milk.css'
 import '../Poop.css'
 import '../Timeline.css'
@@ -41,7 +42,8 @@ function initialDate() {
 }
 
 function initialChildTone() {
-  return new URLSearchParams(window.location.search).get('child') === 'yuu' ? 'yuu' : 'tomo'
+  const requested = new URLSearchParams(window.location.search).get('child')
+  return requested === 'tomo' || requested === 'yuu' ? requested : 'both'
 }
 
 function eventOrder(event) {
@@ -53,7 +55,35 @@ function eventOrder(event) {
   return 2000
 }
 
-function TimelineDetailModal({ event, onClose, onDelete, onNavigate }) {
+function eventBucket(event) {
+  if (event.timeType === 'unknown') return 'unknown'
+  let minutes = PERIOD_ORDER[event.timePeriod] ?? 0
+  if (event.timeType === 'exact') {
+    const [hour, minute] = event.time.split(':').map(Number)
+    minutes = hour * 60 + minute
+  }
+  return Math.floor(minutes / TIMELINE_BUCKET_MINUTES) * TIMELINE_BUCKET_MINUTES
+}
+
+function formatClockMinutes(minutes) {
+  const hour = Math.floor(minutes / 60)
+  const minute = minutes % 60
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+}
+
+function bucketLabel(bucket) {
+  if (bucket === 'unknown') return '時刻不明'
+  const endMinutes = Math.min(bucket + TIMELINE_BUCKET_MINUTES - 1, 24 * 60 - 1)
+  return `${formatClockMinutes(bucket)}–${formatClockMinutes(endMinutes)}`
+}
+
+function TimelineRecordIcon({ event }) {
+  if (event.recordType === 'milk') return <BottleIcon />
+  if (event.recordType === 'note') return <NoteIcon />
+  return <DiaperIcon />
+}
+
+function TimelineDetailModal({ event, onClose, onDelete, onNavigate, returnPath }) {
   useEffect(() => {
     const closeOnEscape = (keyboardEvent) => {
       if (keyboardEvent.key === 'Escape') onClose()
@@ -64,7 +94,7 @@ function TimelineDetailModal({ event, onClose, onDelete, onNavigate }) {
 
   const isMilk = event.recordType === 'milk'
   const isNote = event.recordType === 'note'
-  const timelinePath = `/timeline?${new URLSearchParams({
+  const timelinePath = returnPath || `/timeline?${new URLSearchParams({
     date: event.date,
     child: childTone(event.childName),
   })}`
@@ -220,8 +250,23 @@ function TimelinePage({ session, onNavigate }) {
 
   const selectedChild = children.find((child) => childTone(child.name) === selectedTone)
   const visibleEvents = useMemo(() => events.filter((event) => (
-    selectedChild && event.childId === selectedChild.id
-  )), [events, selectedChild])
+    selectedTone === 'both' || (selectedChild && event.childId === selectedChild.id)
+  )), [events, selectedChild, selectedTone])
+
+  const comparisonRows = useMemo(() => {
+    if (selectedTone !== 'both') return []
+    const rows = new Map()
+    visibleEvents.forEach((event) => {
+      const bucket = eventBucket(event)
+      if (!rows.has(bucket)) rows.set(bucket, { bucket, tomo: [], yuu: [] })
+      rows.get(bucket)[childTone(event.childName)].push(event)
+    })
+    return [...rows.values()].sort((left, right) => {
+      if (left.bucket === 'unknown') return 1
+      if (right.bucket === 'unknown') return -1
+      return left.bucket - right.bucket
+    })
+  }, [selectedTone, visibleEvents])
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0
@@ -278,7 +323,9 @@ function TimelinePage({ session, onNavigate }) {
 
   const quickAddPath = (recordType) => {
     const returnTo = `/timeline?${new URLSearchParams({ date, child: selectedTone })}`
-    return `/${recordType}/new?${new URLSearchParams({ date, child: selectedTone, returnTo })}`
+    const query = new URLSearchParams({ date, returnTo })
+    if (selectedTone !== 'both') query.set('child', selectedTone)
+    return `/${recordType}/new?${query}`
   }
 
   const navigateQuickAdd = (recordType) => (event) => {
@@ -325,6 +372,9 @@ function TimelinePage({ session, onNavigate }) {
       behavior: 'smooth',
     })
   }
+
+  const currentTimelinePath = `/timeline?${new URLSearchParams({ date, child: selectedTone })}`
+  const quickAddSubject = selectedChild ? `${childDisplayName(selectedChild.name)}の` : ''
 
   return (
     <main className="milk-page timeline-page">
@@ -375,6 +425,11 @@ function TimelinePage({ session, onNavigate }) {
         <fieldset className="milk-fieldset timeline-child-fieldset">
           <legend>どちらの子どもの記録を見ますか？</legend>
           <div className="milk-child-options timeline-child-options">
+            <label className={`milk-child-option timeline-child-option--both${selectedTone === 'both' ? ' is-selected' : ''}`}>
+              <input type="radio" name="timelineChild" value="both" checked={selectedTone === 'both'} onChange={() => changeChild('both')} />
+              <span aria-hidden="true">双</span>
+              ふたり
+            </label>
             {children.map((child) => {
               const tone = childTone(child.name)
               return (
@@ -397,9 +452,50 @@ function TimelinePage({ session, onNavigate }) {
           </div>
         )}
         {status === 'ready' && visibleEvents.length > 0 && (
-          <div className={`timeline-scroll-shell${scrollEdges.above ? ' has-content-above' : ''}${scrollEdges.below ? ' has-content-below' : ''}`}>
+          <div className={`timeline-scroll-shell${selectedTone === 'both' ? ' is-comparison' : ''}${scrollEdges.above ? ' has-content-above' : ''}${scrollEdges.below ? ' has-content-below' : ''}`}>
+            {selectedTone === 'both' && (
+              <div className="timeline-comparison-header" aria-hidden="true">
+                <span>時間帯</span>
+                <strong>智ちゃん</strong>
+                <strong>結ちゃん</strong>
+              </div>
+            )}
             <div ref={scrollRef} className="timeline-scroll" tabIndex="0" aria-label={`${formatDateLabel(date)}の記録一覧`}>
-              <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン`}>
+              {selectedTone === 'both' ? (
+                <div className="timeline-comparison" role="table" aria-label={`${formatDateLabel(date)}のふたりのタイムライン`}>
+                  {comparisonRows.map((row) => (
+                    <div className="timeline-comparison-row" role="row" key={row.bucket}>
+                      <time role="rowheader">{bucketLabel(row.bucket)}</time>
+                      {['tomo', 'yuu'].map((tone) => (
+                        <div className={`timeline-comparison-cell timeline-comparison-cell--${tone}`} role="cell" key={tone}>
+                          {row[tone].map((event) => {
+                            const recordLabel = event.recordType === 'milk'
+                              ? 'ミルク'
+                              : event.recordType === 'note'
+                                ? 'その他'
+                                : 'おむつ'
+                            return (
+                              <button
+                                type="button"
+                                className={`milk-event-icon milk-event-icon--${tone} timeline-event-icon--${event.recordType} timeline-comparison-event`}
+                                aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${recordLabel}。詳細を表示`}
+                                onClick={() => setSelectedEvent(event)}
+                                key={`${event.recordType}-${event.id}`}
+                              >
+                                <TimelineRecordIcon event={event} />
+                                {event.timeType === 'period' && (
+                                  <small className="timeline-comparison-event__approximate" aria-hidden="true">〜</small>
+                                )}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン`}>
               {visibleEvents.map((event) => {
                 const isMilk = event.recordType === 'milk'
                 const isNote = event.recordType === 'note'
@@ -428,9 +524,12 @@ function TimelinePage({ session, onNavigate }) {
                       className={`milk-event-icon milk-event-icon--${childTone(event.childName)} timeline-event-icon--${event.recordType}`}
                       aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${isMilk ? 'ミルク' : isNote ? 'その他' : 'おむつ'}、${summaryLabel}。詳細を表示`}
                       onClick={() => setSelectedEvent(event)}
-                    >
-                      {isMilk ? <BottleIcon /> : isNote ? <NoteIcon /> : <DiaperIcon />}
-                    </button>
+                              >
+                                <TimelineRecordIcon event={event} />
+                                {event.timeType === 'period' && (
+                                  <small className="timeline-comparison-event__approximate" aria-hidden="true">〜</small>
+                                )}
+                              </button>
                     <div className={`timeline-event-summary timeline-event-summary--${event.recordType} timeline-event-summary--${childTone(event.childName)}`}>
                       {isMilk ? (
                         <strong>{formatAmount(event.amountMl)}<small> mL</small></strong>
@@ -452,7 +551,8 @@ function TimelinePage({ session, onNavigate }) {
                   </li>
                 )
               })}
-              </ol>
+                </ol>
+              )}
             </div>
             {scrollEdges.above && (
               <button className="timeline-scroll-hint timeline-scroll-hint--up" type="button" onClick={() => scrollTimeline(-1)}>
@@ -477,7 +577,7 @@ function TimelinePage({ session, onNavigate }) {
           className="timeline-quick-add__item timeline-quick-add__item--milk"
           href={quickAddPath('milk')}
           onClick={navigateQuickAdd('milk')}
-          aria-label={`${selectedChild ? childDisplayName(selectedChild.name) : '選択中の子ども'}のミルクを記録`}
+          aria-label={`${quickAddSubject}ミルクを記録`}
           aria-hidden={!isQuickAddOpen}
           tabIndex={isQuickAddOpen ? 0 : -1}
         >
@@ -488,7 +588,7 @@ function TimelinePage({ session, onNavigate }) {
           className="timeline-quick-add__item timeline-quick-add__item--poop"
           href={quickAddPath('poop')}
           onClick={navigateQuickAdd('poop')}
-          aria-label={`${selectedChild ? childDisplayName(selectedChild.name) : '選択中の子ども'}のおむつを記録`}
+          aria-label={`${quickAddSubject}おむつを記録`}
           aria-hidden={!isQuickAddOpen}
           tabIndex={isQuickAddOpen ? 0 : -1}
         >
@@ -499,7 +599,7 @@ function TimelinePage({ session, onNavigate }) {
           className="timeline-quick-add__item timeline-quick-add__item--note"
           href={quickAddPath('timeline/note')}
           onClick={navigateQuickAdd('timeline/note')}
-          aria-label={`${selectedChild ? childDisplayName(selectedChild.name) : '選択中の子ども'}のその他を記録`}
+          aria-label={`${quickAddSubject}その他を記録`}
           aria-hidden={!isQuickAddOpen}
           tabIndex={isQuickAddOpen ? 0 : -1}
         >
@@ -511,7 +611,7 @@ function TimelinePage({ session, onNavigate }) {
           type="button"
           aria-label={isQuickAddOpen ? '記録追加メニューを閉じる' : '記録を追加'}
           aria-expanded={isQuickAddOpen}
-          disabled={!selectedChild || status !== 'ready'}
+          disabled={children.length === 0 || status !== 'ready'}
           onClick={() => setIsQuickAddOpen((current) => !current)}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -526,6 +626,7 @@ function TimelinePage({ session, onNavigate }) {
           onClose={() => setSelectedEvent(null)}
           onDelete={handleDeleteEvent}
           onNavigate={onNavigate}
+          returnPath={currentTimelinePath}
         />
       )}
     </main>
