@@ -34,6 +34,9 @@ const PERIOD_ORDER = {
   night: 1290,
 }
 
+// 最下部の余白をすべて押し上げず、最新記録を上端のフェードより下に見せます。
+const TIMELINE_LATEST_VISIBLE_OFFSET = 48
+
 function initialDate() {
   const requested = new URLSearchParams(window.location.search).get('date')
   return /^20(?:2[6-9]|[3-4]\d|50)-\d{2}-\d{2}$/.test(requested ?? '')
@@ -269,8 +272,21 @@ function TimelinePage({ session, onNavigate }) {
   }, [selectedTone, visibleEvents])
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0
-  }, [date, selectedTone])
+    if (status !== 'ready') return undefined
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      const scrollElement = scrollRef.current
+      if (!scrollElement) return
+      const bottomPadding = Number.parseFloat(window.getComputedStyle(scrollElement).paddingBottom) || 0
+      const visibleOffset = Math.min(TIMELINE_LATEST_VISIBLE_OFFSET, bottomPadding)
+      scrollElement.scrollTop = Math.max(
+        0,
+        scrollElement.scrollHeight - scrollElement.clientHeight - visibleOffset,
+      )
+    })
+
+    return () => window.cancelAnimationFrame(animationFrame)
+  }, [date, selectedTone, status])
 
   useEffect(() => {
     const scrollElement = scrollRef.current
@@ -281,7 +297,9 @@ function TimelinePage({ session, onNavigate }) {
 
     const updateScrollEdges = () => {
       const above = scrollElement.scrollTop > 2
-      const below = scrollElement.scrollTop + scrollElement.clientHeight < scrollElement.scrollHeight - 2
+      const bottomPadding = Number.parseFloat(window.getComputedStyle(scrollElement).paddingBottom) || 0
+      const contentBottom = scrollElement.scrollHeight - bottomPadding
+      const below = scrollElement.scrollTop + scrollElement.clientHeight < contentBottom - 2
       setScrollEdges((current) => (
         current.above === above && current.below === below ? current : { above, below }
       ))
