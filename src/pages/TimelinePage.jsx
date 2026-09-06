@@ -269,8 +269,15 @@ function TimelinePage({ session, onNavigate }) {
   }, [selectedTone, visibleEvents])
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0
-  }, [date, selectedTone])
+    if (status !== 'ready') return undefined
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      const scrollElement = scrollRef.current
+      if (scrollElement) scrollElement.scrollTop = scrollElement.scrollHeight
+    })
+
+    return () => window.cancelAnimationFrame(animationFrame)
+  }, [date, selectedTone, status])
 
   useEffect(() => {
     const scrollElement = scrollRef.current
