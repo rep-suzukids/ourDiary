@@ -36,6 +36,14 @@ function requestedChildTone() {
   return requested === 'tomo' || requested === 'yuu' ? requested : ''
 }
 
+function requestedReturnPath() {
+  const requested = queryValue('returnTo')
+  if (!requested.startsWith('/') || requested.startsWith('//')) return ''
+  const destination = new URL(requested, window.location.origin)
+  if (destination.origin !== window.location.origin) return ''
+  return `${destination.pathname}${destination.search}${destination.hash}`
+}
+
 function formattedTemperature(value) {
   if (String(value).trim() === '') return ''
   const number = Number(value)
@@ -46,6 +54,7 @@ function formattedTemperature(value) {
 function TemperatureFormPage({ session, onNavigate, mode = 'create' }) {
   const activeFamily = session.families[0]
   const eventId = mode === 'edit' ? queryValue('id') : ''
+  const returnPath = mode === 'create' ? requestedReturnPath() : ''
   const initializedEdit = useRef(false)
   const initializedCreate = useRef(false)
   const [children, setChildren] = useState([])
@@ -155,7 +164,7 @@ function TemperatureFormPage({ session, onNavigate, mode = 'create' }) {
       } else {
         await createTemperatureEvent(activeFamily.id, values)
       }
-      onNavigate(`/temperature?date=${date}`, { replace: mode === 'create' })
+      onNavigate(returnPath || `/temperature?date=${date}`, { replace: mode === 'create' })
     } catch (requestError) {
       setError(requestError.message)
       setStatus('ready')
@@ -167,11 +176,12 @@ function TemperatureFormPage({ session, onNavigate, mode = 'create' }) {
     onNavigate(path)
   }
   const selectedPrevious = latestTemperatures.find((item) => item.childId === childId)
+  const backPath = returnPath || `/temperature?date=${date}`
 
   return (
     <main className="milk-page milk-form-page temperature-page temperature-form-page">
       <header className="milk-page-header milk-page-header--compact">
-        <a href={`/temperature?date=${date}`} onClick={navigateLink(`/temperature?date=${date}`)} aria-label="体温の記録へ戻る">←</a>
+        <a href={backPath} onClick={navigateLink(backPath)} aria-label="前の画面へ戻る">←</a>
         <div>
           <p>Our Diary</p>
           <h1>{mode === 'edit' ? '体温記録を編集' : '体温を記録'}</h1>

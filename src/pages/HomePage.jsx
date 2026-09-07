@@ -56,7 +56,7 @@ function ScheduleIcon() {
   )
 }
 
-function HomePage({ session, onLogout, onNavigate }) {
+function HomePage({ session, onLogout, onNavigate, temperatureReminder }) {
   const activeFamily = session.families[0]
 
   const openAlbum = (event) => {
@@ -67,6 +67,7 @@ function HomePage({ session, onLogout, onNavigate }) {
   return (
     <main className="page">
       <h1 className="page__title">Our Diary</h1>
+      {temperatureReminder}
 
       <section className="card" aria-labelledby="welcome-heading">
         {session.user.picture && (

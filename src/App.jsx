@@ -114,7 +114,7 @@ function AppContent() {
 
   const withTemperatureReminder = (page) => (
     <>
-      <TemperatureReminder session={session} refreshKey={pathname} />
+      <TemperatureReminder session={session} refreshKey={pathname} onNavigate={navigate} />
       {page}
     </>
   )
@@ -290,7 +290,19 @@ function AppContent() {
   if (pathname !== '/') return <NotFoundPage onNavigate={navigate} />
 
   if (session) {
-    return withTemperatureReminder(<HomePage session={session} onLogout={handleLogout} onNavigate={navigate} />)
+    return <HomePage
+      session={session}
+      onLogout={handleLogout}
+      onNavigate={navigate}
+      temperatureReminder={(
+        <TemperatureReminder
+          session={session}
+          refreshKey={pathname}
+          onNavigate={navigate}
+          placement="home"
+        />
+      )}
+    />
   }
 
   return <LoginPage

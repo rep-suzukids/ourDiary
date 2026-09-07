@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { childDisplayName, localDateString } from '../careEventUtils.js'
+import { childDisplayName, childTone, localDateString } from '../careEventUtils.js'
 import {
   getDailyTemperatureStatus,
   TEMPERATURE_STATUS_CHANGED_EVENT,
@@ -17,7 +17,7 @@ function japanHour(date) {
   return Number(hour)
 }
 
-function TemperatureReminder({ session, refreshKey }) {
+function TemperatureReminder({ session, refreshKey, onNavigate, placement = 'floating' }) {
   const activeFamily = session.families[0]
   const [now, setNow] = useState(() => new Date())
   const [dailyStatus, setDailyStatus] = useState(null)
@@ -61,18 +61,35 @@ function TemperatureReminder({ session, refreshKey }) {
   if (!dailyStatus || missingChildren.length === 0) return null
 
   let message = 'AM7:00になったら検温をしましょう'
-  if (japanHour(now) >= 7) {
+  const isAfterSeven = japanHour(now) >= 7
+  if (isAfterSeven) {
     message = missingChildren.length >= 2
       ? 'ふたりの検温・登録をしましょう'
       : `${childDisplayName(missingChildren[0].name)}の検温・登録をしましょう`
   }
 
+  const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`
+  const query = new URLSearchParams({ date: today, returnTo })
+  if (isAfterSeven && missingChildren.length === 1) {
+    query.set('child', childTone(missingChildren[0].name))
+  }
+  const destination = `/temperature/new?${query}`
+
   return (
-    <aside className="temperature-reminder" role="alert" aria-live="polite">
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="M14 14.76V5a4 4 0 0 0-8 0v9.76a6 6 0 1 0 8 0ZM10 4a1 1 0 0 1 1 1v11.05a3 3 0 1 1-2 0V5a1 1 0 0 1 1-1Z" />
-      </svg>
-      <span>{message}</span>
+    <aside className={`temperature-reminder temperature-reminder--${placement}`} role="alert" aria-live="polite">
+      <a
+        className="temperature-reminder__link"
+        href={destination}
+        onClick={(event) => {
+          event.preventDefault()
+          onNavigate(destination)
+        }}
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24">
+          <path d="M14 14.76V5a4 4 0 0 0-8 0v9.76a6 6 0 1 0 8 0ZM10 4a1 1 0 0 1 1 1v11.05a3 3 0 1 1-2 0V5a1 1 0 0 1 1-1Z" />
+        </svg>
+        <span>{message}</span>
+      </a>
     </aside>
   )
 }
