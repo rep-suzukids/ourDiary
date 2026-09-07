@@ -139,6 +139,17 @@ async function getLatestTemperatures(sql, familyId) {
   `
 }
 
+async function getDailyRegisteredChildIds(sql, familyId, date) {
+  const rows = await sql`
+    SELECT DISTINCT child_id AS "childId"
+    FROM temperature_readings
+    WHERE family_id = ${familyId}
+      AND measured_date = ${date}
+      AND deleted_at IS NULL
+  `
+  return rows.map((row) => row.childId)
+}
+
 async function getMonthlySummaries(sql, familyId, start, endExclusive) {
   return sql`
     SELECT
@@ -181,6 +192,19 @@ export default async function handler(request, response) {
     if (request.method === 'GET') {
       const url = new URL(request.url, 'http://localhost')
       const view = request.query?.view ?? url.searchParams.get('view')
+      if (view === 'status') {
+        const date = request.query?.date ?? url.searchParams.get('date')
+        if (!isValidDate(date)) {
+          sendJson(response, 400, { error: '表示する日付が正しくありません。' })
+          return
+        }
+        const [children, registeredChildIds] = await Promise.all([
+          getFixedChildren(sql, familyId),
+          getDailyRegisteredChildIds(sql, familyId, date),
+        ])
+        sendJson(response, 200, { children, registeredChildIds })
+        return
+      }
       if (view === 'month') {
         const range = monthRange(
           request.query?.year ?? url.searchParams.get('year'),

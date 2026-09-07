@@ -1,0 +1,49 @@
+.temperature-reminder {
+  position: fixed;
+  z-index: 50;
+  top: max(14px, env(safe-area-inset-top));
+  left: 50%;
+  display: flex;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid #e9bd70;
+  border-radius: 999px;
+  align-items: center;
+  background: rgb(255 248 224 / 96%);
+  box-shadow: 0 9px 26px rgb(133 91 45 / 18%);
+  color: #815a31;
+  font-size: 0.86rem;
+  font-weight: 700;
+  gap: 9px;
+  line-height: 1.45;
+  pointer-events: none;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  backdrop-filter: blur(7px);
+}
+
+.temperature-reminder svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  fill: currentcolor;
+}
+
+@media (max-width: 680px) {
+  .temperature-reminder {
+    top: max(8px, env(safe-area-inset-top));
+    max-width: calc(100vw - 20px);
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 0.76rem;
+    gap: 7px;
+  }
+
+  .temperature-reminder svg {
+    width: 18px;
+    height: 18px;
+    flex-basis: 18px;
+  }
+}

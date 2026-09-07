@@ -24,6 +24,21 @@ export async function getTemperatureEvents(familyId, date) {
   return readResponse(response)
 }
 
+export const TEMPERATURE_STATUS_CHANGED_EVENT = 'ourdiary:temperature-status-changed'
+
+function notifyTemperatureStatusChanged() {
+  window.dispatchEvent(new Event(TEMPERATURE_STATUS_CHANGED_EVENT))
+}
+
+export async function getDailyTemperatureStatus(familyId, date) {
+  const query = new URLSearchParams({ view: 'status', date })
+  const response = await fetch(`/api/temperature-events?${query}`, {
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId),
+  })
+  return readResponse(response)
+}
+
 export async function getMonthlyTemperatureSummary(familyId, year, month) {
   const query = new URLSearchParams({
     view: 'month',
@@ -44,7 +59,9 @@ export async function createTemperatureEvent(familyId, values) {
     headers: requestHeaders(familyId, true),
     body: JSON.stringify(values),
   })
-  return readResponse(response)
+  const result = await readResponse(response)
+  notifyTemperatureStatusChanged()
+  return result
 }
 
 export async function updateTemperatureEvent(familyId, values) {
@@ -54,7 +71,9 @@ export async function updateTemperatureEvent(familyId, values) {
     headers: requestHeaders(familyId, true),
     body: JSON.stringify(values),
   })
-  return readResponse(response)
+  const result = await readResponse(response)
+  notifyTemperatureStatusChanged()
+  return result
 }
 
 export async function deleteTemperatureEvent(familyId, id) {
@@ -64,5 +83,7 @@ export async function deleteTemperatureEvent(familyId, id) {
     headers: requestHeaders(familyId, true),
     body: JSON.stringify({ id }),
   })
-  return readResponse(response)
+  const result = await readResponse(response)
+  notifyTemperatureStatusChanged()
+  return result
 }
