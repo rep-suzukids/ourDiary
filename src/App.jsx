@@ -26,6 +26,7 @@ import TimelineNoteFormPage from './pages/TimelineNoteFormPage.jsx'
 import TemperatureCalendarPage from './pages/TemperatureCalendarPage.jsx'
 import TemperatureFormPage from './pages/TemperatureFormPage.jsx'
 import TemperaturePage from './pages/TemperaturePage.jsx'
+import TemperatureReminder from './components/TemperatureReminder.jsx'
 import {
   clearLegacySessionStorage,
   createSession,
@@ -111,6 +112,13 @@ function AppContent() {
     navigate('/')
   }
 
+  const withTemperatureReminder = (page) => (
+    <>
+      <TemperatureReminder session={session} refreshKey={pathname} onNavigate={navigate} />
+      {page}
+    </>
+  )
+
   if (pathname === '/drive-owner-connect') return <DriveOwnerConnectPage />
   if (pathname === '/drive-owner-connect/complete') return <DriveOwnerCompletePage />
 
@@ -150,139 +158,151 @@ function AppContent() {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <DiaryPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<DiaryPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/diary/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <DiaryCreatePage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<DiaryCreatePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/schedule') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <SchedulePage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<SchedulePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/schedule/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <ScheduleCreatePage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<ScheduleCreatePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/timeline') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <TimelinePage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<TimelinePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/timeline/note/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <TimelineNoteFormPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<TimelineNoteFormPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/timeline/note/edit') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <TimelineNoteFormPage session={session} onNavigate={navigate} mode="edit" />
+    return withTemperatureReminder(<TimelineNoteFormPage session={session} onNavigate={navigate} mode="edit" />)
   }
 
   if (pathname === '/milk') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <MilkPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<MilkPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/milk/calendar') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <MilkCalendarPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<MilkCalendarPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/milk/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <MilkFormPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<MilkFormPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/milk/edit') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <MilkFormPage session={session} onNavigate={navigate} mode="edit" />
+    return withTemperatureReminder(<MilkFormPage session={session} onNavigate={navigate} mode="edit" />)
   }
 
   if (pathname === '/poop') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <PoopPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<PoopPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/poop/calendar') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <PoopCalendarPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<PoopCalendarPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/poop/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <PoopFormPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<PoopFormPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/poop/edit') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <PoopFormPage session={session} onNavigate={navigate} mode="edit" />
+    return withTemperatureReminder(<PoopFormPage session={session} onNavigate={navigate} mode="edit" />)
   }
 
   if (pathname === '/temperature') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <TemperaturePage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<TemperaturePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/temperature/calendar') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <TemperatureCalendarPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<TemperatureCalendarPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/temperature/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <TemperatureFormPage session={session} onNavigate={navigate} />
+    return withTemperatureReminder(<TemperatureFormPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/temperature/edit') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return <TemperatureFormPage session={session} onNavigate={navigate} mode="edit" />
+    return withTemperatureReminder(<TemperatureFormPage session={session} onNavigate={navigate} mode="edit" />)
   }
 
   if (pathname !== '/') return <NotFoundPage onNavigate={navigate} />
 
   if (session) {
-    return <HomePage session={session} onLogout={handleLogout} onNavigate={navigate} />
+    return <HomePage
+      session={session}
+      onLogout={handleLogout}
+      onNavigate={navigate}
+      temperatureReminder={(
+        <TemperatureReminder
+          session={session}
+          refreshKey={pathname}
+          onNavigate={navigate}
+          placement="home"
+        />
+      )}
+    />
   }
 
   return <LoginPage
