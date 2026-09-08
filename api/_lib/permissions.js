@@ -40,6 +40,8 @@ const ROLE_PERMISSIONS = Object.freeze({
     'schedule:create',
     'schedule:update',
     'schedule:delete',
+    'medication:read',
+    'medication:use',
   ]),
   admin: Object.freeze([
     'entry:read_shared',
@@ -80,6 +82,9 @@ const ROLE_PERMISSIONS = Object.freeze({
     'schedule:create',
     'schedule:update',
     'schedule:delete',
+    'medication:read',
+    'medication:use',
+    'medication:manage',
   ]),
 })
 

@@ -25,6 +25,51 @@
   transform: none;
 }
 
+.temperature-reminder--embedded {
+  position: static;
+  z-index: auto;
+  left: auto;
+  transform: none;
+}
+
+.daily-reminder-panel {
+  position: fixed;
+  z-index: 50;
+  top: max(14px, env(safe-area-inset-top));
+  left: 50%;
+  display: flex;
+  max-width: calc(100vw - 32px);
+  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  transform: translateX(-50%);
+}
+
+.daily-reminder-panel:empty {
+  display: none;
+}
+
+.daily-reminder-panel--home {
+  position: static;
+  z-index: auto;
+  max-width: calc(100vw - 32px);
+  margin: 0 0 18px;
+  transform: none;
+}
+
+.daily-reminder-panel .temperature-reminder {
+  max-width: 100%;
+}
+
+.medication-reminder {
+  border-color: #dcb79a;
+  background: rgb(255 245 229 / 96%);
+}
+
+.medication-reminder .temperature-reminder__link {
+  color: #7d5948;
+}
+
 .temperature-reminder__link {
   display: flex;
   min-height: 44px;
@@ -67,6 +112,15 @@
   }
 
   .temperature-reminder--home {
+    margin-bottom: 14px;
+  }
+
+  .daily-reminder-panel {
+    top: max(8px, env(safe-area-inset-top));
+    max-width: calc(100vw - 20px);
+  }
+
+  .daily-reminder-panel--home {
     margin-bottom: 14px;
   }
 

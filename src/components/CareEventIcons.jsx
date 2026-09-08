@@ -35,6 +35,15 @@ export function ThermometerIcon() {
   )
 }
 
+export function MedicationIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M13 35a9 9 0 0 1 0-13L22 13a9.2 9.2 0 0 1 13 13l-9 9a9 9 0 0 1-13 0Z" />
+      <path d="m17.5 17.5 13 13" />
+    </svg>
+  )
+}
+
 export function NoteIcon() {
   return (
     <svg viewBox="0 0 48 48" aria-hidden="true">

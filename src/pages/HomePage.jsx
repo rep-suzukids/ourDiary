@@ -56,7 +56,7 @@ function ScheduleIcon() {
   )
 }
 
-function HomePage({ session, onLogout, onNavigate, temperatureReminder }) {
+function HomePage({ session, onLogout, onNavigate, dailyReminder }) {
   const activeFamily = session.families[0]
 
   const openAlbum = (event) => {
@@ -67,7 +67,7 @@ function HomePage({ session, onLogout, onNavigate, temperatureReminder }) {
   return (
     <main className="page">
       <h1 className="page__title">Our Diary</h1>
-      {temperatureReminder}
+      {dailyReminder}
 
       <section className="card" aria-labelledby="welcome-heading">
         {session.user.picture && (
@@ -185,6 +185,16 @@ function HomePage({ session, onLogout, onNavigate, temperatureReminder }) {
               }}
             >
               タグ管理
+            </a>
+            <a
+              className="album-settings-link"
+              href="/admin/medications"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/admin/medications')
+              }}
+            >
+              おくすり管理
             </a>
           </div>
         )}
