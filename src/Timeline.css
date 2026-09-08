@@ -320,18 +320,23 @@
 }
 
 .timeline-quick-add.is-open .timeline-quick-add__item--milk {
-  transform: translate(-98px, -2px) scale(1) rotate(0);
+  transform: translate(-130px, -2px) scale(1) rotate(0);
   transition-delay: 30ms;
 }
 
 .timeline-quick-add.is-open .timeline-quick-add__item--poop {
-  transform: translate(-78px, -76px) scale(1) rotate(0);
+  transform: translate(-112px, -66px) scale(1) rotate(0);
   transition-delay: 80ms;
 }
 
-.timeline-quick-add.is-open .timeline-quick-add__item--note {
-  transform: translate(-8px, -102px) scale(1) rotate(0);
+.timeline-quick-add.is-open .timeline-quick-add__item--medication {
+  transform: translate(-65px, -114px) scale(1) rotate(0);
   transition-delay: 130ms;
+}
+
+.timeline-quick-add.is-open .timeline-quick-add__item--note {
+  transform: translate(0, -132px) scale(1) rotate(0);
+  transition-delay: 180ms;
 }
 
 .timeline-scroll:focus-visible {
@@ -526,6 +531,7 @@
 .timeline-event-icon--milk svg,
 .timeline-event-icon--poop svg,
 .timeline-event-icon--note svg,
+.timeline-event-icon--medication svg,
 .timeline-modal__card .milk-modal__icon svg {
   fill: none;
   stroke: currentcolor;
@@ -586,6 +592,25 @@
 
 .timeline-event-icon--poop {
   box-shadow: 0 0 0 4px rgb(217 152 126 / 13%), 0 7px 18px rgb(113 71 82 / 20%);
+}
+
+.timeline-event-icon--medication {
+  box-shadow: 0 0 0 4px rgb(183 121 120 / 13%), 0 7px 18px rgb(105 70 77 / 20%);
+}
+
+.timeline-event-summary__medication {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 5px 10px;
+  overflow: hidden;
+  border: 1px solid #e5c5c1;
+  border-radius: 999px;
+  background: #fff5ef;
+  color: #8e5c61;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
 @media (max-width: 680px) {
@@ -675,15 +700,19 @@
   }
 
   .timeline-quick-add.is-open .timeline-quick-add__item--milk {
-    transform: translate(-90px, -2px) scale(1) rotate(0);
+    transform: translate(-118px, -2px) scale(1) rotate(0);
   }
 
   .timeline-quick-add.is-open .timeline-quick-add__item--poop {
-    transform: translate(-72px, -70px) scale(1) rotate(0);
+    transform: translate(-102px, -60px) scale(1) rotate(0);
+  }
+
+  .timeline-quick-add.is-open .timeline-quick-add__item--medication {
+    transform: translate(-59px, -103px) scale(1) rotate(0);
   }
 
   .timeline-quick-add.is-open .timeline-quick-add__item--note {
-    transform: translate(-6px, -94px) scale(1) rotate(0);
+    transform: translate(0, -119px) scale(1) rotate(0);
   }
 }
 

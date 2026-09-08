@@ -9,6 +9,8 @@ import DiaryCreatePage from './pages/DiaryCreatePage.jsx'
 import DiaryPage from './pages/DiaryPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import MedicationFormPage from './pages/MedicationFormPage.jsx'
+import MedicationManagementPage from './pages/MedicationManagementPage.jsx'
 import MilkFormPage from './pages/MilkFormPage.jsx'
 import MilkCalendarPage from './pages/MilkCalendarPage.jsx'
 import MilkPage from './pages/MilkPage.jsx'
@@ -26,7 +28,7 @@ import TimelineNoteFormPage from './pages/TimelineNoteFormPage.jsx'
 import TemperatureCalendarPage from './pages/TemperatureCalendarPage.jsx'
 import TemperatureFormPage from './pages/TemperatureFormPage.jsx'
 import TemperaturePage from './pages/TemperaturePage.jsx'
-import TemperatureReminder from './components/TemperatureReminder.jsx'
+import DailyReminderPanel from './components/DailyReminderPanel.jsx'
 import {
   clearLegacySessionStorage,
   createSession,
@@ -112,9 +114,9 @@ function AppContent() {
     navigate('/')
   }
 
-  const withTemperatureReminder = (page) => (
+  const withDailyReminders = (page) => (
     <>
-      <TemperatureReminder session={session} refreshKey={pathname} onNavigate={navigate} />
+      <DailyReminderPanel session={session} refreshKey={pathname} onNavigate={navigate} />
       {page}
     </>
   )
@@ -154,137 +156,158 @@ function AppContent() {
     return <TagManagementPage session={session} onNavigate={navigate} />
   }
 
+  if (pathname === '/admin/medications') {
+    if (!session || session.families[0]?.role !== 'admin') {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return withDailyReminders(<MedicationManagementPage session={session} onNavigate={navigate} />)
+  }
+
   if (pathname === '/diary') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<DiaryPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<DiaryPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/diary/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<DiaryCreatePage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<DiaryCreatePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/schedule') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<SchedulePage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<SchedulePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/schedule/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<ScheduleCreatePage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<ScheduleCreatePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/timeline') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<TimelinePage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<TimelinePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/timeline/note/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<TimelineNoteFormPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<TimelineNoteFormPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/timeline/note/edit') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<TimelineNoteFormPage session={session} onNavigate={navigate} mode="edit" />)
+    return withDailyReminders(<TimelineNoteFormPage session={session} onNavigate={navigate} mode="edit" />)
   }
 
   if (pathname === '/milk') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<MilkPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<MilkPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/milk/calendar') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<MilkCalendarPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<MilkCalendarPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/milk/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<MilkFormPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<MilkFormPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/milk/edit') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<MilkFormPage session={session} onNavigate={navigate} mode="edit" />)
+    return withDailyReminders(<MilkFormPage session={session} onNavigate={navigate} mode="edit" />)
   }
 
   if (pathname === '/poop') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<PoopPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<PoopPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/poop/calendar') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<PoopCalendarPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<PoopCalendarPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/poop/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<PoopFormPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<PoopFormPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/poop/edit') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<PoopFormPage session={session} onNavigate={navigate} mode="edit" />)
+    return withDailyReminders(<PoopFormPage session={session} onNavigate={navigate} mode="edit" />)
   }
 
   if (pathname === '/temperature') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<TemperaturePage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<TemperaturePage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/temperature/calendar') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<TemperatureCalendarPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<TemperatureCalendarPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/temperature/new') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<TemperatureFormPage session={session} onNavigate={navigate} />)
+    return withDailyReminders(<TemperatureFormPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/temperature/edit') {
     if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
       return <NotFoundPage onNavigate={navigate} />
     }
-    return withTemperatureReminder(<TemperatureFormPage session={session} onNavigate={navigate} mode="edit" />)
+    return withDailyReminders(<TemperatureFormPage session={session} onNavigate={navigate} mode="edit" />)
+  }
+
+  if (pathname === '/medication/new') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return withDailyReminders(<MedicationFormPage session={session} onNavigate={navigate} />)
+  }
+
+  if (pathname === '/medication/edit') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return withDailyReminders(<MedicationFormPage session={session} onNavigate={navigate} mode="edit" />)
   }
 
   if (pathname !== '/') return <NotFoundPage onNavigate={navigate} />
@@ -294,8 +317,8 @@ function AppContent() {
       session={session}
       onLogout={handleLogout}
       onNavigate={navigate}
-      temperatureReminder={(
-        <TemperatureReminder
+      dailyReminder={(
+        <DailyReminderPanel
           session={session}
           refreshKey={pathname}
           onNavigate={navigate}
