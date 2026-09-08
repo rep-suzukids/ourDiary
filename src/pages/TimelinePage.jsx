@@ -547,8 +547,8 @@ function TimelinePage({ session, onNavigate }) {
                       ? event.medicationName
                       : poopDetails.map((detail) => `${detail.label} ${detail.value}`).join('、')
                 const noteCharacters = isNote ? Array.from(event.text) : []
-                const noteSummary = noteCharacters.length > 20
-                  ? `${noteCharacters.slice(0, 20).join('')}…`
+                const noteSummary = noteCharacters.length > 40
+                  ? `${noteCharacters.slice(0, 40).join('')}…`
                   : event.text
                 return (
                   <li key={`${event.recordType}-${event.id}`}>
