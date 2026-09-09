@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BottleIcon, DiaperIcon, MedicationIcon, NoteIcon } from '../components/CareEventIcons.jsx'
+import {
+  BottleIcon,
+  DiaperIcon,
+  MedicationIcon,
+  NoteIcon,
+  ThermometerIcon,
+} from '../components/CareEventIcons.jsx'
 import {
   addDate,
   childDisplayName,
@@ -24,7 +30,10 @@ import {
   getMedicationDay,
 } from '../services/medicationApi.js'
 import { deleteTimelineNote, getTimelineNotes } from '../services/timelineNoteApi.js'
-import { TIMELINE_BUCKET_MINUTES } from '../timelineConfig.js'
+import {
+  TIMELINE_BUCKET_MINUTES,
+  TIMELINE_PREVIOUS_DAY_START_HOUR,
+} from '../timelineConfig.js'
 import '../Milk.css'
 import '../Poop.css'
 import '../Timeline.css'
@@ -82,6 +91,44 @@ function bucketLabel(bucket) {
   if (bucket === 'unknown') return '時刻不明'
   const endMinutes = Math.min(bucket + TIMELINE_BUCKET_MINUTES - 1, 24 * 60 - 1)
   return `${formatClockMinutes(bucket)}–${formatClockMinutes(endMinutes)}`
+}
+
+function timelineTimeLabel(event, selectedDate) {
+  const label = eventTimeLabel(event)
+  return event.date < selectedDate ? `前日 ${label}` : label
+}
+
+function timelineBucketLabel(row, selectedDate) {
+  const label = bucketLabel(row.bucket)
+  return row.date < selectedDate ? `前日 ${label}` : label
+}
+
+async function loadTimelineDay(familyId, date) {
+  const [careResult, bowelResult, noteResult, medicationResult] = await Promise.all([
+    getCareEvents(familyId, date),
+    getBowelEvents(familyId, date),
+    getTimelineNotes(familyId, date),
+    getMedicationDay(familyId, date),
+  ])
+  return { careResult, bowelResult, noteResult, medicationResult }
+}
+
+function timelineEventsFromDay({ careResult, bowelResult, noteResult, medicationResult }) {
+  return [
+    ...careResult.events
+      .filter((event) => event.eventType === 'feeding')
+      .map((event) => ({ ...event, recordType: 'milk' })),
+    ...(careResult.nextMilkPlans ?? []).map((event) => ({
+      ...event,
+      id: `milk-plan-${event.childId}-${event.date}-${event.time}`,
+      recordType: 'milk-plan',
+      timeType: 'exact',
+      createdAt: `${event.date}T${event.time}:59`,
+    })),
+    ...bowelResult.events.map((event) => ({ ...event, recordType: 'poop' })),
+    ...noteResult.notes.map((event) => ({ ...event, recordType: 'note' })),
+    ...medicationResult.administrations.map((event) => ({ ...event, recordType: 'medication' })),
+  ]
 }
 
 function TimelineRecordIcon({ event }) {
@@ -226,31 +273,30 @@ function TimelinePage({ session, onNavigate }) {
     let isActive = true
     setStatus('loading')
     setError('')
+    const previousDate = addDate(date, -1)
+    const previousDayRequest = date > '2026-01-01'
+      ? loadTimelineDay(activeFamily.id, previousDate)
+      : Promise.resolve(null)
     Promise.all([
-      getCareEvents(activeFamily.id, date),
-      getBowelEvents(activeFamily.id, date),
-      getTimelineNotes(activeFamily.id, date),
-      getMedicationDay(activeFamily.id, date),
+      loadTimelineDay(activeFamily.id, date),
+      previousDayRequest,
     ])
-      .then(([careResult, bowelResult, noteResult, medicationResult]) => {
+      .then(([currentDay, previousDay]) => {
         if (!isActive) return
+        const { careResult, bowelResult } = currentDay
         setChildren(careResult.children.length > 0 ? careResult.children : bowelResult.children)
+        const previousEveningEvents = previousDay
+          ? timelineEventsFromDay(previousDay).filter((event) => (
+            eventOrder(event) >= TIMELINE_PREVIOUS_DAY_START_HOUR * 60
+            && eventOrder(event) < 24 * 60
+          ))
+          : []
         setEvents([
-          ...careResult.events
-            .filter((event) => event.eventType === 'feeding')
-            .map((event) => ({ ...event, recordType: 'milk' })),
-          ...(careResult.nextMilkPlans ?? []).map((event) => ({
-            ...event,
-            id: `milk-plan-${event.childId}-${event.date}-${event.time}`,
-            recordType: 'milk-plan',
-            timeType: 'exact',
-            createdAt: `${event.date}T${event.time}:59`,
-          })),
-          ...bowelResult.events.map((event) => ({ ...event, recordType: 'poop' })),
-          ...noteResult.notes.map((event) => ({ ...event, recordType: 'note' })),
-          ...medicationResult.administrations.map((event) => ({ ...event, recordType: 'medication' })),
+          ...previousEveningEvents,
+          ...timelineEventsFromDay(currentDay),
         ].sort((left, right) => (
-          eventOrder(left) - eventOrder(right)
+          left.date.localeCompare(right.date)
+          || eventOrder(left) - eventOrder(right)
           || new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
         )))
         setStatus('ready')
@@ -290,10 +336,13 @@ function TimelinePage({ session, onNavigate }) {
     const rows = new Map()
     visibleEvents.forEach((event) => {
       const bucket = eventBucket(event)
-      if (!rows.has(bucket)) rows.set(bucket, { bucket, tomo: [], yuu: [] })
-      rows.get(bucket)[childTone(event.childName)].push(event)
+      const key = `${event.date}:${bucket}`
+      if (!rows.has(key)) rows.set(key, { key, date: event.date, bucket, tomo: [], yuu: [] })
+      rows.get(key)[childTone(event.childName)].push(event)
     })
     return [...rows.values()].sort((left, right) => {
+      const dateOrder = left.date.localeCompare(right.date)
+      if (dateOrder !== 0) return dateOrder
       if (left.bucket === 'unknown') return 1
       if (right.bucket === 'unknown') return -1
       return left.bucket - right.bucket
@@ -492,7 +541,7 @@ function TimelinePage({ session, onNavigate }) {
         {status === 'ready' && visibleEvents.length === 0 && (
           <div className="milk-empty">
             <span aria-hidden="true">♡</span>
-            <p>この日の記録はまだありません。</p>
+            <p>前日20時以降から、この日の記録はまだありません。</p>
           </div>
         )}
         {status === 'ready' && visibleEvents.length > 0 && (
@@ -504,12 +553,12 @@ function TimelinePage({ session, onNavigate }) {
                 <strong>結ちゃん</strong>
               </div>
             )}
-            <div ref={scrollRef} className="timeline-scroll" tabIndex="0" aria-label={`${formatDateLabel(date)}の記録一覧`}>
+            <div ref={scrollRef} className="timeline-scroll" tabIndex="0" aria-label={`${formatDateLabel(date)}の記録一覧。前日20時以降を含みます`}>
               {selectedTone === 'both' ? (
-                <div className="timeline-comparison" role="table" aria-label={`${formatDateLabel(date)}のふたりのタイムライン`}>
+                <div className="timeline-comparison" role="table" aria-label={`${formatDateLabel(date)}のふたりのタイムライン。前日20時以降を含みます`}>
                   {comparisonRows.map((row) => (
-                    <div className="timeline-comparison-row" role="row" key={row.bucket}>
-                      <time role="rowheader">{bucketLabel(row.bucket)}</time>
+                    <div className="timeline-comparison-row" role="row" key={row.key}>
+                      <time role="rowheader">{timelineBucketLabel(row, date)}</time>
                       {['tomo', 'yuu'].map((tone) => (
                         <div className={`timeline-comparison-cell timeline-comparison-cell--${tone}`} role="cell" key={tone}>
                           {row[tone].map((event) => {
@@ -519,11 +568,11 @@ function TimelinePage({ session, onNavigate }) {
                                   <span
                                     className={`milk-event-icon milk-event-icon--${tone} timeline-event-icon--milk-plan timeline-comparison-event`}
                                     role="img"
-                                    aria-label={`${event.time}、${childDisplayName(event.childName)}の次のミルク予定`}
+                                    aria-label={`${timelineTimeLabel(event, date)}、${childDisplayName(event.childName)}の次のミルク予定`}
                                   >
                                     <BottleIcon />
                                   </span>
-                                  <time>{event.time}</time>
+                                  <time>{timelineTimeLabel(event, date)}</time>
                                 </span>
                               )
                             }
@@ -532,7 +581,7 @@ function TimelinePage({ session, onNavigate }) {
                                 <button
                                   type="button"
                                   className={`milk-event-icon milk-event-icon--${tone} timeline-event-icon--${event.recordType} timeline-comparison-event`}
-                                  aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${recordLabel(event)}。詳細を表示`}
+                                  aria-label={`${timelineTimeLabel(event, date)}、${childDisplayName(event.childName)}の${recordLabel(event)}。詳細を表示`}
                                   onClick={() => setSelectedEvent(event)}
                                 >
                                   <TimelineRecordIcon event={event} />
@@ -540,7 +589,7 @@ function TimelinePage({ session, onNavigate }) {
                                     <small className="timeline-comparison-event__approximate" aria-hidden="true">〜</small>
                                   )}
                                 </button>
-                                <time>{eventTimeLabel(event)}</time>
+                                <time>{timelineTimeLabel(event, date)}</time>
                               </span>
                             )
                           })}
@@ -550,7 +599,7 @@ function TimelinePage({ session, onNavigate }) {
                   ))}
                 </div>
               ) : (
-                <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン`}>
+                <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン。前日20時以降を含みます`}>
               {visibleEvents.map((event) => {
                 const isMilk = event.recordType === 'milk'
                 const isMilkPlan = event.recordType === 'milk-plan'
@@ -579,12 +628,12 @@ function TimelinePage({ session, onNavigate }) {
                   : event.text
                 return (
                   <li key={`${event.recordType}-${event.id}`}>
-                    <time>{eventTimeLabel(event)}</time>
+                    <time>{timelineTimeLabel(event, date)}</time>
                     {isMilkPlan ? (
                       <span
                         className={`milk-event-icon milk-event-icon--${childTone(event.childName)} timeline-event-icon--milk-plan`}
                         role="img"
-                        aria-label={`${event.time}、${childDisplayName(event.childName)}の次のミルク予定`}
+                        aria-label={`${timelineTimeLabel(event, date)}、${childDisplayName(event.childName)}の次のミルク予定`}
                       >
                         <BottleIcon />
                       </span>
@@ -592,7 +641,7 @@ function TimelinePage({ session, onNavigate }) {
                       <button
                         type="button"
                         className={`milk-event-icon milk-event-icon--${childTone(event.childName)} timeline-event-icon--${event.recordType}`}
-                        aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${recordLabel(event)}、${summaryLabel}。詳細を表示`}
+                        aria-label={`${timelineTimeLabel(event, date)}、${childDisplayName(event.childName)}の${recordLabel(event)}、${summaryLabel}。詳細を表示`}
                         onClick={() => setSelectedEvent(event)}
                       >
                         <TimelineRecordIcon event={event} />
@@ -669,6 +718,17 @@ function TimelinePage({ session, onNavigate }) {
         >
           <DiaperIcon />
           <span>おむつ</span>
+        </a>
+        <a
+          className="timeline-quick-add__item timeline-quick-add__item--temperature"
+          href={quickAddPath('temperature')}
+          onClick={navigateQuickAdd('temperature')}
+          aria-label={`${quickAddSubject}検温を記録`}
+          aria-hidden={!isQuickAddOpen}
+          tabIndex={isQuickAddOpen ? 0 : -1}
+        >
+          <ThermometerIcon />
+          <span>検温</span>
         </a>
         <a
           className="timeline-quick-add__item timeline-quick-add__item--medication"
