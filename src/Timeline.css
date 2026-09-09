@@ -320,23 +320,28 @@
 }
 
 .timeline-quick-add.is-open .timeline-quick-add__item--milk {
-  transform: translate(-130px, -2px) scale(1) rotate(0);
+  transform: translate(-158px, -2px) scale(1) rotate(0);
   transition-delay: 30ms;
 }
 
 .timeline-quick-add.is-open .timeline-quick-add__item--poop {
-  transform: translate(-112px, -66px) scale(1) rotate(0);
-  transition-delay: 80ms;
+  transform: translate(-146px, -60px) scale(1) rotate(0);
+  transition-delay: 70ms;
+}
+
+.timeline-quick-add.is-open .timeline-quick-add__item--temperature {
+  transform: translate(-112px, -112px) scale(1) rotate(0);
+  transition-delay: 110ms;
 }
 
 .timeline-quick-add.is-open .timeline-quick-add__item--medication {
-  transform: translate(-65px, -114px) scale(1) rotate(0);
-  transition-delay: 130ms;
+  transform: translate(-60px, -146px) scale(1) rotate(0);
+  transition-delay: 150ms;
 }
 
 .timeline-quick-add.is-open .timeline-quick-add__item--note {
-  transform: translate(0, -132px) scale(1) rotate(0);
-  transition-delay: 180ms;
+  transform: translate(0, -158px) scale(1) rotate(0);
+  transition-delay: 190ms;
 }
 
 .timeline-scroll:focus-visible {
@@ -752,19 +757,23 @@
   }
 
   .timeline-quick-add.is-open .timeline-quick-add__item--milk {
-    transform: translate(-118px, -2px) scale(1) rotate(0);
+    transform: translate(-146px, -2px) scale(1) rotate(0);
   }
 
   .timeline-quick-add.is-open .timeline-quick-add__item--poop {
-    transform: translate(-102px, -60px) scale(1) rotate(0);
+    transform: translate(-135px, -56px) scale(1) rotate(0);
+  }
+
+  .timeline-quick-add.is-open .timeline-quick-add__item--temperature {
+    transform: translate(-103px, -103px) scale(1) rotate(0);
   }
 
   .timeline-quick-add.is-open .timeline-quick-add__item--medication {
-    transform: translate(-59px, -103px) scale(1) rotate(0);
+    transform: translate(-56px, -135px) scale(1) rotate(0);
   }
 
   .timeline-quick-add.is-open .timeline-quick-add__item--note {
-    transform: translate(0, -119px) scale(1) rotate(0);
+    transform: translate(0, -146px) scale(1) rotate(0);
   }
 }
 

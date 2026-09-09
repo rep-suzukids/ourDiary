@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { BottleIcon, DiaperIcon, MedicationIcon, NoteIcon } from '../components/CareEventIcons.jsx'
+import {
+  BottleIcon,
+  DiaperIcon,
+  MedicationIcon,
+  NoteIcon,
+  ThermometerIcon,
+} from '../components/CareEventIcons.jsx'
 import {
   addDate,
   childDisplayName,
@@ -712,6 +718,17 @@ function TimelinePage({ session, onNavigate }) {
         >
           <DiaperIcon />
           <span>おむつ</span>
+        </a>
+        <a
+          className="timeline-quick-add__item timeline-quick-add__item--temperature"
+          href={quickAddPath('temperature')}
+          onClick={navigateQuickAdd('temperature')}
+          aria-label={`${quickAddSubject}検温を記録`}
+          aria-hidden={!isQuickAddOpen}
+          tabIndex={isQuickAddOpen ? 0 : -1}
+        >
+          <ThermometerIcon />
+          <span>検温</span>
         </a>
         <a
           className="timeline-quick-add__item timeline-quick-add__item--medication"
