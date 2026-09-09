@@ -515,7 +515,7 @@ function TimelinePage({ session, onNavigate }) {
                           {row[tone].map((event) => {
                             if (event.recordType === 'milk-plan') {
                               return (
-                                <span className="timeline-comparison-planned" key={event.id}>
+                                <span className="timeline-comparison-entry timeline-comparison-entry--planned" key={event.id}>
                                   <span
                                     className={`milk-event-icon milk-event-icon--${tone} timeline-event-icon--milk-plan timeline-comparison-event`}
                                     role="img"
@@ -528,18 +528,20 @@ function TimelinePage({ session, onNavigate }) {
                               )
                             }
                             return (
-                              <button
-                                type="button"
-                                className={`milk-event-icon milk-event-icon--${tone} timeline-event-icon--${event.recordType} timeline-comparison-event`}
-                                aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${recordLabel(event)}。詳細を表示`}
-                                onClick={() => setSelectedEvent(event)}
-                                key={`${event.recordType}-${event.id}`}
-                              >
-                                <TimelineRecordIcon event={event} />
-                                {event.timeType === 'period' && (
-                                  <small className="timeline-comparison-event__approximate" aria-hidden="true">〜</small>
-                                )}
-                              </button>
+                              <span className="timeline-comparison-entry" key={`${event.recordType}-${event.id}`}>
+                                <button
+                                  type="button"
+                                  className={`milk-event-icon milk-event-icon--${tone} timeline-event-icon--${event.recordType} timeline-comparison-event`}
+                                  aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${recordLabel(event)}。詳細を表示`}
+                                  onClick={() => setSelectedEvent(event)}
+                                >
+                                  <TimelineRecordIcon event={event} />
+                                  {event.timeType === 'period' && (
+                                    <small className="timeline-comparison-event__approximate" aria-hidden="true">〜</small>
+                                  )}
+                                </button>
+                                <time>{eventTimeLabel(event)}</time>
+                              </span>
                             )
                           })}
                         </div>
