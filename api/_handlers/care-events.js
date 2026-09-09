@@ -5,6 +5,8 @@ const EVENT_TYPES = new Set(['feeding', 'pumping'])
 const TIME_TYPES = new Set(['exact', 'period', 'unknown'])
 const TIME_PERIODS = new Set(['late_night', 'early_morning', 'morning', 'noon', 'evening', 'night'])
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const MIN_MILK_INTERVAL_HOURS = 1
+const MAX_MILK_INTERVAL_HOURS = 24
 
 function sendJson(response, status, body) {
   response.status(status).json(body)
@@ -192,6 +194,60 @@ async function getRecentAmounts(sql, familyId) {
   `
 }
 
+async function getMilkInterval(sql, familyId) {
+  const rows = await sql`
+    SELECT milk_interval_hours AS "intervalHours"
+    FROM family_care_settings
+    WHERE family_id = ${familyId}
+  `
+  return rows[0]?.intervalHours ?? null
+}
+
+async function getNextMilkPlans(sql, familyId, date) {
+  return sql`
+    WITH latest_feedings AS (
+      SELECT DISTINCT ON (ce.child_id)
+        ce.id AS source_event_id,
+        ce.child_id,
+        c.display_name AS child_name,
+        ce.time_type,
+        ce.event_date + ce.event_time AS fed_at
+      FROM care_events ce
+      INNER JOIN children c
+        ON c.family_id = ce.family_id AND c.id = ce.child_id AND c.archived_at IS NULL
+      WHERE ce.family_id = ${familyId}
+        AND ce.event_type = 'feeding'
+        AND ce.deleted_at IS NULL
+      ORDER BY
+        ce.child_id,
+        ce.event_date DESC,
+        ce.event_time DESC NULLS FIRST,
+        ce.created_at DESC
+    ), plans AS (
+      SELECT
+        lf.source_event_id,
+        lf.child_id,
+        lf.child_name,
+        settings.milk_interval_hours,
+        lf.fed_at + settings.milk_interval_hours * interval '1 hour' AS planned_at
+      FROM latest_feedings lf
+      CROSS JOIN family_care_settings settings
+      WHERE settings.family_id = ${familyId}
+        AND lf.time_type = 'exact'
+    )
+    SELECT
+      source_event_id AS "sourceEventId",
+      child_id AS "childId",
+      child_name AS "childName",
+      milk_interval_hours AS "intervalHours",
+      to_char(planned_at, 'YYYY-MM-DD') AS date,
+      to_char(planned_at, 'HH24:MI') AS time
+    FROM plans
+    WHERE planned_at::date = ${date}::date
+    ORDER BY planned_at, child_name
+  `
+}
+
 export default async function handler(request, response) {
   if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method)) {
     response.setHeader('Allow', 'GET, POST, PATCH, DELETE')
@@ -206,6 +262,10 @@ export default async function handler(request, response) {
   }
 
   try {
+    const url = new URL(request.url, 'http://localhost')
+    const view = request.query?.view ?? url.searchParams.get('view')
+    const isManagingInterval = (request.method === 'GET' && view === 'milk-interval')
+      || (request.method === 'PATCH' && request.body?.action === 'setMilkInterval')
     const permissionByMethod = {
       GET: 'care:read',
       POST: 'care:create',
@@ -215,13 +275,19 @@ export default async function handler(request, response) {
     const authorization = await authorizeFamilyRequest(
       request,
       familyId,
-      permissionByMethod[request.method],
+      isManagingInterval ? 'care:manage' : permissionByMethod[request.method],
     )
     const sql = getDatabase()
 
     if (request.method === 'GET') {
-      const url = new URL(request.url, 'http://localhost')
-      const view = request.query?.view ?? url.searchParams.get('view')
+      if (view === 'milk-interval') {
+        sendJson(response, 200, {
+          intervalHours: await getMilkInterval(sql, familyId),
+          minHours: MIN_MILK_INTERVAL_HOURS,
+          maxHours: MAX_MILK_INTERVAL_HOURS,
+        })
+        return
+      }
       if (view === 'month') {
         const range = monthRange(
           request.query?.year ?? url.searchParams.get('year'),
@@ -245,11 +311,12 @@ export default async function handler(request, response) {
         return
       }
       const week = weekRange(date)
-      const [children, events, amounts, weeklySummaries] = await Promise.all([
+      const [children, events, amounts, weeklySummaries, nextMilkPlans] = await Promise.all([
         getFixedChildren(sql, familyId),
         getEvents(sql, familyId, authorization.userId, date),
         getRecentAmounts(sql, familyId),
         getCareSummaries(sql, familyId, week.start, week.endExclusive),
+        getNextMilkPlans(sql, familyId, date),
       ])
       const recentAmounts = { pumping: [], children: {} }
       for (const amount of amounts) {
@@ -264,12 +331,37 @@ export default async function handler(request, response) {
         children,
         events,
         recentAmounts,
+        nextMilkPlans,
         weeklySummary: {
           start: week.start,
           end: week.end,
           summaries: weeklySummaries,
         },
       })
+      return
+    }
+
+    if (request.method === 'PATCH' && request.body?.action === 'setMilkInterval') {
+      const intervalHours = Number(request.body?.intervalHours)
+      if (!Number.isInteger(intervalHours)
+        || intervalHours < MIN_MILK_INTERVAL_HOURS
+        || intervalHours > MAX_MILK_INTERVAL_HOURS) {
+        sendJson(response, 400, {
+          error: `ミルク時間間隔は${MIN_MILK_INTERVAL_HOURS}〜${MAX_MILK_INTERVAL_HOURS}の整数で入力してください。`,
+        })
+        return
+      }
+      const rows = await sql`
+        INSERT INTO family_care_settings (family_id, milk_interval_hours, updated_by)
+        VALUES (${familyId}, ${intervalHours}, ${authorization.userId})
+        ON CONFLICT (family_id) DO UPDATE
+        SET
+          milk_interval_hours = EXCLUDED.milk_interval_hours,
+          updated_by = EXCLUDED.updated_by,
+          updated_at = now()
+        RETURNING milk_interval_hours AS "intervalHours"
+      `
+      sendJson(response, 200, { intervalHours: rows[0].intervalHours })
       return
     }
 

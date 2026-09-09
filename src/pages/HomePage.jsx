@@ -196,6 +196,16 @@ function HomePage({ session, onLogout, onNavigate, dailyReminder }) {
             >
               おくすり管理
             </a>
+            <a
+              className="album-settings-link"
+              href="/admin/milk-interval"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/admin/milk-interval')
+              }}
+            >
+              ミルク時間間隔
+            </a>
           </div>
         )}
 

@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import MedicationFormPage from './pages/MedicationFormPage.jsx'
 import MedicationManagementPage from './pages/MedicationManagementPage.jsx'
 import MilkFormPage from './pages/MilkFormPage.jsx'
+import MilkIntervalSettingsPage from './pages/MilkIntervalSettingsPage.jsx'
 import MilkCalendarPage from './pages/MilkCalendarPage.jsx'
 import MilkPage from './pages/MilkPage.jsx'
 import PoopCalendarPage from './pages/PoopCalendarPage.jsx'
@@ -161,6 +162,13 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return withDailyReminders(<MedicationManagementPage session={session} onNavigate={navigate} />)
+  }
+
+  if (pathname === '/admin/milk-interval') {
+    if (!session || session.families[0]?.role !== 'admin') {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return withDailyReminders(<MilkIntervalSettingsPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/diary') {

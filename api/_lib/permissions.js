@@ -54,6 +54,7 @@ const ROLE_PERMISSIONS = Object.freeze({
     'care:create',
     'care:update',
     'care:delete',
+    'care:manage',
     'child:create',
     'child:update',
     'child:archive',

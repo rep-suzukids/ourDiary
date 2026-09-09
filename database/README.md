@@ -28,8 +28,10 @@
 22. 予定の開始・終了時刻を追加する `021_schedule_times.sql` を実行します。
 23. タイムラインのその他記録を追加する `022_timeline_notes.sql` を実行します。
 24. うんち記録をおしっこにも対応したおむつ記録へ拡張する `023_diaper_records.sql` を実行します。
-25. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-26. 再デプロイし、登録した管理者Googleアカウントでログインします。
+25. おくすり管理と投薬記録を追加する `024_medications.sql` を実行します。
+26. 次回のミルク予定を算出する設定を追加する `025_milk_interval_settings.sql` を実行します。
+27. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+28. 再デプロイし、登録した管理者Googleアカウントでログインします。
 
 ## ログインセッション
 
