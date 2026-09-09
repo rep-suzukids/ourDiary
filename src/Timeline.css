@@ -431,6 +431,20 @@
   height: 22px;
 }
 
+.timeline-comparison-planned {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.timeline-comparison-planned time {
+  color: #8d809f;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .timeline-comparison-event__approximate {
   position: absolute;
   top: -5px;
@@ -529,6 +543,7 @@
 }
 
 .timeline-event-icon--milk svg,
+.timeline-event-icon--milk-plan svg,
 .timeline-event-icon--poop svg,
 .timeline-event-icon--note svg,
 .timeline-event-icon--medication svg,
@@ -538,6 +553,34 @@
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2.2;
+}
+
+.milk-event-icon--tomo.timeline-event-icon--milk-plan {
+  border-style: dashed;
+  border-color: #c6c8ec;
+  background: #eeefff;
+  color: #777bbe;
+  box-shadow: 0 5px 14px rgb(119 123 190 / 12%);
+  cursor: default;
+}
+
+.milk-event-icon--yuu.timeline-event-icon--milk-plan {
+  border-style: dashed;
+  border-color: #efbed0;
+  background: #fff0f5;
+  color: #c56589;
+  box-shadow: 0 5px 14px rgb(197 101 137 / 12%);
+  cursor: default;
+}
+
+.timeline-event-icon--milk-plan:hover {
+  transform: none;
+}
+
+.timeline-event-summary__milk-plan {
+  color: #8d809f;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .timeline-event-icon--note {

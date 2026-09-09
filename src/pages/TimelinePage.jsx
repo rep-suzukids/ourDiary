@@ -85,7 +85,7 @@ function bucketLabel(bucket) {
 }
 
 function TimelineRecordIcon({ event }) {
-  if (event.recordType === 'milk') return <BottleIcon />
+  if (event.recordType === 'milk' || event.recordType === 'milk-plan') return <BottleIcon />
   if (event.recordType === 'note') return <NoteIcon />
   if (event.recordType === 'medication') return <MedicationIcon />
   return <DiaperIcon />
@@ -93,6 +93,7 @@ function TimelineRecordIcon({ event }) {
 
 function recordLabel(event) {
   if (event.recordType === 'milk') return 'ミルク'
+  if (event.recordType === 'milk-plan') return '次のミルク予定'
   if (event.recordType === 'note') return 'その他'
   if (event.recordType === 'medication') return 'おくすり'
   return 'おむつ'
@@ -238,6 +239,13 @@ function TimelinePage({ session, onNavigate }) {
           ...careResult.events
             .filter((event) => event.eventType === 'feeding')
             .map((event) => ({ ...event, recordType: 'milk' })),
+          ...(careResult.nextMilkPlans ?? []).map((event) => ({
+            ...event,
+            id: `milk-plan-${event.childId}-${event.date}-${event.time}`,
+            recordType: 'milk-plan',
+            timeType: 'exact',
+            createdAt: `${event.date}T${event.time}:59`,
+          })),
           ...bowelResult.events.map((event) => ({ ...event, recordType: 'poop' })),
           ...noteResult.notes.map((event) => ({ ...event, recordType: 'note' })),
           ...medicationResult.administrations.map((event) => ({ ...event, recordType: 'medication' })),
@@ -505,6 +513,20 @@ function TimelinePage({ session, onNavigate }) {
                       {['tomo', 'yuu'].map((tone) => (
                         <div className={`timeline-comparison-cell timeline-comparison-cell--${tone}`} role="cell" key={tone}>
                           {row[tone].map((event) => {
+                            if (event.recordType === 'milk-plan') {
+                              return (
+                                <span className="timeline-comparison-planned" key={event.id}>
+                                  <span
+                                    className={`milk-event-icon milk-event-icon--${tone} timeline-event-icon--milk-plan timeline-comparison-event`}
+                                    role="img"
+                                    aria-label={`${event.time}、${childDisplayName(event.childName)}の次のミルク予定`}
+                                  >
+                                    <BottleIcon />
+                                  </span>
+                                  <time>{event.time}</time>
+                                </span>
+                              )
+                            }
                             return (
                               <button
                                 type="button"
@@ -529,9 +551,10 @@ function TimelinePage({ session, onNavigate }) {
                 <ol className="milk-timeline timeline-events" aria-label={`${formatDateLabel(date)}のタイムライン`}>
               {visibleEvents.map((event) => {
                 const isMilk = event.recordType === 'milk'
+                const isMilkPlan = event.recordType === 'milk-plan'
                 const isNote = event.recordType === 'note'
                 const isMedication = event.recordType === 'medication'
-                const poopDetails = isMilk || isNote || isMedication ? [] : [
+                const poopDetails = isMilk || isMilkPlan || isNote || isMedication ? [] : [
                   ...(event.urineAmount ? [{ label: 'おしっこ', value: bowelOptionLabel(URINE_AMOUNT_OPTIONS, event.urineAmount) }] : []),
                   ...(event.amount ? [
                     { label: 'うんち', value: bowelOptionLabel(BOWEL_AMOUNT_OPTIONS, event.amount) },
@@ -541,6 +564,8 @@ function TimelinePage({ session, onNavigate }) {
                 ]
                 const summaryLabel = isMilk
                   ? `${formatAmount(event.amountMl)}mL`
+                  : isMilkPlan
+                    ? '次のミルク予定'
                   : isNote
                     ? event.text
                     : isMedication
@@ -553,20 +578,32 @@ function TimelinePage({ session, onNavigate }) {
                 return (
                   <li key={`${event.recordType}-${event.id}`}>
                     <time>{eventTimeLabel(event)}</time>
-                    <button
-                      type="button"
-                      className={`milk-event-icon milk-event-icon--${childTone(event.childName)} timeline-event-icon--${event.recordType}`}
-                      aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${recordLabel(event)}、${summaryLabel}。詳細を表示`}
-                      onClick={() => setSelectedEvent(event)}
-                              >
-                                <TimelineRecordIcon event={event} />
-                                {event.timeType === 'period' && (
-                                  <small className="timeline-comparison-event__approximate" aria-hidden="true">〜</small>
-                                )}
-                              </button>
+                    {isMilkPlan ? (
+                      <span
+                        className={`milk-event-icon milk-event-icon--${childTone(event.childName)} timeline-event-icon--milk-plan`}
+                        role="img"
+                        aria-label={`${event.time}、${childDisplayName(event.childName)}の次のミルク予定`}
+                      >
+                        <BottleIcon />
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`milk-event-icon milk-event-icon--${childTone(event.childName)} timeline-event-icon--${event.recordType}`}
+                        aria-label={`${eventTimeLabel(event)}、${childDisplayName(event.childName)}の${recordLabel(event)}、${summaryLabel}。詳細を表示`}
+                        onClick={() => setSelectedEvent(event)}
+                      >
+                        <TimelineRecordIcon event={event} />
+                        {event.timeType === 'period' && (
+                          <small className="timeline-comparison-event__approximate" aria-hidden="true">〜</small>
+                        )}
+                      </button>
+                    )}
                     <div className={`timeline-event-summary timeline-event-summary--${event.recordType} timeline-event-summary--${childTone(event.childName)}`}>
                       {isMilk ? (
                         <strong>{formatAmount(event.amountMl)}<small> mL</small></strong>
+                      ) : isMilkPlan ? (
+                        <strong className="timeline-event-summary__milk-plan">次のミルク予定</strong>
                       ) : isNote ? (
                         <button className="timeline-event-summary__note" type="button" title={event.text} onClick={() => setSelectedEvent(event)}>
                           {noteSummary}
@@ -580,7 +617,7 @@ function TimelinePage({ session, onNavigate }) {
                           ))}
                         </div>
                       )}
-                      {!isMilk && !isNote && !isMedication && event.memo && (
+                      {!isMilk && !isMilkPlan && !isNote && !isMedication && event.memo && (
                         <p title={event.memo}>{event.memo}</p>
                       )}
                     </div>

@@ -37,6 +37,24 @@ export async function getMonthlyCareSummary(familyId, year, month) {
   return readResponse(response)
 }
 
+export async function getMilkIntervalSettings(familyId) {
+  const response = await fetch('/api/care-events?view=milk-interval', {
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId),
+  })
+  return readResponse(response)
+}
+
+export async function updateMilkIntervalSettings(familyId, intervalHours) {
+  const response = await fetch('/api/care-events', {
+    method: 'PATCH',
+    credentials: 'same-origin',
+    headers: requestHeaders(familyId, true),
+    body: JSON.stringify({ action: 'setMilkInterval', intervalHours }),
+  })
+  return readResponse(response)
+}
+
 export async function createCareEvent(familyId, values) {
   const response = await fetch('/api/care-events', {
     method: 'POST',
