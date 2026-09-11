@@ -8,6 +8,7 @@ import {
 } from '../services/albumApi.js'
 
 const MAX_FILES = 10
+const MAX_PREVIEW_FILES = 4
 const THUMBNAIL_SIZE = 180
 const ACCEPTED_IMAGES = 'image/avif,image/bmp,image/gif,image/heic,image/heif,image/jpeg,image/png,image/tiff,image/webp'
 
@@ -131,7 +132,10 @@ function AlbumUploadPage({ session, onNavigate }) {
     setError(selectedFiles.length > MAX_FILES
       ? `一度に選択できるのは${MAX_FILES}枚までです。`
       : '')
-    setIsPreparing(validFiles.length > 0)
+    const shouldCreatePreviews = validFiles.length <= MAX_PREVIEW_FILES
+    setIsPreparing(shouldCreatePreviews && validFiles.length > 0)
+
+    if (!shouldCreatePreviews) return
 
     for (const [index, file] of validFiles.entries()) {
       try {
@@ -217,22 +221,29 @@ function AlbumUploadPage({ session, onNavigate }) {
         )}
 
         {items.length > 0 && (
-          <ul className="upload-list">
-            {items.map((item) => (
-              <li key={`${item.name}-${item.lastModified}`} className={`upload-item upload-item--${item.status}`}>
-                {item.previewUrl
-                  ? <img src={item.previewUrl} alt="" />
-                  : <span className="upload-item__placeholder" aria-hidden="true">写真</span>}
-                <div className="upload-item__detail">
-                  <strong>{item.name}</strong>
-                  <span>{(item.size / 1024 / 1024).toFixed(1)} MB</span>
-                  {item.status === 'uploading' && <progress max="100" value={item.progress} />}
-                  {item.message && <small>{item.message}</small>}
-                </div>
-                <output>{item.status === 'success' ? '✓' : item.status === 'error' ? '!' : ''}</output>
-              </li>
-            ))}
-          </ul>
+          <>
+            {items.length > MAX_PREVIEW_FILES && (
+              <p className="info-text upload-preview-note">
+                端末の負荷を抑えるため、5枚以上選択した場合はプレビューを省略します。
+              </p>
+            )}
+            <ul className="upload-list">
+              {items.map((item) => (
+                <li key={`${item.name}-${item.lastModified}`} className={`upload-item upload-item--${item.status}`}>
+                  {item.previewUrl
+                    ? <img src={item.previewUrl} alt="" />
+                    : <span className="upload-item__placeholder" aria-hidden="true">写真</span>}
+                  <div className="upload-item__detail">
+                    <strong>{item.name}</strong>
+                    <span>{(item.size / 1024 / 1024).toFixed(1)} MB</span>
+                    {item.status === 'uploading' && <progress max="100" value={item.progress} />}
+                    {item.message && <small>{item.message}</small>}
+                  </div>
+                  <output>{item.status === 'success' ? '✓' : item.status === 'error' ? '!' : ''}</output>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
 
         {error && <div className="error-box upload-error">{error}</div>}
