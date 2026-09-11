@@ -29,6 +29,7 @@ import {
   deleteMedicationAdministration,
   getMedicationDay,
 } from '../services/medicationApi.js'
+import { deleteTemperatureEvent, getTemperatureEvents } from '../services/temperatureApi.js'
 import { deleteTimelineNote, getTimelineNotes } from '../services/timelineNoteApi.js'
 import {
   TIMELINE_BUCKET_MINUTES,
@@ -104,16 +105,17 @@ function timelineBucketLabel(row, selectedDate) {
 }
 
 async function loadTimelineDay(familyId, date) {
-  const [careResult, bowelResult, noteResult, medicationResult] = await Promise.all([
+  const [careResult, bowelResult, noteResult, medicationResult, temperatureResult] = await Promise.all([
     getCareEvents(familyId, date),
     getBowelEvents(familyId, date),
     getTimelineNotes(familyId, date),
     getMedicationDay(familyId, date),
+    getTemperatureEvents(familyId, date),
   ])
-  return { careResult, bowelResult, noteResult, medicationResult }
+  return { careResult, bowelResult, noteResult, medicationResult, temperatureResult }
 }
 
-function timelineEventsFromDay({ careResult, bowelResult, noteResult, medicationResult }) {
+function timelineEventsFromDay({ careResult, bowelResult, noteResult, medicationResult, temperatureResult }) {
   return [
     ...careResult.events
       .filter((event) => event.eventType === 'feeding')
@@ -128,6 +130,7 @@ function timelineEventsFromDay({ careResult, bowelResult, noteResult, medication
     ...bowelResult.events.map((event) => ({ ...event, recordType: 'poop' })),
     ...noteResult.notes.map((event) => ({ ...event, recordType: 'note' })),
     ...medicationResult.administrations.map((event) => ({ ...event, recordType: 'medication' })),
+    ...temperatureResult.events.map((event) => ({ ...event, recordType: 'temperature' })),
   ]
 }
 
@@ -135,6 +138,7 @@ function TimelineRecordIcon({ event }) {
   if (event.recordType === 'milk' || event.recordType === 'milk-plan') return <BottleIcon />
   if (event.recordType === 'note') return <NoteIcon />
   if (event.recordType === 'medication') return <MedicationIcon />
+  if (event.recordType === 'temperature') return <ThermometerIcon />
   return <DiaperIcon />
 }
 
@@ -143,6 +147,7 @@ function recordLabel(event) {
   if (event.recordType === 'milk-plan') return '次のミルク予定'
   if (event.recordType === 'note') return 'その他'
   if (event.recordType === 'medication') return 'おくすり'
+  if (event.recordType === 'temperature') return '検温'
   return 'おむつ'
 }
 
@@ -158,6 +163,7 @@ function TimelineDetailModal({ event, onClose, onDelete, onNavigate, returnPath 
   const isMilk = event.recordType === 'milk'
   const isNote = event.recordType === 'note'
   const isMedication = event.recordType === 'medication'
+  const isTemperature = event.recordType === 'temperature'
   const timelinePath = returnPath || `/timeline?${new URLSearchParams({
     date: event.date,
     child: childTone(event.childName),
@@ -178,14 +184,18 @@ function TimelineDetailModal({ event, onClose, onDelete, onNavigate, returnPath 
       })}`
       : isMedication
         ? `/medication/edit?${editQuery}`
-        : `/poop/edit?${editQuery}`
+        : isTemperature
+          ? `/temperature/edit?${editQuery}`
+          : `/poop/edit?${editQuery}`
   const editButtonClass = isNote
     ? 'timeline-note-primary-button'
     : isMilk
       ? ''
       : isMedication
         ? 'medication-primary-button'
-        : 'poop-primary-button'
+        : isTemperature
+          ? 'temperature-primary-button'
+          : 'poop-primary-button'
 
   return (
     <div
@@ -207,6 +217,8 @@ function TimelineDetailModal({ event, onClose, onDelete, onNavigate, returnPath 
             <div><dt>量</dt><dd>{formatAmount(event.amountMl)} mL</dd></div>
           ) : isMedication ? (
             <div><dt>おくすり</dt><dd>{event.medicationName}</dd></div>
+          ) : isTemperature ? (
+            <div><dt>体温</dt><dd>{Number(event.temperature).toFixed(1)}℃</dd></div>
           ) : (
             <>
               {event.urineAmount && <div><dt>おしっこの量</dt><dd>{bowelOptionLabel(URINE_AMOUNT_OPTIONS, event.urineAmount)}</dd></div>}
@@ -283,8 +295,14 @@ function TimelinePage({ session, onNavigate }) {
     ])
       .then(([currentDay, previousDay]) => {
         if (!isActive) return
-        const { careResult, bowelResult } = currentDay
-        setChildren(careResult.children.length > 0 ? careResult.children : bowelResult.children)
+        const { careResult, bowelResult, temperatureResult } = currentDay
+        setChildren(
+          careResult.children.length > 0
+            ? careResult.children
+            : bowelResult.children.length > 0
+              ? bowelResult.children
+              : temperatureResult.children,
+        )
         const previousEveningEvents = previousDay
           ? timelineEventsFromDay(previousDay).filter((event) => (
             eventOrder(event) >= TIMELINE_PREVIOUS_DAY_START_HOUR * 60
@@ -444,6 +462,8 @@ function TimelinePage({ session, onNavigate }) {
         await deleteTimelineNote(activeFamily.id, targetEvent.id)
       } else if (targetEvent.recordType === 'medication') {
         await deleteMedicationAdministration(activeFamily.id, targetEvent.id)
+      } else if (targetEvent.recordType === 'temperature') {
+        await deleteTemperatureEvent(activeFamily.id, targetEvent.id)
       } else {
         await deleteBowelEvent(activeFamily.id, targetEvent.id)
       }
@@ -605,7 +625,8 @@ function TimelinePage({ session, onNavigate }) {
                 const isMilkPlan = event.recordType === 'milk-plan'
                 const isNote = event.recordType === 'note'
                 const isMedication = event.recordType === 'medication'
-                const poopDetails = isMilk || isMilkPlan || isNote || isMedication ? [] : [
+                const isTemperature = event.recordType === 'temperature'
+                const poopDetails = isMilk || isMilkPlan || isNote || isMedication || isTemperature ? [] : [
                   ...(event.urineAmount ? [{ label: 'おしっこ', value: bowelOptionLabel(URINE_AMOUNT_OPTIONS, event.urineAmount) }] : []),
                   ...(event.amount ? [
                     { label: 'うんち', value: bowelOptionLabel(BOWEL_AMOUNT_OPTIONS, event.amount) },
@@ -621,7 +642,9 @@ function TimelinePage({ session, onNavigate }) {
                     ? event.text
                     : isMedication
                       ? event.medicationName
-                      : poopDetails.map((detail) => `${detail.label} ${detail.value}`).join('、')
+                      : isTemperature
+                        ? `${Number(event.temperature).toFixed(1)}℃`
+                        : poopDetails.map((detail) => `${detail.label} ${detail.value}`).join('、')
                 const noteCharacters = isNote ? Array.from(event.text) : []
                 const noteSummary = noteCharacters.length > 40
                   ? `${noteCharacters.slice(0, 40).join('')}…`
@@ -661,6 +684,10 @@ function TimelinePage({ session, onNavigate }) {
                         </button>
                       ) : isMedication ? (
                         <strong className="timeline-event-summary__medication">{event.medicationName}</strong>
+                      ) : isTemperature ? (
+                        <strong className="timeline-event-summary__temperature">
+                          {Number(event.temperature).toFixed(1)}<small>℃</small>
+                        </strong>
                       ) : (
                         <div className="timeline-event-summary__choices" aria-label={`おむつ内容：${summaryLabel}`}>
                           {poopDetails.map((detail) => (
@@ -668,7 +695,7 @@ function TimelinePage({ session, onNavigate }) {
                           ))}
                         </div>
                       )}
-                      {!isMilk && !isMilkPlan && !isNote && !isMedication && event.memo && (
+                      {!isMilk && !isMilkPlan && !isNote && !isMedication && !isTemperature && event.memo && (
                         <p title={event.memo}>{event.memo}</p>
                       )}
                     </div>
