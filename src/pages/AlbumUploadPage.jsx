@@ -8,18 +8,58 @@ import {
 } from '../services/albumApi.js'
 
 const MAX_FILES = 10
+const THUMBNAIL_SIZE = 180
 const ACCEPTED_IMAGES = 'image/avif,image/bmp,image/gif,image/heic,image/heif,image/jpeg,image/png,image/tiff,image/webp'
+
+function loadImage(url) {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.decoding = 'async'
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error('プレビューを作成できませんでした。'))
+    image.src = url
+  })
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob)
+      else reject(new Error('プレビューを作成できませんでした。'))
+    }, 'image/jpeg', 0.72)
+  })
+}
+
+async function createThumbnailUrl(file) {
+  const sourceUrl = URL.createObjectURL(file)
+  try {
+    const image = await loadImage(sourceUrl)
+    const scale = Math.min(1, THUMBNAIL_SIZE / Math.max(image.naturalWidth, image.naturalHeight))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale))
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale))
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('プレビューを作成できませんでした。')
+    context.drawImage(image, 0, 0, canvas.width, canvas.height)
+    image.src = ''
+    return URL.createObjectURL(await canvasToBlob(canvas))
+  } finally {
+    URL.revokeObjectURL(sourceUrl)
+  }
+}
 
 function AlbumUploadPage({ session, onNavigate }) {
   const activeFamily = session.families[0]
   const [folderId, setFolderId] = useState('')
   const [items, setItems] = useState([])
   const [isUploading, setIsUploading] = useState(false)
+  const [isPreparing, setIsPreparing] = useState(false)
   const [error, setError] = useState('')
   const [driveAccessToken, setDriveAccessToken] = useState('')
   const [driveStatus, setDriveStatus] = useState('loading')
   const [canReconnectDrive, setCanReconnectDrive] = useState(false)
   const previewUrls = useRef([])
+  const selectionVersion = useRef(0)
 
   useEffect(() => {
     let isActive = true
@@ -60,6 +100,7 @@ function AlbumUploadPage({ session, onNavigate }) {
   }, [activeFamily.id, session.user.email])
 
   useEffect(() => () => {
+    selectionVersion.current += 1
     for (const url of previewUrls.current) URL.revokeObjectURL(url)
   }, [])
 
@@ -68,16 +109,21 @@ function AlbumUploadPage({ session, onNavigate }) {
     onNavigate(path)
   }
 
-  const handleFiles = (event) => {
+  const handleFiles = async (event) => {
+    const version = selectionVersion.current + 1
+    selectionVersion.current = version
     for (const url of previewUrls.current) URL.revokeObjectURL(url)
+    previewUrls.current = []
     const selectedFiles = [...event.target.files]
     const validFiles = selectedFiles
       .filter((file) => file.type.startsWith('image/'))
       .slice(0, MAX_FILES)
-    previewUrls.current = validFiles.map((file) => URL.createObjectURL(file))
-    setItems(validFiles.map((file, index) => ({
+    setItems(validFiles.map((file) => ({
       file,
-      previewUrl: previewUrls.current[index],
+      name: file.name,
+      size: file.size,
+      lastModified: file.lastModified,
+      previewUrl: '',
       status: 'ready',
       progress: 0,
       message: '',
@@ -85,6 +131,22 @@ function AlbumUploadPage({ session, onNavigate }) {
     setError(selectedFiles.length > MAX_FILES
       ? `一度に選択できるのは${MAX_FILES}枚までです。`
       : '')
+    setIsPreparing(validFiles.length > 0)
+
+    for (const [index, file] of validFiles.entries()) {
+      try {
+        const previewUrl = await createThumbnailUrl(file)
+        if (selectionVersion.current !== version) {
+          URL.revokeObjectURL(previewUrl)
+          return
+        }
+        previewUrls.current.push(previewUrl)
+        updateItem(index, { previewUrl })
+      } catch {
+        // A thumbnail is optional. Keep the original File only for the upload itself.
+      }
+    }
+    if (selectionVersion.current === version) setIsPreparing(false)
   }
 
   const updateItem = (index, changes) => {
@@ -107,7 +169,7 @@ function AlbumUploadPage({ session, onNavigate }) {
           driveAccessToken, folderId, item.file,
           (progress) => updateItem(index, { progress }),
         )
-        updateItem(index, { uploadedFile, message: 'アルバムへ登録中' })
+        updateItem(index, { file: null, uploadedFile, message: 'アルバムへ登録中' })
         await registerDriveAlbumFiles(activeFamily.id, [uploadedFile])
         updateItem(index, { status: 'success', progress: 100, message: '完了' })
       } catch (uploadError) {
@@ -157,11 +219,13 @@ function AlbumUploadPage({ session, onNavigate }) {
         {items.length > 0 && (
           <ul className="upload-list">
             {items.map((item) => (
-              <li key={`${item.file.name}-${item.file.lastModified}`} className={`upload-item upload-item--${item.status}`}>
-                <img src={item.previewUrl} alt="" />
+              <li key={`${item.name}-${item.lastModified}`} className={`upload-item upload-item--${item.status}`}>
+                {item.previewUrl
+                  ? <img src={item.previewUrl} alt="" />
+                  : <span className="upload-item__placeholder" aria-hidden="true">写真</span>}
                 <div className="upload-item__detail">
-                  <strong>{item.file.name}</strong>
-                  <span>{(item.file.size / 1024 / 1024).toFixed(1)} MB</span>
+                  <strong>{item.name}</strong>
+                  <span>{(item.size / 1024 / 1024).toFixed(1)} MB</span>
                   {item.status === 'uploading' && <progress max="100" value={item.progress} />}
                   {item.message && <small>{item.message}</small>}
                 </div>
@@ -179,10 +243,14 @@ function AlbumUploadPage({ session, onNavigate }) {
           <button
             className="album-link album-link--button"
             type="button"
-            disabled={!folderId || items.length === 0 || isUploading || successCount === items.length}
+            disabled={!folderId || items.length === 0 || isPreparing || isUploading || successCount === items.length}
             onClick={handleUpload}
           >
-            {isUploading ? 'アップロードしています…' : `${items.length}枚をアップロード`}
+            {isPreparing
+              ? '写真を準備しています…'
+              : isUploading
+                ? 'アップロードしています…'
+                : `${items.length}枚をアップロード`}
           </button>
         )}
         <a href="/album" onClick={navigateLink('/album')}>アルバムへ戻る</a>

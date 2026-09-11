@@ -283,6 +283,17 @@
   object-fit: cover;
 }
 
+.upload-item__placeholder {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 5px;
+  background: #f7edf1;
+  color: #b9899a;
+  font-size: 0.7rem;
+}
+
 .upload-item__detail {
   display: flex;
   min-width: 0;
