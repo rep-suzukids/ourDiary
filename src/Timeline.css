@@ -557,6 +557,7 @@
 .timeline-event-icon--poop svg,
 .timeline-event-icon--note svg,
 .timeline-event-icon--medication svg,
+.timeline-event-icon--temperature svg,
 .timeline-modal__card .milk-modal__icon svg {
   fill: none;
   stroke: currentcolor;
@@ -649,6 +650,20 @@
 
 .timeline-event-icon--medication {
   box-shadow: 0 0 0 4px rgb(183 121 120 / 13%), 0 7px 18px rgb(105 70 77 / 20%);
+}
+
+.timeline-event-icon--temperature {
+  box-shadow: 0 0 0 4px rgb(215 125 141 / 13%), 0 7px 18px rgb(105 70 77 / 20%);
+}
+
+.timeline-event-summary__temperature {
+  color: #a85065;
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+
+.timeline-event-summary__temperature small {
+  font-size: 0.68rem;
 }
 
 .timeline-event-summary__medication {

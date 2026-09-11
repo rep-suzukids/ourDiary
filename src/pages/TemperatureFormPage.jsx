@@ -54,7 +54,7 @@ function formattedTemperature(value) {
 function TemperatureFormPage({ session, onNavigate, mode = 'create' }) {
   const activeFamily = session.families[0]
   const eventId = mode === 'edit' ? queryValue('id') : ''
-  const returnPath = mode === 'create' ? requestedReturnPath() : ''
+  const returnPath = requestedReturnPath()
   const initializedEdit = useRef(false)
   const initializedCreate = useRef(false)
   const [children, setChildren] = useState([])
@@ -164,7 +164,7 @@ function TemperatureFormPage({ session, onNavigate, mode = 'create' }) {
       } else {
         await createTemperatureEvent(activeFamily.id, values)
       }
-      onNavigate(returnPath || `/temperature?date=${date}`, { replace: mode === 'create' })
+      onNavigate(returnPath || `/temperature?date=${date}`, { replace: mode === 'create' || Boolean(returnPath) })
     } catch (requestError) {
       setError(requestError.message)
       setStatus('ready')
