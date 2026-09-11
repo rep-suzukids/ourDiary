@@ -146,10 +146,150 @@ export function getDriveConnectUrl(familyId, returnTo) {
   return `/api/drive-user-oauth-start?${new URLSearchParams({ familyId, returnTo })}`
 }
 
+const MULTIPART_UPLOAD_LIMIT = 5 * 1024 * 1024
+const RESUMABLE_CHUNK_SIZE = 2 * 1024 * 1024
+const MAX_UPLOAD_ATTEMPTS = 3
+const FILE_FIELDS = 'id,name,mimeType,createdTime,size,imageMediaMetadata(width,height,time)'
+
+function wait(milliseconds) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds))
+}
+
+function parseDriveFile(responseText, fallbackName) {
+  try {
+    return JSON.parse(responseText)
+  } catch {
+    return { name: fallbackName }
+  }
+}
+
+function createUploadError(message, { status = 0, retryable = false } = {}) {
+  const error = new Error(message)
+  error.status = status
+  error.retryable = retryable
+  return error
+}
+
+function sendUploadRequest({ method, url, headers, body, onProgress }) {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest()
+    request.open(method, url)
+    for (const [name, value] of Object.entries(headers ?? {})) {
+      request.setRequestHeader(name, value)
+    }
+    if (onProgress) {
+      request.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) onProgress(event.loaded, event.total)
+      })
+    }
+    request.addEventListener('load', () => resolve({
+      status: request.status,
+      responseText: request.responseText,
+      range: request.getResponseHeader('Range'),
+    }))
+    request.addEventListener('error', () => reject(createUploadError(
+      'Google Driveとの通信が途切れました。',
+      { retryable: true },
+    )))
+    request.addEventListener('timeout', () => reject(createUploadError(
+      'Google Driveへの送信がタイムアウトしました。',
+      { retryable: true },
+    )))
+    request.send(body)
+  })
+}
+
+function driveUploadError(status) {
+  if (status === 401 || status === 403) {
+    return createUploadError(
+      `Google Driveへの書き込みが許可されていません（HTTP ${status}）。再接続してください。`,
+      { status },
+    )
+  }
+  return createUploadError(
+    `Google Driveへの送信に失敗しました（HTTP ${status || '不明'}）。`,
+    { status, retryable: status === 408 || status === 429 || status >= 500 },
+  )
+}
+
+async function generateDriveFileId(accessToken) {
+  const parameters = new URLSearchParams({ count: '1', space: 'drive', type: 'files' })
+  const response = await fetch(`https://www.googleapis.com/drive/v3/files/generateIds?${parameters}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (!response.ok) throw driveUploadError(response.status)
+  const body = await response.json()
+  if (!body.ids?.[0]) throw new Error('Google DriveからファイルIDを取得できませんでした。')
+  return body.ids[0]
+}
+
+async function findUploadedDriveFile(accessToken, fileId) {
+  const parameters = new URLSearchParams({ fields: FILE_FIELDS })
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?${parameters}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  ).catch(() => null)
+  if (!response?.ok) return null
+  return response.json()
+}
+
+async function uploadFileMultipart(accessToken, folderId, file, onProgress) {
+  const fileId = await generateDriveFileId(accessToken)
+  const mimeType = file.type || 'application/octet-stream'
+  const boundary = `ourdiary_${crypto.randomUUID().replaceAll('-', '')}`
+  const metadata = JSON.stringify({
+    id: fileId,
+    name: file.name,
+    mimeType,
+    parents: [folderId],
+    appProperties: { ourDiaryPhoto: 'true' },
+  })
+  const body = new Blob([
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`,
+    `--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`,
+    file,
+    `\r\n--${boundary}--`,
+  ], { type: `multipart/related; boundary=${boundary}` })
+  const parameters = new URLSearchParams({ uploadType: 'multipart', fields: FILE_FIELDS })
+  const url = `https://www.googleapis.com/upload/drive/v3/files?${parameters}`
+
+  let lastError
+  for (let attempt = 0; attempt < MAX_UPLOAD_ATTEMPTS; attempt += 1) {
+    try {
+      const result = await sendUploadRequest({
+        method: 'POST',
+        url,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': `multipart/related; boundary=${boundary}`,
+        },
+        body,
+        onProgress: (loaded, total) => onProgress(Math.round((loaded / total) * 100)),
+      })
+      if (result.status >= 200 && result.status < 300) {
+        return parseDriveFile(result.responseText, file.name)
+      }
+      if (result.status === 409) {
+        const uploaded = await findUploadedDriveFile(accessToken, fileId)
+        if (uploaded) return uploaded
+      }
+      throw driveUploadError(result.status)
+    } catch (error) {
+      lastError = error
+      const uploaded = await findUploadedDriveFile(accessToken, fileId)
+      if (uploaded) return uploaded
+      if (!error.retryable || attempt === MAX_UPLOAD_ATTEMPTS - 1) break
+      onProgress(0)
+      await wait(500 * (2 ** attempt))
+    }
+  }
+  throw lastError
+}
+
 async function createDriveUploadSession(accessToken, folderId, file) {
   const parameters = new URLSearchParams({
     uploadType: 'resumable',
-    fields: 'id,name,mimeType,createdTime,size,imageMediaMetadata(width,height,time)',
+    fields: FILE_FIELDS,
   })
   const response = await fetch(`https://www.googleapis.com/upload/drive/v3/files?${parameters}`, {
     method: 'POST',
@@ -176,28 +316,88 @@ async function createDriveUploadSession(accessToken, folderId, file) {
   return uploadUrl
 }
 
-export async function uploadFileDirectlyToDrive(accessToken, folderId, file, onProgress) {
-  const uploadUrl = await createDriveUploadSession(accessToken, folderId, file)
-  return new Promise((resolve, reject) => {
-    const request = new XMLHttpRequest()
-    request.open('PUT', uploadUrl)
-    request.setRequestHeader('Authorization', `Bearer ${accessToken}`)
-    request.setRequestHeader('Content-Type', file.type)
-    request.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable) onProgress(Math.round((event.loaded / event.total) * 100))
-    })
-    request.addEventListener('load', () => {
-      if (request.status >= 200 && request.status < 300) {
-        try {
-          resolve(JSON.parse(request.responseText))
-        } catch {
-          resolve({ name: file.name })
-        }
-      } else {
-        reject(new Error('Google Driveへの送信に失敗しました。'))
-      }
-    })
-    request.addEventListener('error', () => reject(new Error('Google Driveへ接続できませんでした。')))
-    request.send(file)
+function nextByteFromRange(range, fallback) {
+  const matched = range?.match(/bytes=0-(\d+)/)
+  return matched ? Number(matched[1]) + 1 : fallback
+}
+
+async function queryResumableUpload(uploadUrl, file) {
+  const result = await sendUploadRequest({
+    method: 'PUT',
+    url: uploadUrl,
+    headers: { 'Content-Range': `bytes */${file.size}` },
+    body: null,
   })
+  if (result.status >= 200 && result.status < 300) {
+    return { completed: parseDriveFile(result.responseText, file.name) }
+  }
+  if (result.status === 308) {
+    return { offset: nextByteFromRange(result.range, 0) }
+  }
+  if (result.status === 404) return { expired: true }
+  throw driveUploadError(result.status)
+}
+
+async function uploadFileResumable(accessToken, folderId, file, onProgress) {
+  let uploadUrl = await createDriveUploadSession(accessToken, folderId, file)
+  let offset = 0
+  let attempt = 0
+  const mimeType = file.type || 'application/octet-stream'
+
+  while (offset < file.size) {
+    const endExclusive = Math.min(offset + RESUMABLE_CHUNK_SIZE, file.size)
+    const chunk = file.slice(offset, endExclusive, mimeType)
+    try {
+      const result = await sendUploadRequest({
+        method: 'PUT',
+        url: uploadUrl,
+        headers: {
+          'Content-Type': mimeType,
+          'Content-Range': `bytes ${offset}-${endExclusive - 1}/${file.size}`,
+        },
+        body: chunk,
+        onProgress: (loaded) => onProgress(Math.round(((offset + loaded) / file.size) * 100)),
+      })
+      if (result.status >= 200 && result.status < 300) {
+        return parseDriveFile(result.responseText, file.name)
+      }
+      if (result.status === 308) {
+        offset = nextByteFromRange(result.range, endExclusive)
+        attempt = 0
+        continue
+      }
+      if (result.status === 404 && attempt < MAX_UPLOAD_ATTEMPTS - 1) {
+        uploadUrl = await createDriveUploadSession(accessToken, folderId, file)
+        offset = 0
+        attempt += 1
+        continue
+      }
+      throw driveUploadError(result.status)
+    } catch (error) {
+      if (!error.retryable || attempt === MAX_UPLOAD_ATTEMPTS - 1) throw error
+      attempt += 1
+      await wait(500 * (2 ** (attempt - 1)))
+      try {
+        const status = await queryResumableUpload(uploadUrl, file)
+        if (status.completed) return status.completed
+        if (status.expired) {
+          uploadUrl = await createDriveUploadSession(accessToken, folderId, file)
+          offset = 0
+        } else {
+          offset = status.offset
+          onProgress(Math.round((offset / file.size) * 100))
+        }
+      } catch (statusError) {
+        if (!statusError.retryable || attempt === MAX_UPLOAD_ATTEMPTS - 1) throw statusError
+      }
+    }
+  }
+  throw new Error('Google Driveへの送信を完了できませんでした。')
+}
+
+export async function uploadFileDirectlyToDrive(accessToken, folderId, file, onProgress) {
+  if (file.size <= MULTIPART_UPLOAD_LIMIT) {
+    return uploadFileMultipart(accessToken, folderId, file, onProgress)
+  }
+  return uploadFileResumable(accessToken, folderId, file, onProgress)
 }
