@@ -146,7 +146,6 @@ export function getDriveConnectUrl(familyId, returnTo) {
   return `/api/drive-user-oauth-start?${new URLSearchParams({ familyId, returnTo })}`
 }
 
-const MULTIPART_UPLOAD_LIMIT = 5 * 1024 * 1024
 const RESUMABLE_CHUNK_SIZE = 2 * 1024 * 1024
 const MAX_UPLOAD_ATTEMPTS = 3
 const FILE_FIELDS = 'id,name,mimeType,createdTime,size,imageMediaMetadata(width,height,time)'
@@ -210,80 +209,6 @@ function driveUploadError(status) {
     `Google Driveへの送信に失敗しました（HTTP ${status || '不明'}）。`,
     { status, retryable: status === 408 || status === 429 || status >= 500 },
   )
-}
-
-async function generateDriveFileId(accessToken) {
-  const parameters = new URLSearchParams({ count: '1', space: 'drive', type: 'files' })
-  const response = await fetch(`https://www.googleapis.com/drive/v3/files/generateIds?${parameters}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
-  if (!response.ok) throw driveUploadError(response.status)
-  const body = await response.json()
-  if (!body.ids?.[0]) throw new Error('Google DriveからファイルIDを取得できませんでした。')
-  return body.ids[0]
-}
-
-async function findUploadedDriveFile(accessToken, fileId) {
-  const parameters = new URLSearchParams({ fields: FILE_FIELDS })
-  const response = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?${parameters}`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  ).catch(() => null)
-  if (!response?.ok) return null
-  return response.json()
-}
-
-async function uploadFileMultipart(accessToken, folderId, file, onProgress) {
-  const fileId = await generateDriveFileId(accessToken)
-  const mimeType = file.type || 'application/octet-stream'
-  const boundary = `ourdiary_${crypto.randomUUID().replaceAll('-', '')}`
-  const metadata = JSON.stringify({
-    id: fileId,
-    name: file.name,
-    mimeType,
-    parents: [folderId],
-    appProperties: { ourDiaryPhoto: 'true' },
-  })
-  const body = new Blob([
-    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`,
-    `--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`,
-    file,
-    `\r\n--${boundary}--`,
-  ], { type: `multipart/related; boundary=${boundary}` })
-  const parameters = new URLSearchParams({ uploadType: 'multipart', fields: FILE_FIELDS })
-  const url = `https://www.googleapis.com/upload/drive/v3/files?${parameters}`
-
-  let lastError
-  for (let attempt = 0; attempt < MAX_UPLOAD_ATTEMPTS; attempt += 1) {
-    try {
-      const result = await sendUploadRequest({
-        method: 'POST',
-        url,
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': `multipart/related; boundary=${boundary}`,
-        },
-        body,
-        onProgress: (loaded, total) => onProgress(Math.round((loaded / total) * 100)),
-      })
-      if (result.status >= 200 && result.status < 300) {
-        return parseDriveFile(result.responseText, file.name)
-      }
-      if (result.status === 409) {
-        const uploaded = await findUploadedDriveFile(accessToken, fileId)
-        if (uploaded) return uploaded
-      }
-      throw driveUploadError(result.status)
-    } catch (error) {
-      lastError = error
-      const uploaded = await findUploadedDriveFile(accessToken, fileId)
-      if (uploaded) return uploaded
-      if (!error.retryable || attempt === MAX_UPLOAD_ATTEMPTS - 1) break
-      onProgress(0)
-      await wait(500 * (2 ** attempt))
-    }
-  }
-  throw lastError
 }
 
 async function createDriveUploadSession(accessToken, folderId, file) {
@@ -396,8 +321,5 @@ async function uploadFileResumable(accessToken, folderId, file, onProgress) {
 }
 
 export async function uploadFileDirectlyToDrive(accessToken, folderId, file, onProgress) {
-  if (file.size <= MULTIPART_UPLOAD_LIMIT) {
-    return uploadFileMultipart(accessToken, folderId, file, onProgress)
-  }
   return uploadFileResumable(accessToken, folderId, file, onProgress)
 }

@@ -337,6 +337,11 @@
   margin: 0 0 18px;
 }
 
+.upload-preview-note {
+  margin-bottom: 10px;
+  font-size: 0.76rem;
+}
+
 .upload-success {
   width: 100%;
   margin-bottom: 18px;
