@@ -47,6 +47,15 @@
   background: rgb(255 255 255 / 72%);
 }
 
+.comment-card.is-search-focus {
+  animation: comment-search-focus 2.6s ease-out;
+}
+
+@keyframes comment-search-focus {
+  0%, 35% { border-color: #d8729a; box-shadow: 0 0 0 3px rgb(216 114 154 / 22%); }
+  100% { border-color: #ead8de; box-shadow: none; }
+}
+
 .comment-card > p {
   color: #59494f;
   font-size: 0.84rem;

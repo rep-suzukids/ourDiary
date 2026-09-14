@@ -6,6 +6,7 @@ import {
   updateComment,
 } from '../services/commentApi.js'
 import ReactionBar from './ReactionBar.jsx'
+import HighlightedText from './HighlightedText.jsx'
 import '../Comment.css'
 
 const MAX_COMMENT_LENGTH = 2000
@@ -23,7 +24,7 @@ function formatUpdatedAt(value) {
   }).format(date)
 }
 
-function CommentSection({ familyId, targetType, targetId, initialComments }) {
+function CommentSection({ familyId, targetType, targetId, initialComments, focusCommentId = '', highlightQuery = '' }) {
   const hasInitialComments = Array.isArray(initialComments)
   const [comments, setComments] = useState(hasInitialComments ? initialComments : [])
   const [status, setStatus] = useState(hasInitialComments ? 'ready' : 'loading')
@@ -121,7 +122,11 @@ function CommentSection({ familyId, targetType, targetId, initialComments }) {
 
       <div className="comment-section__list">
         {comments.map((comment) => (
-          <article className="comment-card" key={comment.id}>
+          <article
+            id={targetType === 'diary' ? `diary-comment-${comment.id}` : undefined}
+            className={`comment-card${focusCommentId === comment.id ? ' is-search-focus' : ''}`}
+            key={comment.id}
+          >
             {editingId === comment.id ? (
               <form className="comment-card__edit" onSubmit={saveEdit}>
                 <textarea
@@ -140,7 +145,7 @@ function CommentSection({ familyId, targetType, targetId, initialComments }) {
               </form>
             ) : (
               <>
-                <p>{comment.text}</p>
+                <p><HighlightedText text={comment.text} query={focusCommentId === comment.id ? highlightQuery : ''} /></p>
                 <footer>
                   <span>{comment.authorName}</span>
                   <time dateTime={comment.updatedAt}>{formatUpdatedAt(comment.updatedAt)}</time>
