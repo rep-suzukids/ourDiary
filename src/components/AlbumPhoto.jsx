@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { formatPhotoCapturedDate } from '../photoDateUtils.js'
 import { getDrivePhotoUrl } from '../services/albumApi.js'
 
-function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
+function AlbumPhoto({ photo, driveAccessToken, onOpen, style, variant = 'canvas' }) {
   const [imageUrl, setImageUrl] = useState('')
   const [failed, setFailed] = useState(false)
   const [failureMessage, setFailureMessage] = useState('')
@@ -33,7 +33,7 @@ function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
   }, [driveAccessToken, photo])
 
   return (
-    <div className="album-photo-position" style={style}>
+    <div className={`album-photo-position${variant === 'grid' ? ' album-photo-position--grid' : ''}`} style={style}>
       <button
         type="button"
         className="album-photo"

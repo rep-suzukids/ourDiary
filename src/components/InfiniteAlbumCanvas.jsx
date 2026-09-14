@@ -44,6 +44,7 @@ function createSpiralCoordinates(count) {
 
 function InfiniteAlbumCanvas({
   photos,
+  viewMode,
   driveAccessToken,
   familyId,
   canEditTags,
@@ -181,6 +182,43 @@ function InfiniteAlbumCanvas({
     } : current)
   }
 
+  const photoModal = selectedPhoto && (
+    <AlbumPhotoModal
+      photo={selectedPhoto.photo}
+      imageUrl={selectedPhoto.imageUrl}
+      familyId={familyId}
+      canEditTags={canEditTags}
+      canManageTags={canManageTags}
+      canPublishPhotos={canPublishPhotos}
+      onTagsChange={handleTagsChange}
+      onFavoriteChange={handleFavoriteChange}
+      onVisibilityChange={handleVisibilityChange}
+      onClose={() => setSelectedPhoto(null)}
+    />
+  )
+
+  if (viewMode === 'grid') {
+    return (
+      <section
+        className="album-grid"
+        aria-label="写真のグリッド一覧"
+        onContextMenu={(event) => event.preventDefault()}
+        onDragStart={(event) => event.preventDefault()}
+      >
+        {photos.map((photo) => (
+          <AlbumPhoto
+            key={photo.id}
+            photo={photo}
+            driveAccessToken={driveAccessToken}
+            onOpen={handleOpenPhoto}
+            variant="grid"
+          />
+        ))}
+        {photoModal}
+      </section>
+    )
+  }
+
   return (
     <section
       className="album-canvas"
@@ -231,20 +269,7 @@ function InfiniteAlbumCanvas({
         })}
       </div>
 
-      {selectedPhoto && (
-        <AlbumPhotoModal
-          photo={selectedPhoto.photo}
-          imageUrl={selectedPhoto.imageUrl}
-          familyId={familyId}
-          canEditTags={canEditTags}
-          canManageTags={canManageTags}
-          canPublishPhotos={canPublishPhotos}
-          onTagsChange={handleTagsChange}
-          onFavoriteChange={handleFavoriteChange}
-          onVisibilityChange={handleVisibilityChange}
-          onClose={() => setSelectedPhoto(null)}
-        />
-      )}
+      {photoModal}
 
       <div className="album-controls" aria-label="表示倍率の操作">
         <button type="button" onClick={() => zoomAtCenter(-0.15)} aria-label="縮小">−</button>
