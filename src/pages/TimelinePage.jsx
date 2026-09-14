@@ -695,7 +695,7 @@ function TimelinePage({ session, onNavigate }) {
                           ))}
                         </div>
                       )}
-                      {!isMilk && !isMilkPlan && !isNote && !isMedication && !isTemperature && event.memo && (
+                      {!isMilk && !isMilkPlan && !isNote && !isMedication && event.memo && (
                         <p title={event.memo}>{event.memo}</p>
                       )}
                     </div>
