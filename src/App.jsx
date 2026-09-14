@@ -22,6 +22,7 @@ import NotFoundPage from './pages/NotFoundPage.jsx'
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx'
 import ScheduleCreatePage from './pages/ScheduleCreatePage.jsx'
 import SchedulePage from './pages/SchedulePage.jsx'
+import SearchPage from './pages/SearchPage.jsx'
 import TagManagementPage from './pages/TagManagementPage.jsx'
 import TermsOfServicePage from './pages/TermsOfServicePage.jsx'
 import TimelinePage from './pages/TimelinePage.jsx'
@@ -176,6 +177,13 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return withDailyReminders(<DiaryPage session={session} onNavigate={navigate} />)
+  }
+
+  if (pathname === '/search') {
+    if (!session || !['parent', 'admin'].includes(session.families[0]?.role)) {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return withDailyReminders(<SearchPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/diary/new') {

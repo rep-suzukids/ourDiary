@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import CalendarMonthNavigation from '../components/CalendarMonthNavigation.jsx'
 import CommentSection from '../components/CommentSection.jsx'
+import HighlightedText from '../components/HighlightedText.jsx'
 import ReactionBar from '../components/ReactionBar.jsx'
 import { openNativePicker } from '../careEventUtils.js'
 import {
@@ -32,6 +33,12 @@ function initialDate() {
   return diaryDateFromSearch(window.location.search) ?? localDiaryDateString()
 }
 
+function initialSearchFocus() {
+  const parameters = new URLSearchParams(window.location.search)
+  const match = /^(entry|comment):([0-9a-f-]{36})$/i.exec(parameters.get('focus') ?? '')
+  return match ? { type: match[1], id: match[2], query: (parameters.get('q') ?? '').slice(0, 100) } : null
+}
+
 function buildCalendar(year, month) {
   const firstWeekday = new Date(year, month - 1, 1).getDay()
   const daysInMonth = new Date(year, month, 0).getDate()
@@ -49,6 +56,7 @@ function DiaryPage({ session, onNavigate }) {
   const activeFamily = session.families[0]
   const canCreate = ['parent', 'admin'].includes(activeFamily.role)
   const firstDate = initialDate()
+  const searchFocus = useMemo(initialSearchFocus, [])
   const [monthValue, setMonthValue] = useState(firstDate.slice(0, 7))
   const [selectedDate, setSelectedDate] = useState(firstDate)
   const [children, setChildren] = useState([])
@@ -84,6 +92,17 @@ function DiaryPage({ session, onNavigate }) {
   }, {}), [entries])
   const selectedEntries = entriesByDate[selectedDate] ?? []
   const createDiaryPath = `/diary/new?date=${encodeURIComponent(selectedDate)}`
+  const diaryReturnPath = `/diary?date=${encodeURIComponent(selectedDate)}`
+  const searchPath = `/search?scope=diary&returnTo=${encodeURIComponent(diaryReturnPath)}`
+
+  useEffect(() => {
+    if (status !== 'ready' || !searchFocus) return undefined
+    const id = searchFocus.type === 'entry' ? `diary-entry-${searchFocus.id}` : `diary-comment-${searchFocus.id}`
+    const frame = requestAnimationFrame(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [searchFocus, status])
 
   const navigateLink = (path) => (event) => {
     event.preventDefault()
@@ -143,9 +162,14 @@ function DiaryPage({ session, onNavigate }) {
           <p>{activeFamily.name}</p>
           <h1>ファミリー日記</h1>
         </div>
-        {canCreate && (
-          <a className="diary-add-button" href={createDiaryPath} onClick={navigateLink(createDiaryPath)}>＋ 書く</a>
-        )}
+        <div className="diary-header-actions">
+          <a className="diary-search-button" href={searchPath} onClick={navigateLink(searchPath)} aria-label="日記を検索" title="日記を検索">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4 4" /></svg>
+          </a>
+          {canCreate && (
+            <a className="diary-add-button" href={createDiaryPath} onClick={navigateLink(createDiaryPath)}>＋ 書く</a>
+          )}
+        </div>
       </header>
 
       <section className="diary-calendar-card" aria-label={`${year}年${month}月の日記カレンダー`}>
@@ -213,7 +237,11 @@ function DiaryPage({ session, onNavigate }) {
 
         <div className="diary-notes">
           {selectedEntries.map((entry) => (
-            <article className={`diary-note diary-note--${diaryEntryTone(entry)}`} key={entry.id}>
+            <article
+              id={`diary-entry-${entry.id}`}
+              className={`diary-note diary-note--${diaryEntryTone(entry)}${searchFocus?.type === 'entry' && searchFocus.id === entry.id ? ' is-search-focus' : ''}`}
+              key={entry.id}
+            >
               {editingId === entry.id ? (
                 <form className="diary-edit-form" onSubmit={saveEdit}>
                   <div className="diary-edit-row">
@@ -263,7 +291,9 @@ function DiaryPage({ session, onNavigate }) {
                       })}
                     </time>
                   </header>
-                  <p className="diary-note__text">{entry.text}</p>
+                  <p className="diary-note__text">
+                    <HighlightedText text={entry.text} query={searchFocus?.type === 'entry' && searchFocus.id === entry.id ? searchFocus.query : ''} />
+                  </p>
                   <ReactionBar
                     familyId={activeFamily.id}
                     targetType="diary"
@@ -285,6 +315,8 @@ function DiaryPage({ session, onNavigate }) {
                 targetType="diary"
                 targetId={entry.id}
                 initialComments={entry.comments ?? []}
+                focusCommentId={searchFocus?.type === 'comment' ? searchFocus.id : ''}
+                highlightQuery={searchFocus?.type === 'comment' ? searchFocus.query : ''}
               />
             </article>
           ))}

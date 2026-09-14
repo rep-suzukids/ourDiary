@@ -16,6 +16,7 @@ import photoVisibilityHandler from './_handlers/photo-visibility.js'
 import photoTagsHandler from './_handlers/photo-tags.js'
 import reactionsHandler from './_handlers/reactions.js'
 import schedulesHandler from './_handlers/schedules.js'
+import searchHandler from './_handlers/search.js'
 import tagsHandler from './_handlers/tags.js'
 import temperatureEventsHandler from './_handlers/temperature-events.js'
 import timelineNotesHandler from './_handlers/timeline-notes.js'
@@ -39,6 +40,7 @@ const ROUTES = new Map([
   ['photo-tags', photoTagsHandler],
   ['reactions', reactionsHandler],
   ['schedules', schedulesHandler],
+  ['search', searchHandler],
   ['tags', tagsHandler],
   ['temperature-events', temperatureEventsHandler],
   ['timeline-notes', timelineNotesHandler],
