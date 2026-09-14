@@ -347,6 +347,15 @@
 }
 
 .album-grid {
+  min-height: 100svh;
+  background:
+    linear-gradient(rgb(191 110 143 / 8%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(191 110 143 / 8%) 1px, transparent 1px),
+    linear-gradient(145deg, #fff8fb 0%, #f9e9f3 55%, #f3dce7 100%);
+  background-size: 52px 52px, 52px 52px, 100% 100%;
+}
+
+.album-grid__photos {
   display: grid;
   min-height: 100svh;
   padding: 150px 24px 48px;
@@ -354,11 +363,6 @@
   align-content: start;
   gap: 12px;
   box-sizing: border-box;
-  background:
-    linear-gradient(rgb(191 110 143 / 8%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(191 110 143 / 8%) 1px, transparent 1px),
-    linear-gradient(145deg, #fff8fb 0%, #f9e9f3 55%, #f3dce7 100%);
-  background-size: 52px 52px, 52px 52px, 100% 100%;
 }
 
 .album-grid .album-photo {
@@ -1334,7 +1338,7 @@
     left: 14px;
   }
 
-  .album-grid {
+  .album-grid__photos {
     padding: 136px 10px 126px;
     grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
     gap: 7px;
@@ -1350,7 +1354,7 @@
     padding-inline: 9px;
   }
 
-  .album-grid {
+  .album-grid__photos {
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
 }

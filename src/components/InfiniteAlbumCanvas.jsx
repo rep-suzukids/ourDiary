@@ -197,45 +197,37 @@ function InfiniteAlbumCanvas({
     />
   )
 
-  if (viewMode === 'grid') {
-    return (
-      <section
-        className="album-grid"
-        aria-label="写真のグリッド一覧"
-        onContextMenu={(event) => event.preventDefault()}
-        onDragStart={(event) => event.preventDefault()}
-      >
-        {photos.map((photo) => (
-          <AlbumPhoto
-            key={photo.id}
-            photo={photo}
-            driveAccessToken={driveAccessToken}
-            onOpen={handleOpenPhoto}
-            variant="grid"
-          />
-        ))}
-        {photoModal}
-      </section>
-    )
-  }
-
   return (
     <section
-      className="album-canvas"
-      aria-label="写真の無限キャンバス"
-      onWheel={handleWheel}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={stopDragging}
-      onPointerCancel={stopDragging}
+      className={viewMode === 'grid' ? 'album-grid' : 'album-canvas'}
+      aria-label={viewMode === 'grid' ? '写真のグリッド一覧' : '写真の無限キャンバス'}
+      onWheel={viewMode === 'spiral' ? handleWheel : undefined}
+      onPointerDown={viewMode === 'spiral' ? handlePointerDown : undefined}
+      onPointerMove={viewMode === 'spiral' ? handlePointerMove : undefined}
+      onPointerUp={viewMode === 'spiral' ? stopDragging : undefined}
+      onPointerCancel={viewMode === 'spiral' ? stopDragging : undefined}
       onContextMenu={(event) => event.preventDefault()}
       onDragStart={(event) => event.preventDefault()}
     >
       <div
-        className="album-canvas__plane"
-        style={{ transform: `translate(calc(50vw + ${camera.x}px), calc(50vh + ${camera.y}px)) scale(${camera.scale})` }}
+        className={viewMode === 'grid' ? 'album-grid__photos' : 'album-canvas__plane'}
+        style={viewMode === 'spiral'
+          ? { transform: `translate(calc(50vw + ${camera.x}px), calc(50vh + ${camera.y}px)) scale(${camera.scale})` }
+          : undefined}
       >
         {placements.map(({ photo, x, y }) => {
+          if (viewMode === 'grid') {
+            return (
+              <AlbumPhoto
+                key={photo.id}
+                photo={photo}
+                driveAccessToken={driveAccessToken}
+                onOpen={handleOpenPhoto}
+                variant="grid"
+              />
+            )
+          }
+
           const screenX = camera.x + (x + CARD_WIDTH / 2) * camera.scale
           const screenY = camera.y + (y + CARD_HEIGHT / 2) * camera.scale
           const radiusX = Math.max(viewport.width * 1.65, 900)
@@ -271,13 +263,17 @@ function InfiniteAlbumCanvas({
 
       {photoModal}
 
-      <div className="album-controls" aria-label="表示倍率の操作">
-        <button type="button" onClick={() => zoomAtCenter(-0.15)} aria-label="縮小">−</button>
-        <output>{Math.round(camera.scale * 100)}%</output>
-        <button type="button" onClick={() => zoomAtCenter(0.15)} aria-label="拡大">＋</button>
-        <button type="button" onClick={() => setCamera({ x: 0, y: 0, scale: 1 })}>リセット</button>
-      </div>
-      <p className="album-canvas__hint">ドラッグして移動・ホイールで拡大縮小</p>
+      {viewMode === 'spiral' && (
+        <>
+          <div className="album-controls" aria-label="表示倍率の操作">
+            <button type="button" onClick={() => zoomAtCenter(-0.15)} aria-label="縮小">−</button>
+            <output>{Math.round(camera.scale * 100)}%</output>
+            <button type="button" onClick={() => zoomAtCenter(0.15)} aria-label="拡大">＋</button>
+            <button type="button" onClick={() => setCamera({ x: 0, y: 0, scale: 1 })}>リセット</button>
+          </div>
+          <p className="album-canvas__hint">ドラッグして移動・ホイールで拡大縮小</p>
+        </>
+      )}
     </section>
   )
 }
