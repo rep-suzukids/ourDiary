@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import AlbumPhoto from './AlbumPhoto.jsx'
 import AlbumPhotoModal from './AlbumPhotoModal.jsx'
+import { getDrivePhotoUrl } from '../services/albumApi.js'
 
 const MIN_SCALE = 0.45
 const MAX_SCALE = 1.8
@@ -62,6 +63,32 @@ function InfiniteAlbumCanvas({
   }))
   const drag = useRef(null)
   const suppressOpen = useRef(false)
+  const originalLoadPhoto = useRef(null)
+  const selectedPhotoId = selectedPhoto?.photo.id
+
+  useEffect(() => {
+    const photo = originalLoadPhoto.current
+    if (!selectedPhotoId || !photo) return undefined
+    const controller = new AbortController()
+    let objectUrl = ''
+    getDrivePhotoUrl(driveAccessToken, photo, controller.signal)
+      .then((url) => {
+        objectUrl = url
+        setSelectedPhoto((current) => current?.photo.id === selectedPhotoId
+          ? { ...current, imageUrl: url, imageError: '' }
+          : current)
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') return
+        setSelectedPhoto((current) => current?.photo.id === selectedPhotoId
+          ? { ...current, imageError: error.message }
+          : current)
+      })
+    return () => {
+      controller.abort()
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [driveAccessToken, selectedPhotoId])
 
   useEffect(() => {
     const updateViewport = () => {
@@ -149,13 +176,14 @@ function InfiniteAlbumCanvas({
     }, 0)
   }
 
-  const handleOpenPhoto = (photo, imageUrl) => {
+  const handleOpenPhoto = (photo) => {
     if (suppressOpen.current) {
       suppressOpen.current = false
       return
     }
 
-    setSelectedPhoto({ photo, imageUrl })
+    originalLoadPhoto.current = photo
+    setSelectedPhoto({ photo, imageUrl: '', imageError: '' })
   }
 
   const handleTagsChange = (albumFileId, tagIds) => {
@@ -186,6 +214,7 @@ function InfiniteAlbumCanvas({
     <AlbumPhotoModal
       photo={selectedPhoto.photo}
       imageUrl={selectedPhoto.imageUrl}
+      imageError={selectedPhoto.imageError}
       familyId={familyId}
       canEditTags={canEditTags}
       canManageTags={canManageTags}
@@ -221,7 +250,7 @@ function InfiniteAlbumCanvas({
               <AlbumPhoto
                 key={photo.id}
                 photo={photo}
-                driveAccessToken={driveAccessToken}
+                familyId={familyId}
                 onOpen={handleOpenPhoto}
                 variant="grid"
               />
@@ -251,7 +280,7 @@ function InfiniteAlbumCanvas({
             <AlbumPhoto
               key={photo.id}
               photo={photo}
-              driveAccessToken={driveAccessToken}
+              familyId={familyId}
               onOpen={handleOpenPhoto}
               style={{
                 transform: `translate3d(${curvedX}px, ${curvedY}px, ${depth}px) rotateY(${-angleX * RADIANS_TO_DEGREES}deg) rotateX(${angleY * RADIANS_TO_DEGREES}deg) scale(${scaleX}, ${scaleY})`,

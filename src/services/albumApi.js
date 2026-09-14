@@ -115,6 +115,22 @@ export async function getDrivePhotoUrl(accessToken, photo, signal) {
   return URL.createObjectURL(blob)
 }
 
+export async function getAlbumThumbnailUrl(familyId, albumFileId, signal) {
+  const parameters = new URLSearchParams({ albumFileId })
+  const response = await fetch(`/api/album-thumbnail?${parameters}`, {
+    credentials: 'same-origin',
+    headers: { 'x-family-id': familyId },
+    signal,
+  })
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}))
+    throw new Error(body.error ?? 'サムネイルを取得できませんでした。')
+  }
+  const blob = await response.blob()
+  if (!blob.type.startsWith('image/')) throw new Error('サムネイルの形式が正しくありません。')
+  return URL.createObjectURL(blob)
+}
+
 export async function createDriveOwnerInvitation(familyId, values) {
   const response = await fetch('/api/drive-owner-invitations', {
     method: 'POST',

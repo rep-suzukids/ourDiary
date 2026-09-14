@@ -446,6 +446,41 @@ export async function listGoogleDrivePhotos(familyId) {
   return { title: access.title, folderId: access.folderId, photos }
 }
 
+const MAX_THUMBNAIL_BYTES = 2 * 1024 * 1024
+
+export async function getGoogleDriveThumbnail(familyId, fileId) {
+  const access = await getFamilyDriveReadAccess(familyId)
+  let metadataResponse
+  try {
+    const parameters = new URLSearchParams({ fields: 'thumbnailLink' })
+    metadataResponse = await driveFetch(
+      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}?${parameters}`,
+      access.token,
+    )
+  } catch (error) {
+    if (error instanceof GoogleDriveRequestError && error.status === 401) {
+      throw new GoogleDriveServiceAccountAccessError()
+    }
+    throw error
+  }
+
+  const metadata = await metadataResponse.json()
+  if (!metadata.thumbnailLink) {
+    throw new GoogleDriveRequestError('この写真のサムネイルはまだ準備されていません。', 404)
+  }
+
+  const thumbnailResponse = await driveFetch(metadata.thumbnailLink, access.token)
+  const contentType = thumbnailResponse.headers.get('content-type') ?? ''
+  if (!contentType.startsWith('image/')) {
+    throw new GoogleDriveRequestError('Google Driveから画像以外のデータを受信しました。', 502)
+  }
+  const data = Buffer.from(await thumbnailResponse.arrayBuffer())
+  if (data.length === 0 || data.length > MAX_THUMBNAIL_BYTES) {
+    throw new GoogleDriveRequestError('Google Driveのサムネイルサイズが正しくありません。', 502)
+  }
+  return { contentType, data }
+}
+
 export function getApplicationBaseUrl(request) {
   if (process.env.APP_BASE_URL) return process.env.APP_BASE_URL.replace(/\/$/, '')
   const protocol = request.headers['x-forwarded-proto'] ?? 'http'

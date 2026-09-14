@@ -1,4 +1,5 @@
 import albumFilesHandler from './_handlers/album-files.js'
+import albumThumbnailHandler from './_handlers/album-thumbnail.js'
 import authSessionHandler from './_handlers/auth-session.js'
 import bowelEventsHandler from './_handlers/bowel-events.js'
 import careEventsHandler from './_handlers/care-events.js'
@@ -23,6 +24,7 @@ import timelineNotesHandler from './_handlers/timeline-notes.js'
 
 const ROUTES = new Map([
   ['album-files', albumFilesHandler],
+  ['album-thumbnail', albumThumbnailHandler],
   ['auth-session', authSessionHandler],
   ['bowel-events', bowelEventsHandler],
   ['care-events', careEventsHandler],
