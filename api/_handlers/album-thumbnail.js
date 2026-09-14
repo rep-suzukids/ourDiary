@@ -50,7 +50,8 @@ export default async function handler(request, response) {
     response.setHeader('Content-Type', thumbnail.contentType)
     response.setHeader('Content-Length', String(thumbnail.data.length))
     response.setHeader('Vary', 'Cookie, x-family-id')
-    response.status(200).send(thumbnail.data)
+    response.status(200)
+    response.end(thumbnail.data)
   } catch (error) {
     if (error instanceof AuthorizationError) {
       sendJson(response, error.status, { error: error.message })
