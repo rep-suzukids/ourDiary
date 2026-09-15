@@ -42,6 +42,7 @@ function comparePhotosByCapturedDateDescending(left, right) {
 }
 
 function AlbumPage({ session, onNavigate }) {
+  const [viewMode, setViewMode] = useState('spiral')
   const [albumTitle, setAlbumTitle] = useState('Album')
   const [folderId, setFolderId] = useState('')
   const [photos, setPhotos] = useState([])
@@ -197,7 +198,7 @@ function AlbumPage({ session, onNavigate }) {
   )
 
   return (
-    <main className="album-page">
+    <main className={`album-page${viewMode === 'grid' ? ' album-page--grid' : ''}`}>
       <header className="album-header">
         <a className="album-header__back" href="/" onClick={navigateLink('/')} aria-label="TOPへ戻る">←</a>
         <div>
@@ -212,22 +213,51 @@ function AlbumPage({ session, onNavigate }) {
       </header>
 
       {status === 'ready' && photos.length > 0 && (
-        <div className="album-actions">
-          <AlbumFilterPanel
-            filters={filters}
-            onChange={setFilters}
-            tags={tags}
-            tagStatus={tagStatus}
-            tagError={tagError}
-            resultCount={filteredPhotos.length}
-            totalCount={photos.length}
-          />
-          {['parent', 'admin'].includes(activeFamily.role) && (
-            <a className="album-upload-link" href="/album/upload" onClick={navigateLink('/album/upload')}>
-              ＋ 写真を追加
-            </a>
-          )}
-        </div>
+        <>
+          <div className="album-view-switch" aria-label="写真の表示方法">
+            <button
+              type="button"
+              className={viewMode === 'spiral' ? 'is-active' : ''}
+              aria-pressed={viewMode === 'spiral'}
+              onClick={() => setViewMode('spiral')}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5.5c4.2 0 6.7 2.1 6.7 5.1 0 3.7-3.6 6.1-7.5 6.1-3.2 0-5.9-1.5-5.9-3.9 0-2.2 2.2-3.7 4.7-3.7 2.2 0 3.8 1 3.8 2.4 0 1.2-1.2 2-2.5 2" />
+              </svg>
+              <span>らせん</span>
+            </button>
+            <button
+              type="button"
+              className={viewMode === 'grid' ? 'is-active' : ''}
+              aria-pressed={viewMode === 'grid'}
+              onClick={() => setViewMode('grid')}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="4" width="6" height="6" rx="1" />
+                <rect x="14" y="4" width="6" height="6" rx="1" />
+                <rect x="4" y="14" width="6" height="6" rx="1" />
+                <rect x="14" y="14" width="6" height="6" rx="1" />
+              </svg>
+              <span>グリッド</span>
+            </button>
+          </div>
+          <div className="album-actions">
+            <AlbumFilterPanel
+              filters={filters}
+              onChange={setFilters}
+              tags={tags}
+              tagStatus={tagStatus}
+              tagError={tagError}
+              resultCount={filteredPhotos.length}
+              totalCount={photos.length}
+            />
+            {['parent', 'admin'].includes(activeFamily.role) && (
+              <a className="album-upload-link" href="/album/upload" onClick={navigateLink('/album/upload')}>
+                ＋ 写真を追加
+              </a>
+            )}
+          </div>
+        </>
       )}
 
       {status === 'loading' && <div className="album-state">写真を読み込んでいます…</div>}
@@ -295,6 +325,7 @@ function AlbumPage({ session, onNavigate }) {
       {status === 'ready' && photos.length > 0 && driveAccessToken && (
         <InfiniteAlbumCanvas
           photos={filteredPhotos}
+          viewMode={viewMode}
           driveAccessToken={driveAccessToken}
           familyId={activeFamily.id}
           canEditTags={canEditTags}

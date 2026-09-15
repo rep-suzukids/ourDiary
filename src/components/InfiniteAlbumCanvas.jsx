@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import AlbumPhoto from './AlbumPhoto.jsx'
 import AlbumPhotoModal from './AlbumPhotoModal.jsx'
+import { getDrivePhotoUrl } from '../services/albumApi.js'
 
 const MIN_SCALE = 0.45
 const MAX_SCALE = 1.8
@@ -44,6 +45,7 @@ function createSpiralCoordinates(count) {
 
 function InfiniteAlbumCanvas({
   photos,
+  viewMode,
   driveAccessToken,
   familyId,
   canEditTags,
@@ -61,6 +63,32 @@ function InfiniteAlbumCanvas({
   }))
   const drag = useRef(null)
   const suppressOpen = useRef(false)
+  const originalLoadPhoto = useRef(null)
+  const selectedPhotoId = selectedPhoto?.photo.id
+
+  useEffect(() => {
+    const photo = originalLoadPhoto.current
+    if (!selectedPhotoId || !photo) return undefined
+    const controller = new AbortController()
+    let objectUrl = ''
+    getDrivePhotoUrl(driveAccessToken, photo, controller.signal)
+      .then((url) => {
+        objectUrl = url
+        setSelectedPhoto((current) => current?.photo.id === selectedPhotoId
+          ? { ...current, imageUrl: url, imageError: '' }
+          : current)
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') return
+        setSelectedPhoto((current) => current?.photo.id === selectedPhotoId
+          ? { ...current, imageError: error.message }
+          : current)
+      })
+    return () => {
+      controller.abort()
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [driveAccessToken, selectedPhotoId])
 
   useEffect(() => {
     const updateViewport = () => {
@@ -148,13 +176,14 @@ function InfiniteAlbumCanvas({
     }, 0)
   }
 
-  const handleOpenPhoto = (photo, imageUrl) => {
+  const handleOpenPhoto = (photo) => {
     if (suppressOpen.current) {
       suppressOpen.current = false
       return
     }
 
-    setSelectedPhoto({ photo, imageUrl })
+    originalLoadPhoto.current = photo
+    setSelectedPhoto({ photo, imageUrl: '', imageError: '' })
   }
 
   const handleTagsChange = (albumFileId, tagIds) => {
@@ -181,23 +210,53 @@ function InfiniteAlbumCanvas({
     } : current)
   }
 
+  const photoModal = selectedPhoto && (
+    <AlbumPhotoModal
+      photo={selectedPhoto.photo}
+      imageUrl={selectedPhoto.imageUrl}
+      imageError={selectedPhoto.imageError}
+      familyId={familyId}
+      canEditTags={canEditTags}
+      canManageTags={canManageTags}
+      canPublishPhotos={canPublishPhotos}
+      onTagsChange={handleTagsChange}
+      onFavoriteChange={handleFavoriteChange}
+      onVisibilityChange={handleVisibilityChange}
+      onClose={() => setSelectedPhoto(null)}
+    />
+  )
+
   return (
     <section
-      className="album-canvas"
-      aria-label="写真の無限キャンバス"
-      onWheel={handleWheel}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={stopDragging}
-      onPointerCancel={stopDragging}
+      className={viewMode === 'grid' ? 'album-grid' : 'album-canvas'}
+      aria-label={viewMode === 'grid' ? '写真のグリッド一覧' : '写真の無限キャンバス'}
+      onWheel={viewMode === 'spiral' ? handleWheel : undefined}
+      onPointerDown={viewMode === 'spiral' ? handlePointerDown : undefined}
+      onPointerMove={viewMode === 'spiral' ? handlePointerMove : undefined}
+      onPointerUp={viewMode === 'spiral' ? stopDragging : undefined}
+      onPointerCancel={viewMode === 'spiral' ? stopDragging : undefined}
       onContextMenu={(event) => event.preventDefault()}
       onDragStart={(event) => event.preventDefault()}
     >
       <div
-        className="album-canvas__plane"
-        style={{ transform: `translate(calc(50vw + ${camera.x}px), calc(50vh + ${camera.y}px)) scale(${camera.scale})` }}
+        className={viewMode === 'grid' ? 'album-grid__photos' : 'album-canvas__plane'}
+        style={viewMode === 'spiral'
+          ? { transform: `translate(calc(50vw + ${camera.x}px), calc(50vh + ${camera.y}px)) scale(${camera.scale})` }
+          : undefined}
       >
         {placements.map(({ photo, x, y }) => {
+          if (viewMode === 'grid') {
+            return (
+              <AlbumPhoto
+                key={photo.id}
+                photo={photo}
+                familyId={familyId}
+                onOpen={handleOpenPhoto}
+                variant="grid"
+              />
+            )
+          }
+
           const screenX = camera.x + (x + CARD_WIDTH / 2) * camera.scale
           const screenY = camera.y + (y + CARD_HEIGHT / 2) * camera.scale
           const radiusX = Math.max(viewport.width * 1.65, 900)
@@ -221,7 +280,7 @@ function InfiniteAlbumCanvas({
             <AlbumPhoto
               key={photo.id}
               photo={photo}
-              driveAccessToken={driveAccessToken}
+              familyId={familyId}
               onOpen={handleOpenPhoto}
               style={{
                 transform: `translate3d(${curvedX}px, ${curvedY}px, ${depth}px) rotateY(${-angleX * RADIANS_TO_DEGREES}deg) rotateX(${angleY * RADIANS_TO_DEGREES}deg) scale(${scaleX}, ${scaleY})`,
@@ -231,28 +290,19 @@ function InfiniteAlbumCanvas({
         })}
       </div>
 
-      {selectedPhoto && (
-        <AlbumPhotoModal
-          photo={selectedPhoto.photo}
-          imageUrl={selectedPhoto.imageUrl}
-          familyId={familyId}
-          canEditTags={canEditTags}
-          canManageTags={canManageTags}
-          canPublishPhotos={canPublishPhotos}
-          onTagsChange={handleTagsChange}
-          onFavoriteChange={handleFavoriteChange}
-          onVisibilityChange={handleVisibilityChange}
-          onClose={() => setSelectedPhoto(null)}
-        />
-      )}
+      {photoModal}
 
-      <div className="album-controls" aria-label="表示倍率の操作">
-        <button type="button" onClick={() => zoomAtCenter(-0.15)} aria-label="縮小">−</button>
-        <output>{Math.round(camera.scale * 100)}%</output>
-        <button type="button" onClick={() => zoomAtCenter(0.15)} aria-label="拡大">＋</button>
-        <button type="button" onClick={() => setCamera({ x: 0, y: 0, scale: 1 })}>リセット</button>
-      </div>
-      <p className="album-canvas__hint">ドラッグして移動・ホイールで拡大縮小</p>
+      {viewMode === 'spiral' && (
+        <>
+          <div className="album-controls" aria-label="表示倍率の操作">
+            <button type="button" onClick={() => zoomAtCenter(-0.15)} aria-label="縮小">−</button>
+            <output>{Math.round(camera.scale * 100)}%</output>
+            <button type="button" onClick={() => zoomAtCenter(0.15)} aria-label="拡大">＋</button>
+            <button type="button" onClick={() => setCamera({ x: 0, y: 0, scale: 1 })}>リセット</button>
+          </div>
+          <p className="album-canvas__hint">ドラッグして移動・ホイールで拡大縮小</p>
+        </>
+      )}
     </section>
   )
 }

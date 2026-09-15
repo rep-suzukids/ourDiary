@@ -33,6 +33,7 @@ function CommentIcon() {
 function AlbumPhotoModal({
   photo,
   imageUrl,
+  imageError,
   familyId,
   canEditTags,
   canManageTags,
@@ -163,12 +164,18 @@ function AlbumPhotoModal({
     >
       <div className={`album-modal__content${isEditingTags || isViewingComments ? ' album-modal__content--tagging' : ''}`} onClick={(event) => event.stopPropagation()}>
         <div className="album-modal__photo-area">
-          <img
-            src={imageUrl}
-            alt={photo.name}
-            draggable="false"
-            onContextMenu={(event) => event.preventDefault()}
-          />
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={photo.name}
+              draggable="false"
+              onContextMenu={(event) => event.preventDefault()}
+            />
+          ) : (
+            <div className={`album-modal__image-state${imageError ? ' is-error' : ''}`} role={imageError ? 'alert' : 'status'}>
+              {imageError || '写真を読み込んでいます…'}
+            </div>
+          )}
           {!isEditingTags && !isViewingComments && (
             <button
               ref={closeButtonRef}

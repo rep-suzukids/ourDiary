@@ -1,20 +1,35 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { formatPhotoCapturedDate } from '../photoDateUtils.js'
-import { getDrivePhotoUrl } from '../services/albumApi.js'
+import { getAlbumThumbnailUrl } from '../services/albumApi.js'
 
-function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
+function AlbumPhoto({ photo, familyId, onOpen, style, variant = 'canvas' }) {
+  const positionRef = useRef(null)
   const [imageUrl, setImageUrl] = useState('')
   const [failed, setFailed] = useState(false)
   const [failureMessage, setFailureMessage] = useState('')
+  const [shouldLoad, setShouldLoad] = useState(false)
   const capturedDate = formatPhotoCapturedDate(photo.capturedAt, photo.capturedOn)
 
   useEffect(() => {
+    const element = positionRef.current
+    if (!element || shouldLoad) return undefined
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return
+      setShouldLoad(true)
+      observer.disconnect()
+    }, { rootMargin: '35% 35%' })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [shouldLoad])
+
+  useEffect(() => {
+    if (!shouldLoad) return undefined
     const controller = new AbortController()
     let objectUrl = ''
     setFailed(false)
     setFailureMessage('')
 
-    getDrivePhotoUrl(driveAccessToken, photo, controller.signal)
+    getAlbumThumbnailUrl(familyId, photo.albumFileId, controller.signal)
       .then((url) => {
         objectUrl = url
         setImageUrl(url)
@@ -30,16 +45,15 @@ function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
       controller.abort()
       if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
-  }, [driveAccessToken, photo])
+  }, [familyId, photo.albumFileId, shouldLoad])
 
   return (
-    <div className="album-photo-position" style={style}>
+    <div ref={positionRef} className={`album-photo-position${variant === 'grid' ? ' album-photo-position--grid' : ''}`} style={style}>
       <button
         type="button"
         className="album-photo"
         aria-label={`${photo.name}を拡大表示`}
-        aria-disabled={!imageUrl}
-        onClick={() => imageUrl && onOpen(photo, imageUrl)}
+        onClick={() => onOpen(photo)}
         onContextMenu={(event) => event.preventDefault()}
         onDragStart={(event) => event.preventDefault()}
       >
@@ -55,7 +69,7 @@ function AlbumPhoto({ photo, driveAccessToken, onOpen, style }) {
             }}
           />
         )}
-        {!imageUrl && !failed && <span className="album-photo__placeholder" aria-label="読み込み中" />}
+        {!imageUrl && !failed && <span className="album-photo__placeholder" aria-label={shouldLoad ? '読み込み中' : '表示待ち'} />}
         {failed && <span className="album-photo__error">{failureMessage || '読み込めませんでした'}</span>}
         {photo.tagIds?.length > 0 && (
           <span className={`album-photo__tag-marker${capturedDate ? ' has-captured-date' : ''}`} aria-label="タグ設定済み" title="タグ設定済み">
