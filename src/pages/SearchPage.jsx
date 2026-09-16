@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import HighlightedText from '../components/HighlightedText.jsx'
-import { searchDiary } from '../services/searchApi.js'
+import { searchAll } from '../services/searchApi.js'
 import '../Search.css'
 
 function initialParameters() {
@@ -8,9 +8,9 @@ function initialParameters() {
   const requestedReturnTo = parameters.get('returnTo') ?? ''
   return {
     query: parameters.get('q')?.trim() ?? '',
-    returnTo: requestedReturnTo.startsWith('/diary') && !requestedReturnTo.startsWith('//')
+    returnTo: requestedReturnTo.startsWith('/') && !requestedReturnTo.startsWith('//')
       ? requestedReturnTo
-      : '/diary',
+      : '/',
   }
 }
 
@@ -26,6 +26,62 @@ function SearchIcon() {
       <path d="m16 16 4 4" />
     </svg>
   )
+}
+
+const RESULT_LABELS = {
+  diary: '日記本文',
+  diary_comment: '日記コメント',
+  photo_comment: '写真コメント',
+  milk_memo: 'ミルク',
+  pumping_memo: '搾乳',
+  diaper_memo: 'おむつ',
+  temperature_memo: '検温',
+  timeline_note: 'その他',
+  medication_memo: 'おくすり',
+  schedule: '予定',
+}
+
+function childTone(subjectName) {
+  if (String(subjectName).includes('智') || String(subjectName).includes('とも')) return 'tomo'
+  if (String(subjectName).includes('結') || String(subjectName).includes('ゆう')) return 'yuu'
+  return 'both'
+}
+
+function resultPath(result, query) {
+  const parameters = new URLSearchParams({ q: query })
+  if (result.type === 'diary' || result.type === 'diary_comment') {
+    parameters.set('date', result.date)
+    parameters.set('focus', `${result.type === 'diary_comment' ? 'comment' : 'entry'}:${result.id}`)
+    return `/diary?${parameters}`
+  }
+  if (result.type === 'photo_comment') {
+    parameters.set('photo', result.parentId)
+    parameters.set('comment', result.id)
+    return `/album?${parameters}`
+  }
+  if (result.type === 'schedule') {
+    parameters.set('date', result.date)
+    parameters.set('focus', result.id)
+    return `/schedule?${parameters}`
+  }
+  if (result.type === 'pumping_memo') {
+    parameters.set('date', result.date)
+    parameters.set('tab', 'pumping')
+    parameters.set('focus', result.id)
+    return `/milk?${parameters}`
+  }
+
+  const recordTypes = {
+    milk_memo: 'milk',
+    diaper_memo: 'poop',
+    temperature_memo: 'temperature',
+    timeline_note: 'note',
+    medication_memo: 'medication',
+  }
+  parameters.set('date', result.date)
+  parameters.set('child', childTone(result.subjectName))
+  parameters.set('focus', `${recordTypes[result.type]}:${result.id}`)
+  return `/timeline?${parameters}`
 }
 
 function SearchPage({ session, onNavigate }) {
@@ -44,7 +100,7 @@ function SearchPage({ session, onNavigate }) {
     let active = true
     setStatus('loading')
     setError('')
-    searchDiary(activeFamily.id, query)
+    searchAll(activeFamily.id, query)
       .then((result) => {
         if (!active) return
         setResults(result.results ?? [])
@@ -76,8 +132,8 @@ function SearchPage({ session, onNavigate }) {
       setStatus('idle')
       return
     }
-    const parameters = new URLSearchParams({ scope: 'diary', q: nextQuery })
-    if (initial.returnTo !== '/diary') parameters.set('returnTo', initial.returnTo)
+    const parameters = new URLSearchParams({ scope: 'all', q: nextQuery })
+    if (initial.returnTo !== '/') parameters.set('returnTo', initial.returnTo)
     window.history.replaceState({}, '', `/search?${parameters}`)
     setQuery(nextQuery)
   }
@@ -86,7 +142,7 @@ function SearchPage({ session, onNavigate }) {
     setStatus('loading-more')
     setError('')
     try {
-      const result = await searchDiary(activeFamily.id, query, results.length)
+      const result = await searchAll(activeFamily.id, query, results.length)
       setResults((current) => [...current, ...(result.results ?? [])])
       setTotal(result.total ?? total)
       setHasMore(Boolean(result.hasMore))
@@ -100,37 +156,36 @@ function SearchPage({ session, onNavigate }) {
   const openResult = (result) => (event) => {
     event.preventDefault()
     sessionStorage.setItem('ourdiary-search-scroll', String(window.scrollY))
-    const focus = `${result.type === 'comment' ? 'comment' : 'entry'}:${result.id}`
-    onNavigate(`/diary?date=${encodeURIComponent(result.date)}&focus=${encodeURIComponent(focus)}&q=${encodeURIComponent(query)}`)
+    onNavigate(resultPath(result, query))
   }
 
   return (
     <main className="search-page">
       <header className="search-page__header">
-        <a href={initial.returnTo} onClick={(event) => { event.preventDefault(); onNavigate(initial.returnTo) }} aria-label="日記へ戻る">←</a>
+        <a href={initial.returnTo} onClick={(event) => { event.preventDefault(); onNavigate(initial.returnTo) }} aria-label="前の画面へ戻る">←</a>
         <div>
           <p>Find memories</p>
-          <h1>日記を検索</h1>
+          <h1>思い出を検索</h1>
         </div>
       </header>
 
       <section className="search-panel">
         <form className="search-form" onSubmit={submit} role="search">
           <label>
-            <span className="visually-hidden">日記とコメントを検索</span>
+            <span className="visually-hidden">記録とコメントを検索</span>
             <SearchIcon />
             <input
               type="search"
               value={input}
               maxLength="100"
-              placeholder="日記やコメントの言葉を入力"
+              placeholder="記録やコメントの言葉を入力"
               onChange={(event) => setInput(event.target.value)}
               autoFocus
             />
           </label>
           <button type="submit" disabled={!input.trim() || status === 'loading'}>検索</button>
         </form>
-        <p className="search-panel__hint">日記本文とコメントから、思い出の言葉を探せます。</p>
+        <p className="search-panel__hint">日記、写真コメント、育児記録のメモなどから言葉を探せます。</p>
       </section>
 
       <section className="search-results" aria-live="polite">
@@ -144,22 +199,21 @@ function SearchPage({ session, onNavigate }) {
         {status === 'loading' && <p className="search-results__empty">思い出を探しています…</p>}
         {status === 'error' && <p className="search-results__error" role="alert">{error}</p>}
         {status !== 'loading' && query && results.length === 0 && status !== 'error' && (
-          <p className="search-results__empty">「{query}」を含む日記やコメントは見つかりませんでした。</p>
+          <p className="search-results__empty">「{query}」を含む記録やコメントは見つかりませんでした。</p>
         )}
         <div className="search-results__list">
           {results.map((result) => {
-            const focus = `${result.type === 'comment' ? 'comment' : 'entry'}:${result.id}`
-            const path = `/diary?date=${encodeURIComponent(result.date)}&focus=${encodeURIComponent(focus)}&q=${encodeURIComponent(query)}`
+            const path = resultPath(result, query)
             return (
               <a className="search-result-card" href={path} onClick={openResult(result)} key={`${result.type}-${result.id}`}>
                 <div className="search-result-card__meta">
                   <time dateTime={result.date}>{formatDate(result.date)}</time>
                   <span>{result.subjectName}</span>
-                  <small>{result.type === 'comment' ? 'コメント' : '日記本文'}</small>
+                  <small>{RESULT_LABELS[result.type] ?? '記録'}</small>
                 </div>
                 <p><HighlightedText text={result.snippet} query={query} /></p>
                 <footer>
-                  {result.type === 'comment' && <span>{result.authorName}</span>}
+                  {result.type.endsWith('_comment') && <span>{result.authorName}</span>}
                   <span aria-hidden="true">›</span>
                 </footer>
               </a>

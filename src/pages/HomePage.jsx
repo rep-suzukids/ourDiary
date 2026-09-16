@@ -56,6 +56,16 @@ function ScheduleIcon() {
   )
 }
 
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <circle cx="21" cy="21" r="12" />
+      <path d="m30 30 10 10" />
+      <path d="M16 18h10M16 23h7" />
+    </svg>
+  )
+}
+
 function HomePage({ session, onLogout, onNavigate, dailyReminder }) {
   const activeFamily = session.families[0]
 
@@ -105,6 +115,17 @@ function HomePage({ session, onLogout, onNavigate, dailyReminder }) {
             >
               <DiaryIcon />
               <span>日記</span>
+            </a>
+            <a
+              className="album-link home-nav-link home-search-link"
+              href="/search"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/search')
+              }}
+            >
+              <SearchIcon />
+              <span>検索</span>
             </a>
             <a
               className="album-link home-nav-link home-schedule-link"

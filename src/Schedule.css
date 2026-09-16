@@ -288,3 +288,7 @@
     gap: 9px;
   }
 }
+.schedule-entry.is-search-focus {
+  outline: 3px solid rgb(216 118 155 / 28%);
+  outline-offset: 3px;
+}

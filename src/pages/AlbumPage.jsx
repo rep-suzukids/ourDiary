@@ -42,6 +42,10 @@ function comparePhotosByCapturedDateDescending(left, right) {
 }
 
 function AlbumPage({ session, onNavigate }) {
+  const searchParameters = new URLSearchParams(window.location.search)
+  const focusPhotoId = searchParameters.get('photo') ?? ''
+  const focusCommentId = searchParameters.get('comment') ?? ''
+  const highlightQuery = searchParameters.get('q')?.trim() ?? ''
   const [viewMode, setViewMode] = useState('spiral')
   const [albumTitle, setAlbumTitle] = useState('Album')
   const [folderId, setFolderId] = useState('')
@@ -331,6 +335,9 @@ function AlbumPage({ session, onNavigate }) {
           canEditTags={canEditTags}
           canManageTags={activeFamily.role === 'admin'}
           canPublishPhotos={canPublishPhotos}
+          focusPhotoId={focusPhotoId}
+          focusCommentId={focusCommentId}
+          highlightQuery={highlightQuery}
           onPhotoTagsChange={updatePhotoTags}
           onPhotoFavoriteChange={updatePhotoFavorite}
           onPhotoVisibilityChange={updatePhotoVisibility}

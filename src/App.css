@@ -571,6 +571,14 @@
   stroke-width: 2.5;
 }
 
+.home-search-link {
+  background: linear-gradient(135deg, #d7a7b9, #9aa7cf);
+}
+
+.home-search-link:hover {
+  background: linear-gradient(135deg, #c993a8, #8795c2);
+}
+
 .album-link:focus-visible,
 .logout-button:focus-visible {
   outline-color: rgb(216 118 155 / 32%);

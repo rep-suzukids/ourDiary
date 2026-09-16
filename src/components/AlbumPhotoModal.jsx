@@ -38,6 +38,9 @@ function AlbumPhotoModal({
   canEditTags,
   canManageTags,
   canPublishPhotos,
+  initialPanel = '',
+  focusCommentId = '',
+  highlightQuery = '',
   onTagsChange,
   onFavoriteChange,
   onVisibilityChange,
@@ -46,7 +49,7 @@ function AlbumPhotoModal({
   const closeButtonRef = useRef(null)
   const onCloseRef = useRef(onClose)
   const [isEditingTags, setIsEditingTags] = useState(false)
-  const [isViewingComments, setIsViewingComments] = useState(false)
+  const [isViewingComments, setIsViewingComments] = useState(initialPanel === 'comments')
   const [tags, setTags] = useState([])
   const [selectedTagIds, setSelectedTagIds] = useState(photo.tagIds ?? [])
   const [tagStatus, setTagStatus] = useState('idle')
@@ -295,6 +298,8 @@ function AlbumPhotoModal({
               familyId={familyId}
               targetType="photo"
               targetId={photo.albumFileId}
+              focusCommentId={focusCommentId}
+              highlightQuery={highlightQuery}
             />
           </aside>
         )}

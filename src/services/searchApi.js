@@ -4,9 +4,8 @@ async function readResponse(response) {
   return body
 }
 
-export async function searchDiary(familyId, query, offset = 0) {
+export async function searchAll(familyId, query, offset = 0) {
   const parameters = new URLSearchParams({
-    scope: 'diary',
     q: query,
     offset: String(offset),
   })
