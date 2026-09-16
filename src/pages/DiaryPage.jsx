@@ -93,7 +93,7 @@ function DiaryPage({ session, onNavigate }) {
   const selectedEntries = entriesByDate[selectedDate] ?? []
   const createDiaryPath = `/diary/new?date=${encodeURIComponent(selectedDate)}`
   const diaryReturnPath = `/diary?date=${encodeURIComponent(selectedDate)}`
-  const searchPath = `/search?scope=diary&returnTo=${encodeURIComponent(diaryReturnPath)}`
+  const searchPath = `/search?scope=all&returnTo=${encodeURIComponent(diaryReturnPath)}`
 
   useEffect(() => {
     if (status !== 'ready' || !searchFocus) return undefined

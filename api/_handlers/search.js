@@ -44,10 +44,11 @@ export default async function handler(request, response) {
   }
 
   const url = new URL(request.url, 'http://localhost')
-  const scope = request.query?.scope ?? url.searchParams.get('scope') ?? 'diary'
+  const rawScope = request.query?.scope ?? url.searchParams.get('scope') ?? 'all'
+  const scope = Array.isArray(rawScope) ? rawScope[0] : rawScope
   const query = String(request.query?.q ?? url.searchParams.get('q') ?? '').trim()
   const offset = Number(request.query?.offset ?? url.searchParams.get('offset') ?? 0)
-  if (scope !== 'diary') {
+  if (!['all', 'diary'].includes(scope)) {
     sendJson(response, 400, { error: '検索対象が正しくありません。' })
     return
   }
@@ -68,8 +69,7 @@ export default async function handler(request, response) {
         SELECT
           de.id,
           'diary'::text AS type,
-          de.id AS entry_id,
-          de.subject_type,
+          de.id AS parent_id,
           de.child_id,
           CASE de.subject_type
             WHEN 'father' THEN 'お父さん'
@@ -92,9 +92,8 @@ export default async function handler(request, response) {
 
         SELECT
           cmt.id,
-          'comment'::text AS type,
-          de.id AS entry_id,
-          de.subject_type,
+          'diary_comment'::text AS type,
+          de.id AS parent_id,
           de.child_id,
           CASE de.subject_type
             WHEN 'father' THEN 'お父さん'
@@ -115,12 +114,146 @@ export default async function handler(request, response) {
         INNER JOIN users author ON author.id = cmt.author_id
         WHERE cmt.family_id = ${familyId}
           AND strpos(lower(cmt.body), lower(${query})) > 0
+
+        UNION ALL
+
+        SELECT
+          cmt.id,
+          'photo_comment'::text AS type,
+          photo.id AS parent_id,
+          NULL::uuid AS child_id,
+          photo.name AS subject_name,
+          to_char(COALESCE(photo.captured_on, photo.drive_created_at::date, cmt.created_at::date), 'YYYY-MM-DD') AS date,
+          cmt.body AS matched_text,
+          COALESCE(author.display_name, author.email::text) AS author_name,
+          cmt.updated_at
+        FROM comments cmt
+        INNER JOIN drive_album_files photo
+          ON photo.id = cmt.album_file_id
+          AND photo.family_id = cmt.family_id
+        INNER JOIN users author ON author.id = cmt.author_id
+        WHERE cmt.family_id = ${familyId}
+          AND strpos(lower(cmt.body), lower(${query})) > 0
+
+        UNION ALL
+
+        SELECT
+          event.id,
+          CASE event.event_type WHEN 'feeding' THEN 'milk_memo' ELSE 'pumping_memo' END AS type,
+          NULL::uuid AS parent_id,
+          event.child_id,
+          CASE event.subject_type WHEN 'mother' THEN 'ママ' ELSE child.display_name END AS subject_name,
+          to_char(event.event_date, 'YYYY-MM-DD') AS date,
+          event.memo AS matched_text,
+          COALESCE(author.display_name, author.email::text) AS author_name,
+          event.updated_at
+        FROM care_events event
+        LEFT JOIN children child ON child.id = event.child_id AND child.family_id = event.family_id
+        INNER JOIN users author ON author.id = event.author_id
+        WHERE event.family_id = ${familyId}
+          AND event.deleted_at IS NULL
+          AND event.event_type IN ('feeding', 'pumping')
+          AND strpos(lower(COALESCE(event.memo, '')), lower(${query})) > 0
+
+        UNION ALL
+
+        SELECT
+          event.id,
+          'diaper_memo'::text AS type,
+          NULL::uuid AS parent_id,
+          event.child_id,
+          child.display_name AS subject_name,
+          to_char(event.event_date, 'YYYY-MM-DD') AS date,
+          event.memo AS matched_text,
+          COALESCE(author.display_name, author.email::text) AS author_name,
+          event.updated_at
+        FROM bowel_movements event
+        INNER JOIN children child ON child.id = event.child_id AND child.family_id = event.family_id
+        INNER JOIN users author ON author.id = event.author_id
+        WHERE event.family_id = ${familyId}
+          AND event.deleted_at IS NULL
+          AND strpos(lower(COALESCE(event.memo, '')), lower(${query})) > 0
+
+        UNION ALL
+
+        SELECT
+          event.id,
+          'temperature_memo'::text AS type,
+          NULL::uuid AS parent_id,
+          event.child_id,
+          child.display_name AS subject_name,
+          to_char(event.measured_date, 'YYYY-MM-DD') AS date,
+          event.memo AS matched_text,
+          COALESCE(author.display_name, author.email::text) AS author_name,
+          event.updated_at
+        FROM temperature_readings event
+        INNER JOIN children child ON child.id = event.child_id AND child.family_id = event.family_id
+        INNER JOIN users author ON author.id = event.author_id
+        WHERE event.family_id = ${familyId}
+          AND event.deleted_at IS NULL
+          AND strpos(lower(COALESCE(event.memo, '')), lower(${query})) > 0
+
+        UNION ALL
+
+        SELECT
+          note.id,
+          'timeline_note'::text AS type,
+          NULL::uuid AS parent_id,
+          note.child_id,
+          child.display_name AS subject_name,
+          to_char(note.note_date, 'YYYY-MM-DD') AS date,
+          note.body AS matched_text,
+          COALESCE(author.display_name, author.email::text) AS author_name,
+          note.updated_at
+        FROM timeline_notes note
+        INNER JOIN children child ON child.id = note.child_id AND child.family_id = note.family_id
+        INNER JOIN users author ON author.id = note.author_id
+        WHERE note.family_id = ${familyId}
+          AND note.deleted_at IS NULL
+          AND strpos(lower(note.body), lower(${query})) > 0
+
+        UNION ALL
+
+        SELECT
+          administration.id,
+          'medication_memo'::text AS type,
+          NULL::uuid AS parent_id,
+          administration.child_id,
+          child.display_name || '・' || medication.name AS subject_name,
+          to_char(administration.administered_date, 'YYYY-MM-DD') AS date,
+          administration.memo AS matched_text,
+          COALESCE(author.display_name, author.email::text) AS author_name,
+          administration.updated_at
+        FROM medication_administrations administration
+        INNER JOIN children child ON child.id = administration.child_id AND child.family_id = administration.family_id
+        INNER JOIN medications medication ON medication.id = administration.medication_id AND medication.family_id = administration.family_id
+        INNER JOIN users author ON author.id = administration.author_id
+        WHERE administration.family_id = ${familyId}
+          AND administration.deleted_at IS NULL
+          AND strpos(lower(COALESCE(administration.memo, '')), lower(${query})) > 0
+
+        UNION ALL
+
+        SELECT
+          schedule.id,
+          'schedule'::text AS type,
+          NULL::uuid AS parent_id,
+          NULL::uuid AS child_id,
+          '家族の予定'::text AS subject_name,
+          to_char(schedule.schedule_date, 'YYYY-MM-DD') AS date,
+          schedule.body AS matched_text,
+          COALESCE(author.display_name, author.email::text) AS author_name,
+          schedule.updated_at
+        FROM family_schedules schedule
+        INNER JOIN users author ON author.id = schedule.author_id
+        WHERE schedule.family_id = ${familyId}
+          AND schedule.deleted_at IS NULL
+          AND strpos(lower(schedule.body), lower(${query})) > 0
       )
       SELECT
         id,
         type,
-        entry_id AS "entryId",
-        subject_type AS "subjectType",
+        parent_id AS "parentId",
         child_id AS "childId",
         subject_name AS "subjectName",
         date,
@@ -129,6 +262,7 @@ export default async function handler(request, response) {
         updated_at AS "updatedAt",
         COUNT(*) OVER()::integer AS "totalCount"
       FROM matches
+      WHERE ${scope} = 'all' OR type IN ('diary', 'diary_comment')
       ORDER BY date DESC, updated_at DESC, id
       LIMIT ${SEARCH_LIMIT}
       OFFSET ${offset}

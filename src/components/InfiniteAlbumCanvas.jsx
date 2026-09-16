@@ -51,6 +51,9 @@ function InfiniteAlbumCanvas({
   canEditTags,
   canManageTags,
   canPublishPhotos,
+  focusPhotoId = '',
+  focusCommentId = '',
+  highlightQuery = '',
   onPhotoTagsChange,
   onPhotoFavoriteChange,
   onPhotoVisibilityChange,
@@ -64,6 +67,7 @@ function InfiniteAlbumCanvas({
   const drag = useRef(null)
   const suppressOpen = useRef(false)
   const originalLoadPhoto = useRef(null)
+  const focusHandled = useRef(false)
   const selectedPhotoId = selectedPhoto?.photo.id
 
   useEffect(() => {
@@ -186,6 +190,15 @@ function InfiniteAlbumCanvas({
     setSelectedPhoto({ photo, imageUrl: '', imageError: '' })
   }
 
+  useEffect(() => {
+    if (!focusPhotoId || focusHandled.current) return
+    const photo = photos.find((item) => item.albumFileId === focusPhotoId)
+    if (!photo) return
+    focusHandled.current = true
+    originalLoadPhoto.current = photo
+    setSelectedPhoto({ photo, imageUrl: '', imageError: '' })
+  }, [focusPhotoId, photos])
+
   const handleTagsChange = (albumFileId, tagIds) => {
     onPhotoTagsChange(albumFileId, tagIds)
     setSelectedPhoto((current) => current ? {
@@ -219,6 +232,9 @@ function InfiniteAlbumCanvas({
       canEditTags={canEditTags}
       canManageTags={canManageTags}
       canPublishPhotos={canPublishPhotos}
+      initialPanel={focusCommentId ? 'comments' : ''}
+      focusCommentId={focusCommentId}
+      highlightQuery={highlightQuery}
       onTagsChange={handleTagsChange}
       onFavoriteChange={handleFavoriteChange}
       onVisibilityChange={handleVisibilityChange}

@@ -86,6 +86,7 @@ function SchedulePage({ session, onNavigate }) {
   const [error, setError] = useState('')
   const [editingId, setEditingId] = useState('')
   const [editValues, setEditValues] = useState({ date: '', startTime: '', endTime: '', text: '' })
+  const focusId = new URLSearchParams(window.location.search).get('focus') ?? ''
   const [year, month] = monthValue.split('-').map(Number)
   const calendarDays = useMemo(() => buildCalendar(year, month), [month, year])
 
@@ -114,6 +115,13 @@ function SchedulePage({ session, onNavigate }) {
   }, {}), [schedules])
   const selectedSchedules = schedulesByDate[selectedDate] ?? []
   const createPath = `/schedule/new?date=${encodeURIComponent(selectedDate)}`
+
+  useEffect(() => {
+    if (status !== 'ready' || !focusId) return
+    requestAnimationFrame(() => {
+      document.getElementById(`schedule-${focusId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  }, [focusId, selectedDate, status])
 
   const navigateLink = (path) => (event) => {
     event.preventDefault()
@@ -257,7 +265,11 @@ function SchedulePage({ session, onNavigate }) {
 
         <div className="schedule-entries">
           {selectedSchedules.map((schedule) => (
-            <article className="schedule-entry" key={schedule.id}>
+            <article
+              id={`schedule-${schedule.id}`}
+              className={`schedule-entry${schedule.id === focusId ? ' is-search-focus' : ''}`}
+              key={schedule.id}
+            >
               {editingId === schedule.id ? (
                 <form className="diary-edit-form" onSubmit={saveEdit}>
                   <span className="diary-date-control">

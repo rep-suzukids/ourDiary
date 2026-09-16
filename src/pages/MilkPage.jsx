@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { deleteCareEvent, getCareEvents } from '../services/careEventApi.js'
 import { BottleIcon, PumpIcon } from '../components/CareEventIcons.jsx'
+import HighlightedText from '../components/HighlightedText.jsx'
 import {
   addDate,
   childDisplayName,
@@ -26,7 +27,7 @@ function initialTab() {
     : 'feeding'
 }
 
-function EventModal({ event, onClose, onDelete, onNavigate }) {
+function EventModal({ event, onClose, onDelete, onNavigate, highlightQuery = '' }) {
   useEffect(() => {
     const closeOnEscape = (keyboardEvent) => {
       if (keyboardEvent.key === 'Escape') onClose()
@@ -63,7 +64,7 @@ function EventModal({ event, onClose, onDelete, onNavigate }) {
         </dl>
         <div className="milk-detail-memo">
           <span>メモ</span>
-          <p>{event.memo || 'メモはありません。'}</p>
+          <p><HighlightedText text={event.memo || 'メモはありません。'} query={highlightQuery} /></p>
         </div>
         {event.canEdit && (
           <div className="milk-modal__actions">
@@ -95,6 +96,10 @@ function MilkPage({ session, onNavigate }) {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const searchParameters = new URLSearchParams(window.location.search)
+  const focusId = searchParameters.get('focus') ?? ''
+  const highlightQuery = searchParameters.get('q')?.trim() ?? ''
+  const focusHandled = useRef(false)
 
   const loadEvents = () => {
     setStatus('loading')
@@ -113,6 +118,15 @@ function MilkPage({ session, onNavigate }) {
   }
 
   useEffect(loadEvents, [activeFamily.id, date])
+
+  useEffect(() => {
+    if (status !== 'ready' || !focusId || focusHandled.current) return
+    const target = events.find((event) => event.id === focusId)
+    if (!target) return
+    focusHandled.current = true
+    setTab(target.eventType)
+    setSelectedEvent(target)
+  }, [events, focusId, selectedEvent, status])
 
   const visibleEvents = useMemo(() => events.filter((event) => {
     if (event.eventType !== tab) return false
@@ -294,6 +308,7 @@ function MilkPage({ session, onNavigate }) {
           onClose={() => setSelectedEvent(null)}
           onDelete={removeEvent}
           onNavigate={onNavigate}
+          highlightQuery={highlightQuery}
         />
       )}
     </main>

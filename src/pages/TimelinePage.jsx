@@ -35,6 +35,7 @@ import {
   TIMELINE_BUCKET_MINUTES,
   TIMELINE_PREVIOUS_DAY_START_HOUR,
 } from '../timelineConfig.js'
+import HighlightedText from '../components/HighlightedText.jsx'
 import '../Milk.css'
 import '../Poop.css'
 import '../Timeline.css'
@@ -151,7 +152,7 @@ function recordLabel(event) {
   return 'おむつ'
 }
 
-function TimelineDetailModal({ event, onClose, onDelete, onNavigate, returnPath }) {
+function TimelineDetailModal({ event, onClose, onDelete, onNavigate, returnPath, highlightQuery = '' }) {
   useEffect(() => {
     const closeOnEscape = (keyboardEvent) => {
       if (keyboardEvent.key === 'Escape') onClose()
@@ -241,7 +242,7 @@ function TimelineDetailModal({ event, onClose, onDelete, onNavigate, returnPath 
         </dl>}
         <div className="milk-detail-memo">
           <span>{isNote ? '本文' : 'メモ'}</span>
-          <p>{isNote ? event.text : event.memo || 'メモはありません。'}</p>
+          <p><HighlightedText text={isNote ? event.text : event.memo || 'メモはありません。'} query={highlightQuery} /></p>
         </div>
         {isNote && (
           <dl className="milk-detail-list timeline-note-detail-meta">
@@ -280,6 +281,10 @@ function TimelinePage({ session, onNavigate }) {
   const [scrollEdges, setScrollEdges] = useState({ above: false, below: false })
   const quickAddRef = useRef(null)
   const scrollRef = useRef(null)
+  const focusHandled = useRef(false)
+  const focusParameters = new URLSearchParams(window.location.search)
+  const focusValue = focusParameters.get('focus') ?? ''
+  const highlightQuery = focusParameters.get('q')?.trim() ?? ''
 
   useEffect(() => {
     let isActive = true
@@ -348,6 +353,16 @@ function TimelinePage({ session, onNavigate }) {
   const visibleEvents = useMemo(() => events.filter((event) => (
     selectedTone === 'both' || (selectedChild && event.childId === selectedChild.id)
   )), [events, selectedChild, selectedTone])
+
+  useEffect(() => {
+    if (status !== 'ready' || !focusValue || focusHandled.current) return
+    const [recordType, id] = focusValue.split(':')
+    const target = events.find((event) => event.recordType === recordType && event.id === id)
+    if (!target) return
+    focusHandled.current = true
+    setSelectedTone(childTone(target.childName))
+    setSelectedEvent(target)
+  }, [events, focusValue, status])
 
   const comparisonRows = useMemo(() => {
     if (selectedTone !== 'both') return []
@@ -800,6 +815,7 @@ function TimelinePage({ session, onNavigate }) {
           onDelete={handleDeleteEvent}
           onNavigate={onNavigate}
           returnPath={currentTimelinePath}
+          highlightQuery={highlightQuery}
         />
       )}
     </main>
