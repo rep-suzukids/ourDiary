@@ -3,6 +3,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import AlbumPage from './pages/AlbumPage.jsx'
 import AlbumSetupPage from './pages/AlbumSetupPage.jsx'
 import AlbumUploadPage from './pages/AlbumUploadPage.jsx'
+import BirthdaySettingsPage from './pages/BirthdaySettingsPage.jsx'
 import DriveOwnerCompletePage from './pages/DriveOwnerCompletePage.jsx'
 import DriveOwnerConnectPage from './pages/DriveOwnerConnectPage.jsx'
 import DiaryCreatePage from './pages/DiaryCreatePage.jsx'
@@ -170,6 +171,13 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return withDailyReminders(<MilkIntervalSettingsPage session={session} onNavigate={navigate} />)
+  }
+
+  if (pathname === '/admin/birthdays') {
+    if (!session || session.families[0]?.role !== 'admin') {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return withDailyReminders(<BirthdaySettingsPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/diary') {
