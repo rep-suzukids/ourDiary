@@ -1,4 +1,5 @@
 import LegalFooter from '../components/LegalFooter.jsx'
+import ChildAgeSummary from '../components/ChildAgeSummary.jsx'
 import { DiaperIcon, ThermometerIcon } from '../components/CareEventIcons.jsx'
 
 const ROLE_LABELS = {
@@ -78,6 +79,7 @@ function HomePage({ session, onLogout, onNavigate, dailyReminder }) {
     <main className="page">
       <h1 className="page__title">Our Diary</h1>
       {dailyReminder}
+      <ChildAgeSummary familyId={activeFamily.id} />
 
       <section className="card" aria-labelledby="welcome-heading">
         {session.user.picture && (
@@ -216,6 +218,16 @@ function HomePage({ session, onLogout, onNavigate, dailyReminder }) {
               }}
             >
               おくすり管理
+            </a>
+            <a
+              className="album-settings-link"
+              href="/admin/birthdays"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/admin/birthdays')
+              }}
+            >
+              誕生日設定
             </a>
             <a
               className="album-settings-link"

@@ -3,6 +3,7 @@ import albumThumbnailHandler from './_handlers/album-thumbnail.js'
 import authSessionHandler from './_handlers/auth-session.js'
 import bowelEventsHandler from './_handlers/bowel-events.js'
 import careEventsHandler from './_handlers/care-events.js'
+import childBirthdaysHandler from './_handlers/child-birthdays.js'
 import commentsHandler from './_handlers/comments.js'
 import diaryEntriesHandler from './_handlers/diary-entries.js'
 import driveAccessTokenHandler from './_handlers/drive-access-token.js'
@@ -28,6 +29,7 @@ const ROUTES = new Map([
   ['auth-session', authSessionHandler],
   ['bowel-events', bowelEventsHandler],
   ['care-events', careEventsHandler],
+  ['child-birthdays', childBirthdaysHandler],
   ['comments', commentsHandler],
   ['diary-entries', diaryEntriesHandler],
   ['drive-access-token', driveAccessTokenHandler],

@@ -152,6 +152,62 @@
   margin: 0;
 }
 
+.child-age-summary {
+  display: grid;
+  width: min(100%, 520px);
+  margin: 10px 0 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.child-age-card {
+  display: flex;
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid #dddcef;
+  border-radius: 18px;
+  align-items: center;
+  background: rgb(247 246 255 / 92%);
+  box-shadow: 0 8px 22px rgb(102 92 143 / 9%);
+  color: #665d8d;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.child-age-card--yuu {
+  border-color: #efd4de;
+  background: rgb(255 246 249 / 94%);
+  color: #9b5b73;
+}
+
+.child-age-card__mark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: 50%;
+  place-items: center;
+  background: #8d91cd;
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 700;
+}
+
+.child-age-card--yuu .child-age-card__mark { background: #df7fa2; }
+.child-age-card p, .child-age-card strong, .child-age-card small { display: block; margin: 0; }
+.child-age-card p { margin-bottom: 2px; font-size: .7rem; font-weight: 700; }
+.child-age-card strong { color: #62527b; font-size: .96rem; }
+.child-age-card--yuu strong { color: #8e5269; }
+.child-age-card small { margin-top: 2px; color: #998a9d; font-size: .66rem; }
+
+@media (max-width: 480px) {
+  .child-age-summary { width: min(100%, 400px); }
+  .child-age-card { padding: 11px 10px; gap: 7px; }
+  .child-age-card__mark { width: 28px; height: 28px; flex-basis: 28px; }
+  .child-age-card strong { font-size: .82rem; }
+  .child-age-card small { font-size: .6rem; }
+}
+
 .page__title--small {
   font-size: 2.2rem;
 }
