@@ -147,6 +147,36 @@ async function getMonthlySummaries(sql, familyId, start, endExclusive) {
   `
 }
 
+async function getLatestBowelEvents(sql, familyId) {
+  return sql`
+    SELECT DISTINCT ON (bm.child_id)
+      bm.child_id AS "childId",
+      to_char(bm.event_date, 'YYYY-MM-DD') AS date,
+      bm.time_type AS "timeType",
+      CASE WHEN bm.event_time IS NULL THEN NULL ELSE to_char(bm.event_time, 'HH24:MI') END AS time,
+      bm.time_period AS "timePeriod"
+    FROM bowel_movements bm
+    WHERE bm.family_id = ${familyId}
+      AND bm.deleted_at IS NULL
+      AND bm.amount_code IS NOT NULL
+    ORDER BY
+      bm.child_id,
+      bm.event_date DESC,
+      CASE
+        WHEN bm.time_type = 'exact' THEN
+          EXTRACT(HOUR FROM bm.event_time) * 60 + EXTRACT(MINUTE FROM bm.event_time)
+        WHEN bm.time_period = 'late_night' THEN 120
+        WHEN bm.time_period = 'early_morning' THEN 330
+        WHEN bm.time_period = 'morning' THEN 540
+        WHEN bm.time_period = 'noon' THEN 780
+        WHEN bm.time_period = 'evening' THEN 1020
+        WHEN bm.time_period = 'night' THEN 1290
+        ELSE 720
+      END DESC,
+      bm.created_at DESC
+  `
+}
+
 export default async function handler(request, response) {
   if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method)) {
     response.setHeader('Allow', 'GET, POST, PATCH, DELETE')
@@ -173,6 +203,14 @@ export default async function handler(request, response) {
     if (request.method === 'GET') {
       const url = new URL(request.url, 'http://localhost')
       const view = request.query?.view ?? url.searchParams.get('view')
+      if (view === 'reminder') {
+        const [children, latestBowelEvents] = await Promise.all([
+          getFixedChildren(sql, familyId),
+          getLatestBowelEvents(sql, familyId),
+        ])
+        sendJson(response, 200, { children, latestBowelEvents })
+        return
+      }
       if (view === 'month') {
         const range = monthRange(
           request.query?.year ?? url.searchParams.get('year'),

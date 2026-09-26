@@ -34,13 +34,13 @@ function requestedChildTone() {
   return requested === 'tomo' || requested === 'yuu' ? requested : ''
 }
 
-function requestedTimelineReturnPath() {
+function requestedReturnPath() {
   const requested = queryValue('returnTo')
-  if (!requested) return ''
+  if (!requested.startsWith('/') || requested.startsWith('//')) return ''
   try {
     const url = new URL(requested, window.location.origin)
-    return url.origin === window.location.origin && url.pathname === '/timeline'
-      ? `${url.pathname}${url.search}`
+    return url.origin === window.location.origin
+      ? `${url.pathname}${url.search}${url.hash}`
       : ''
   } catch {
     return ''
@@ -50,7 +50,7 @@ function requestedTimelineReturnPath() {
 function PoopFormPage({ session, onNavigate, mode = 'create' }) {
   const activeFamily = session.families[0]
   const eventId = mode === 'edit' ? queryValue('id') : ''
-  const timelineReturnPath = requestedTimelineReturnPath()
+  const returnPath = requestedReturnPath()
   const initializedEdit = useRef(false)
   const initializedRequestedChild = useRef(false)
   const [children, setChildren] = useState([])
@@ -149,8 +149,8 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
       } else {
         await createBowelEvent(activeFamily.id, values)
       }
-      onNavigate(timelineReturnPath || `/poop?date=${date}`, {
-        replace: mode === 'create' || Boolean(timelineReturnPath),
+      onNavigate(returnPath || `/poop?date=${date}`, {
+        replace: mode === 'create' || Boolean(returnPath),
       })
     } catch (requestError) {
       setError(requestError.message)
@@ -163,12 +163,12 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
     onNavigate(path)
   }
 
-  const backPath = timelineReturnPath || `/poop?date=${date}`
+  const backPath = returnPath || `/poop?date=${date}`
 
   return (
     <main className="milk-page milk-form-page poop-page poop-form-page">
       <header className="milk-page-header milk-page-header--compact">
-        <a href={backPath} onClick={navigateLink(backPath)} aria-label={timelineReturnPath ? 'タイムラインへ戻る' : 'おむつの記録へ戻る'}>←</a>
+        <a href={backPath} onClick={navigateLink(backPath)} aria-label={returnPath ? '元の画面へ戻る' : 'おむつの記録へ戻る'}>←</a>
         <div>
           <p>Our Diary</p>
           <h1>{mode === 'edit' ? 'おむつ記録を編集' : 'おむつを記録'}</h1>
