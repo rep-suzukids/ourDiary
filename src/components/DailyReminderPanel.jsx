@@ -1,3 +1,4 @@
+import BowelReminder from './BowelReminder.jsx'
 import MedicationReminder from './MedicationReminder.jsx'
 import TemperatureReminder from './TemperatureReminder.jsx'
 
@@ -11,6 +12,7 @@ function DailyReminderPanel({ session, refreshKey, onNavigate, placement = 'floa
         placement="embedded"
       />
       <MedicationReminder session={session} refreshKey={refreshKey} onNavigate={onNavigate} />
+      <BowelReminder session={session} refreshKey={refreshKey} onNavigate={onNavigate} />
     </div>
   )
 }

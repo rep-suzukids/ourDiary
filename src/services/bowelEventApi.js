@@ -8,6 +8,12 @@ async function readResponse(response) {
   return body
 }
 
+export const BOWEL_STATUS_CHANGED_EVENT = 'ourdiary:bowel-status-changed'
+
+function notifyBowelStatusChanged() {
+  window.dispatchEvent(new Event(BOWEL_STATUS_CHANGED_EVENT))
+}
+
 function requestHeaders(familyId, includeJson = false) {
   return {
     'x-family-id': familyId,
@@ -37,6 +43,15 @@ export async function getMonthlyBowelSummary(familyId, year, month) {
   return readResponse(response)
 }
 
+export async function getBowelReminderStatus(familyId) {
+  const response = await fetch('/api/bowel-events?view=reminder', {
+    credentials: 'same-origin',
+    cache: 'no-store',
+    headers: requestHeaders(familyId),
+  })
+  return readResponse(response)
+}
+
 export async function createBowelEvent(familyId, values) {
   const response = await fetch('/api/bowel-events', {
     method: 'POST',
@@ -44,7 +59,9 @@ export async function createBowelEvent(familyId, values) {
     headers: requestHeaders(familyId, true),
     body: JSON.stringify(values),
   })
-  return readResponse(response)
+  const result = await readResponse(response)
+  notifyBowelStatusChanged()
+  return result
 }
 
 export async function updateBowelEvent(familyId, values) {
@@ -54,7 +71,9 @@ export async function updateBowelEvent(familyId, values) {
     headers: requestHeaders(familyId, true),
     body: JSON.stringify(values),
   })
-  return readResponse(response)
+  const result = await readResponse(response)
+  notifyBowelStatusChanged()
+  return result
 }
 
 export async function deleteBowelEvent(familyId, id) {
@@ -64,5 +83,7 @@ export async function deleteBowelEvent(familyId, id) {
     headers: requestHeaders(familyId, true),
     body: JSON.stringify({ id }),
   })
-  return readResponse(response)
+  const result = await readResponse(response)
+  notifyBowelStatusChanged()
+  return result
 }

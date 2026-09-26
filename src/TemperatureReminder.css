@@ -70,6 +70,28 @@
   color: #7d5948;
 }
 
+.bowel-reminder {
+  border-color: #e4a769;
+  background: rgb(255 240 218 / 97%);
+  box-shadow: 0 9px 26px rgb(148 87 39 / 18%);
+}
+
+.bowel-reminder .temperature-reminder__link {
+  color: #8a4f2f;
+}
+
+.bowel-reminder .temperature-reminder__link:hover {
+  background: rgb(255 229 193 / 88%);
+}
+
+.bowel-reminder .temperature-reminder__link svg {
+  fill: none;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
 .temperature-reminder__link {
   display: flex;
   min-height: 44px;
