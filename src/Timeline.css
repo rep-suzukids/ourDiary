@@ -792,6 +792,58 @@
   }
 }
 
+/* iPad miniなど、横幅はある一方で縦の表示領域が短い端末向け。 */
+@media (orientation: landscape) and (min-width: 681px) and (max-height: 760px) {
+  .timeline-page {
+    padding: 14px clamp(20px, 3vw, 34px) 22px;
+  }
+
+  .timeline-page-header {
+    margin-bottom: 12px;
+  }
+
+  .timeline-page-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .timeline-dashboard {
+    padding: 18px 24px;
+    border-radius: 20px;
+    gap: 14px;
+  }
+
+  .timeline-field {
+    gap: 5px;
+  }
+
+  .timeline-date-control {
+    min-height: 42px;
+  }
+
+  .timeline-child-fieldset legend {
+    margin-bottom: 6px;
+  }
+
+  .timeline-child-options {
+    gap: 8px;
+  }
+
+  .timeline-child-options .milk-child-option {
+    min-height: 46px;
+    padding: 7px 12px;
+  }
+
+  .timeline-child-options .milk-child-option > span {
+    width: 24px;
+    height: 24px;
+    font-size: 0.66rem;
+  }
+
+  .timeline-scroll {
+    padding-bottom: 72px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .timeline-quick-add__toggle,
   .timeline-quick-add__toggle svg,
