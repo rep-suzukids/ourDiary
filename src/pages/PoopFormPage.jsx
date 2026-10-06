@@ -104,9 +104,10 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
     return () => { isActive = false }
   }, [activeFamily.id, date, eventId, mode])
 
-  const chooseNow = () => {
-    setDate(localDateString())
-    setTime(localTimeString())
+  const chooseRelativeTime = (minutesAgo) => {
+    const selectedDateTime = new Date(Date.now() - minutesAgo * 60 * 1000)
+    setDate(localDateString(selectedDateTime))
+    setTime(localTimeString(selectedDateTime))
     setTimeType('exact')
   }
 
@@ -279,7 +280,11 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
 
         <fieldset className="milk-fieldset">
           <legend>時間</legend>
-          <button className="milk-now-button" type="button" onClick={chooseNow}>今の日時を使う</button>
+          <div className="milk-time-shortcuts">
+            <button className="milk-now-button" type="button" onClick={() => chooseRelativeTime(0)}>今の日時を使う</button>
+            <button className="milk-now-button" type="button" onClick={() => chooseRelativeTime(2)}>今の2分前</button>
+            <button className="milk-now-button" type="button" onClick={() => chooseRelativeTime(5)}>今の5分前</button>
+          </div>
           <div className="milk-time-types">
             <label><input type="radio" name="timeType" checked={timeType === 'exact'} onChange={() => setTimeType('exact')} />時刻を指定</label>
             <label><input type="radio" name="timeType" checked={timeType === 'period'} onChange={() => setTimeType('period')} />だいたい</label>

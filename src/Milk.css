@@ -1041,6 +1041,12 @@
   font-weight: 700;
 }
 
+.milk-time-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .milk-recent-amounts button:hover,
 .milk-period-options button.is-selected,
 .milk-now-button:hover {

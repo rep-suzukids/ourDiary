@@ -113,13 +113,14 @@ async function getEvents(sql, familyId, userId, date) {
   `
 }
 
-async function getLatestTemperatures(sql, familyId) {
+async function getLatestTemperatures(sql, familyId, date) {
   return sql`
     SELECT DISTINCT ON (child_id)
       child_id AS "childId",
       temperature_c::text AS temperature
     FROM temperature_readings
     WHERE family_id = ${familyId}
+      AND measured_date <= ${date}
       AND deleted_at IS NULL
     ORDER BY
       child_id,
@@ -230,7 +231,7 @@ export default async function handler(request, response) {
       const [children, events, latestTemperatures] = await Promise.all([
         getFixedChildren(sql, familyId),
         getEvents(sql, familyId, authorization.userId, date),
-        getLatestTemperatures(sql, familyId),
+        getLatestTemperatures(sql, familyId, date),
       ])
       sendJson(response, 200, { children, events, latestTemperatures })
       return
