@@ -159,20 +159,53 @@ async function getCareSummaries(sql, familyId, start, endExclusive) {
   `
 }
 
-async function getRecentAmounts(sql, familyId) {
+async function getRecentAmounts(sql, familyId, date) {
   return sql`
-    WITH latest_amounts AS (
-      SELECT DISTINCT ON (ce.event_type, ce.child_id, md.amount_ml)
+    WITH amount_uses AS (
+      SELECT
         ce.event_type,
         ce.child_id,
         md.amount_ml,
-        ce.created_at AS last_used_at
+        ce.event_date AS used_date,
+        CASE
+          WHEN ce.time_type = 'exact' THEN
+            EXTRACT(HOUR FROM ce.event_time) * 60 + EXTRACT(MINUTE FROM ce.event_time)
+          WHEN ce.time_period = 'night' THEN 1290
+          WHEN ce.time_period = 'evening' THEN 1020
+          WHEN ce.time_period = 'noon' THEN 780
+          WHEN ce.time_period = 'morning' THEN 540
+          WHEN ce.time_period = 'early_morning' THEN 330
+          WHEN ce.time_period = 'late_night' THEN 120
+          ELSE -1
+        END AS used_minute,
+        ce.created_at AS used_at,
+        ROW_NUMBER() OVER (
+          PARTITION BY ce.event_type, ce.child_id, md.amount_ml
+          ORDER BY
+            ce.event_date DESC,
+            CASE
+              WHEN ce.time_type = 'exact' THEN
+                EXTRACT(HOUR FROM ce.event_time) * 60 + EXTRACT(MINUTE FROM ce.event_time)
+              WHEN ce.time_period = 'night' THEN 1290
+              WHEN ce.time_period = 'evening' THEN 1020
+              WHEN ce.time_period = 'noon' THEN 780
+              WHEN ce.time_period = 'morning' THEN 540
+              WHEN ce.time_period = 'early_morning' THEN 330
+              WHEN ce.time_period = 'late_night' THEN 120
+              ELSE -1
+            END DESC,
+            ce.created_at DESC
+        ) AS amount_use_position
       FROM care_events ce
       INNER JOIN milk_event_details md
         ON md.family_id = ce.family_id AND md.event_id = ce.id
       WHERE ce.family_id = ${familyId}
+        AND ce.event_date <= ${date}
         AND ce.deleted_at IS NULL
-      ORDER BY ce.event_type, ce.child_id, md.amount_ml, ce.created_at DESC
+    ), latest_amounts AS (
+      SELECT event_type, child_id, amount_ml, used_date, used_minute, used_at
+      FROM amount_uses
+      WHERE amount_use_position = 1
     ), ranked AS (
       SELECT
         event_type,
@@ -180,7 +213,7 @@ async function getRecentAmounts(sql, familyId) {
         amount_ml,
         ROW_NUMBER() OVER (
           PARTITION BY event_type, child_id
-          ORDER BY last_used_at DESC
+          ORDER BY used_date DESC, used_minute DESC, used_at DESC
         ) AS position
       FROM latest_amounts
     )
@@ -314,7 +347,7 @@ export default async function handler(request, response) {
       const [children, events, amounts, weeklySummaries, nextMilkPlans] = await Promise.all([
         getFixedChildren(sql, familyId),
         getEvents(sql, familyId, authorization.userId, date),
-        getRecentAmounts(sql, familyId),
+        getRecentAmounts(sql, familyId, date),
         getCareSummaries(sql, familyId, week.start, week.endExclusive),
         getNextMilkPlans(sql, familyId, date),
       ])

@@ -73,7 +73,11 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
         if (mode === 'create' && !initializedRequestedChild.current) {
           const tone = requestedChildTone()
           const requestedChild = result.children.find((child) => childTone(child.name) === tone)
-          if (requestedChild) setChildId(requestedChild.id)
+          if (requestedChild) {
+            setChildId(requestedChild.id)
+            const previousAmount = result.recentAmounts?.children?.[requestedChild.id]?.[0]
+            setAmountMl(previousAmount == null ? '' : String(previousAmount))
+          }
           initializedRequestedChild.current = true
         }
         setRecentAmounts(result.recentAmounts)
@@ -104,9 +108,18 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
     ? recentAmounts.pumping
     : recentAmounts.children[childId] ?? []
 
-  const chooseNow = () => {
-    setDate(localDateString())
-    setTime(localTimeString())
+  const chooseChild = (nextChildId) => {
+    setChildId(nextChildId)
+    if (mode === 'create') {
+      const previousAmount = recentAmounts.children[nextChildId]?.[0]
+      setAmountMl(previousAmount == null ? '' : String(previousAmount))
+    }
+  }
+
+  const chooseRelativeTime = (minutesAgo) => {
+    const selectedDateTime = new Date(Date.now() - minutesAgo * 60 * 1000)
+    setDate(localDateString(selectedDateTime))
+    setTime(localTimeString(selectedDateTime))
     setTimeType('exact')
   }
 
@@ -191,7 +204,7 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
             <div className="milk-child-options">
               {children.map((child) => (
                 <label className={`milk-child-option milk-child-option--${childTone(child.name)}${childId === child.id ? ' is-selected' : ''}`} key={child.id}>
-                  <input type="radio" name="child" value={child.id} checked={childId === child.id} onChange={() => setChildId(child.id)} />
+                  <input type="radio" name="child" value={child.id} checked={childId === child.id} onChange={() => chooseChild(child.id)} />
                   <span aria-hidden="true">{child.name === 'ともちゃん' ? '智' : '結'}</span>
                   {childDisplayName(child.name)}
                 </label>
@@ -249,7 +262,11 @@ function MilkFormPage({ session, onNavigate, mode = 'create' }) {
 
         <fieldset className="milk-fieldset">
           <legend>時間</legend>
-          <button className="milk-now-button" type="button" onClick={chooseNow}>今の日時を使う</button>
+          <div className="milk-time-shortcuts">
+            <button className="milk-now-button" type="button" onClick={() => chooseRelativeTime(0)}>今の日時を使う</button>
+            <button className="milk-now-button" type="button" onClick={() => chooseRelativeTime(2)}>今の2分前</button>
+            <button className="milk-now-button" type="button" onClick={() => chooseRelativeTime(5)}>今の5分前</button>
+          </div>
           <div className="milk-time-types">
             <label><input type="radio" name="timeType" checked={timeType === 'exact'} onChange={() => setTimeType('exact')} />時刻を指定</label>
             <label><input type="radio" name="timeType" checked={timeType === 'period'} onChange={() => setTimeType('period')} />だいたい</label>
