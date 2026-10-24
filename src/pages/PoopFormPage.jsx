@@ -59,6 +59,7 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
   const [consistency, setConsistency] = useState('')
   const [color, setColor] = useState('')
   const [urineAmount, setUrineAmount] = useState('')
+  const [excludeFromReminder, setExcludeFromReminder] = useState(false)
   const [date, setDate] = useState(initialDate)
   const [timeType, setTimeType] = useState('exact')
   const [time, setTime] = useState(localTimeString)
@@ -88,6 +89,7 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
           setConsistency(target.consistency ?? '')
           setColor(target.color ?? '')
           setUrineAmount(target.urineAmount ?? '')
+          setExcludeFromReminder(target.excludeFromReminder ?? false)
           setDate(target.date)
           setTimeType(target.timeType)
           setTime(target.time ?? localTimeString())
@@ -138,6 +140,7 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
       consistency: amount ? consistency : '',
       color: amount ? color : '',
       urineAmount,
+      excludeFromReminder: amount ? excludeFromReminder : false,
       date,
       timeType,
       time: timeType === 'exact' ? time : null,
@@ -223,6 +226,7 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
                   setAmount('')
                   setConsistency('')
                   setColor('')
+                  setExcludeFromReminder(false)
                 }}
               />
               なし
@@ -260,6 +264,20 @@ function PoopFormPage({ session, onNavigate, mode = 'create' }) {
             ))}
           </div>
         </fieldset>}
+
+        {amount && (
+          <label className="poop-reminder-exclusion">
+            <input
+              type="checkbox"
+              checked={excludeFromReminder}
+              onChange={(event) => setExcludeFromReminder(event.target.checked)}
+            />
+            <span>
+              <strong>アラート対象外にする</strong>
+              <small>少量など、今回の記録で「うんちが出ていない」アラートを解除しない場合に選択してください。</small>
+            </span>
+          </label>
+        )}
 
         <label className="milk-field">
           <span>日付</span>

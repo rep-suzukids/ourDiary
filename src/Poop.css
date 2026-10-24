@@ -55,6 +55,46 @@
   font-weight: 500;
 }
 
+.poop-reminder-exclusion {
+  display: flex;
+  padding: 14px 16px;
+  border: 1px solid #edc9bd;
+  border-radius: 14px;
+  align-items: flex-start;
+  background: #fff8f4;
+  color: #805e63;
+  cursor: pointer;
+  gap: 11px;
+}
+
+.poop-reminder-exclusion input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  flex: 0 0 auto;
+  accent-color: var(--poop-accent);
+}
+
+.poop-reminder-exclusion span {
+  display: grid;
+  gap: 4px;
+}
+
+.poop-reminder-exclusion strong {
+  font-size: 0.9rem;
+}
+
+.poop-reminder-exclusion small {
+  color: #9a777c;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.poop-reminder-exclusion:focus-within {
+  outline: 3px solid rgb(211 141 118 / 24%);
+  outline-offset: 2px;
+}
+
 .poop-choice-options,
 .poop-color-options {
   display: grid;
