@@ -7,7 +7,8 @@ import {
 import { DiaperIcon } from './CareEventIcons.jsx'
 
 const CLOCK_UPDATE_INTERVAL_MS = 60 * 1000
-const DAY_MILLISECONDS = 24 * 60 * 60 * 1000
+const HOUR_MILLISECONDS = 60 * 60 * 1000
+const HOURS_PER_DAY = 24
 const PERIOD_TIMES = Object.freeze({
   late_night: '02:00',
   early_morning: '05:30',
@@ -67,15 +68,18 @@ function BowelReminder({ session, refreshKey, onNavigate }) {
       if (!latest) return []
       const recordedAt = eventDateTime(latest)
       if (!recordedAt) return []
-      const fullDays = Math.floor((now.getTime() - recordedAt.getTime()) / DAY_MILLISECONDS)
-      return fullDays >= 1 ? [{ child, fullDays }] : []
+      const elapsedHours = Math.floor((now.getTime() - recordedAt.getTime()) / HOUR_MILLISECONDS)
+      if (elapsedHours < HOURS_PER_DAY) return []
+      const fullDays = Math.floor(elapsedHours / HOURS_PER_DAY)
+      const remainingHours = elapsedHours % HOURS_PER_DAY
+      return [{ child, fullDays, remainingHours }]
     })
   }, [now, status])
 
   if (overdueChildren.length === 0 || ['/poop/new', '/poop/edit'].includes(window.location.pathname)) return null
 
   const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`
-  return overdueChildren.map(({ child, fullDays }) => {
+  return overdueChildren.map(({ child, fullDays, remainingHours }) => {
     const query = new URLSearchParams({
       date: localDateString(now),
       child: childTone(child.name),
@@ -89,7 +93,7 @@ function BowelReminder({ session, refreshKey, onNavigate }) {
           onNavigate(destination)
         }}>
           <DiaperIcon />
-          <span>{childDisplayName(child.name)}のうんちが丸{fullDays}日記録されていません</span>
+          <span>{childDisplayName(child.name)}のうんちが{fullDays}日と{remainingHours}時間記録されていません</span>
         </a>
       </aside>
     )

@@ -30,8 +30,9 @@
 24. うんち記録をおしっこにも対応したおむつ記録へ拡張する `023_diaper_records.sql` を実行します。
 25. おくすり管理と投薬記録を追加する `024_medications.sql` を実行します。
 26. 次回のミルク予定を算出する設定を追加する `025_milk_interval_settings.sql` を実行します。
-27. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
-28. 再デプロイし、登録した管理者Googleアカウントでログインします。
+27. おむつ記録をうんちアラートの集計対象外にできるようにする `026_bowel_reminder_exclusions.sql` を実行します。
+28. Vercelの環境変数に `GOOGLE_CLIENT_ID` を追加します。値は `VITE_GOOGLE_CLIENT_ID` と同じです。
+29. 再デプロイし、登録した管理者Googleアカウントでログインします。
 
 ## ログインセッション
 

@@ -50,6 +50,7 @@ function validateInput(body) {
   const time = typeof body?.time === 'string' ? body.time : ''
   const timePeriod = typeof body?.timePeriod === 'string' ? body.timePeriod : ''
   const memo = typeof body?.memo === 'string' ? body.memo.trim() : ''
+  const excludeFromReminder = body?.excludeFromReminder === true
 
   if (!UUID_PATTERN.test(childId) || !isValidDate(date)) return null
   // うんちの有無は量で確定する。量を「なし」に戻した場合、画面に残った
@@ -74,6 +75,7 @@ function validateInput(body) {
     time: timeType === 'exact' ? time : null,
     timePeriod: timeType === 'period' ? timePeriod : null,
     memo,
+    excludeFromReminder: hasBowel ? excludeFromReminder : false,
   }
 }
 
@@ -102,6 +104,7 @@ async function getEvents(sql, familyId, userId, date) {
       bm.consistency_code AS consistency,
       bm.color_code AS color,
       bm.urine_amount_code AS "urineAmount",
+      bm.exclude_from_reminder AS "excludeFromReminder",
       bm.memo,
       bm.author_id AS "authorId",
       COALESCE(u.display_name, u.email::text) AS "authorName",
@@ -159,6 +162,7 @@ async function getLatestBowelEvents(sql, familyId) {
     WHERE bm.family_id = ${familyId}
       AND bm.deleted_at IS NULL
       AND bm.amount_code IS NOT NULL
+      AND bm.exclude_from_reminder = false
     ORDER BY
       bm.child_id,
       bm.event_date DESC,
@@ -255,10 +259,12 @@ export default async function handler(request, response) {
       const rows = await sql`
         INSERT INTO bowel_movements (
           family_id, child_id, event_date, time_type, event_time, time_period,
-          amount_code, consistency_code, color_code, urine_amount_code, memo, author_id
+          amount_code, consistency_code, color_code, urine_amount_code,
+          exclude_from_reminder, memo, author_id
         ) VALUES (
           ${familyId}, ${input.childId}, ${input.date}, ${input.timeType}, ${input.time}, ${input.timePeriod},
-          ${input.amount}, ${input.consistency}, ${input.color}, ${input.urineAmount}, ${input.memo}, ${authorization.userId}
+          ${input.amount}, ${input.consistency}, ${input.color}, ${input.urineAmount},
+          ${input.excludeFromReminder}, ${input.memo}, ${authorization.userId}
         )
         RETURNING id
       `
@@ -295,6 +301,7 @@ export default async function handler(request, response) {
           consistency_code = ${input.consistency},
           color_code = ${input.color},
           urine_amount_code = ${input.urineAmount},
+          exclude_from_reminder = ${input.excludeFromReminder},
           memo = ${input.memo},
           updated_at = now()
         WHERE id = ${eventId}
