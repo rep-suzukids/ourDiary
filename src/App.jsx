@@ -24,6 +24,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx'
 import ScheduleCreatePage from './pages/ScheduleCreatePage.jsx'
 import SchedulePage from './pages/SchedulePage.jsx'
 import SearchPage from './pages/SearchPage.jsx'
+import SearchKeywordManagementPage from './pages/SearchKeywordManagementPage.jsx'
 import TagManagementPage from './pages/TagManagementPage.jsx'
 import TermsOfServicePage from './pages/TermsOfServicePage.jsx'
 import TimelinePage from './pages/TimelinePage.jsx'
@@ -157,6 +158,13 @@ function AppContent() {
       return <NotFoundPage onNavigate={navigate} />
     }
     return <TagManagementPage session={session} onNavigate={navigate} />
+  }
+
+  if (pathname === '/admin/search-keywords') {
+    if (!session || session.families[0]?.role !== 'admin') {
+      return <NotFoundPage onNavigate={navigate} />
+    }
+    return withDailyReminders(<SearchKeywordManagementPage session={session} onNavigate={navigate} />)
   }
 
   if (pathname === '/admin/medications') {
