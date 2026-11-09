@@ -239,6 +239,16 @@ function HomePage({ session, onLogout, onNavigate, dailyReminder }) {
             >
               ミルク時間間隔
             </a>
+            <a
+              className="album-settings-link"
+              href="/admin/search-keywords"
+              onClick={(event) => {
+                event.preventDefault()
+                onNavigate('/admin/search-keywords')
+              }}
+            >
+              検索キーワード登録
+            </a>
           </div>
         )}
 

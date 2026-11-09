@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import HighlightedText from '../components/HighlightedText.jsx'
 import { searchAll } from '../services/searchApi.js'
+import { getSavedSearchKeywords } from '../services/searchKeywordApi.js'
 import '../Search.css'
 
 function initialParameters() {
@@ -92,8 +93,23 @@ function SearchPage({ session, onNavigate }) {
   const [results, setResults] = useState([])
   const [total, setTotal] = useState(0)
   const [hasMore, setHasMore] = useState(false)
+  const [savedKeywords, setSavedKeywords] = useState([])
+  const [keywordError, setKeywordError] = useState('')
+  const [searchRevision, setSearchRevision] = useState(0)
   const [status, setStatus] = useState(initial.query ? 'loading' : 'idle')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    getSavedSearchKeywords(activeFamily.id)
+      .then((result) => {
+        if (active) setSavedKeywords(result.keywords ?? [])
+      })
+      .catch((requestError) => {
+        if (active) setKeywordError(requestError.message)
+      })
+    return () => { active = false }
+  }, [activeFamily.id])
 
   useEffect(() => {
     if (!query) return undefined
@@ -119,11 +135,11 @@ function SearchPage({ session, onNavigate }) {
         setStatus('error')
       })
     return () => { active = false }
-  }, [activeFamily.id, query])
+  }, [activeFamily.id, query, searchRevision])
 
-  const submit = (event) => {
-    event.preventDefault()
-    const nextQuery = input.trim()
+  const runSearch = (value) => {
+    const nextQuery = value.trim()
+    setInput(nextQuery)
     if (!nextQuery) {
       setQuery('')
       setResults([])
@@ -136,6 +152,12 @@ function SearchPage({ session, onNavigate }) {
     if (initial.returnTo !== '/') parameters.set('returnTo', initial.returnTo)
     window.history.replaceState({}, '', `/search?${parameters}`)
     setQuery(nextQuery)
+    setSearchRevision((current) => current + 1)
+  }
+
+  const submit = (event) => {
+    event.preventDefault()
+    runSearch(input)
   }
 
   const loadMore = async () => {
@@ -185,7 +207,20 @@ function SearchPage({ session, onNavigate }) {
           </label>
           <button type="submit" disabled={!input.trim() || status === 'loading'}>検索</button>
         </form>
+        {savedKeywords.length > 0 && (
+          <div className="search-quick-keywords" aria-label="よく使う検索キーワード">
+            <span>よく使うワード</span>
+            <div>
+              {savedKeywords.map((item) => (
+                <button type="button" key={item.id} onClick={() => runSearch(item.keyword)}>
+                  {item.keyword}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <p className="search-panel__hint">日記、写真コメント、育児記録のメモなどから言葉を探せます。</p>
+        {keywordError && <p className="search-panel__keyword-error" role="status">よく使うワードを読み込めませんでした。</p>}
       </section>
 
       <section className="search-results" aria-live="polite">

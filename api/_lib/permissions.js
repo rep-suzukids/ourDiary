@@ -42,6 +42,7 @@ const ROLE_PERMISSIONS = Object.freeze({
     'schedule:delete',
     'medication:read',
     'medication:use',
+    'search_keyword:read',
   ]),
   admin: Object.freeze([
     'entry:read_shared',
@@ -86,6 +87,8 @@ const ROLE_PERMISSIONS = Object.freeze({
     'medication:read',
     'medication:use',
     'medication:manage',
+    'search_keyword:read',
+    'search_keyword:manage',
   ]),
 })
 
