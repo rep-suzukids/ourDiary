@@ -10,6 +10,8 @@ const CARD_HEIGHT = 190
 const COLUMN_GAP = 0
 const ROW_GAP = 0
 const RADIANS_TO_DEGREES = 180 / Math.PI
+const CAPTURED_MONTH_PATTERN = /^(\d{4})-(0[1-9]|1[0-2])/
+const UNKNOWN_MONTH_KEY = 'unknown'
 
 function clamp(value, minimum, maximum) {
   return Math.min(maximum, Math.max(minimum, value))
@@ -41,6 +43,39 @@ function createSpiralCoordinates(count) {
   }
 
   return coordinates
+}
+
+function photoMonth(photo) {
+  const capturedValue = photo.capturedAt || photo.capturedOn || ''
+  const match = CAPTURED_MONTH_PATTERN.exec(capturedValue)
+  if (!match) {
+    return {
+      key: UNKNOWN_MONTH_KEY,
+      label: '撮影日不明',
+      indexLabel: '不明',
+    }
+  }
+  const year = Number(match[1])
+  const month = Number(match[2])
+  return {
+    key: `${match[1]}-${match[2]}`,
+    label: `${year}年${month}月`,
+    indexLabel: `${String(year).slice(2)}/${month}`,
+  }
+}
+
+function createMonthGroups(photos) {
+  const groups = []
+  for (const photo of photos) {
+    const month = photoMonth(photo)
+    const current = groups.at(-1)
+    if (current?.key === month.key) {
+      current.photos.push(photo)
+    } else {
+      groups.push({ ...month, photos: [photo] })
+    }
+  }
+  return groups
 }
 
 function InfiniteAlbumCanvas({
@@ -117,6 +152,12 @@ function InfiniteAlbumCanvas({
       }
     })
   }, [photos])
+  const monthGroups = useMemo(() => createMonthGroups(photos), [photos])
+
+  const jumpToMonth = (monthKey, behavior = 'smooth') => {
+    const heading = document.getElementById(`album-month-${monthKey}`)
+    heading?.scrollIntoView({ behavior, block: 'start' })
+  }
 
   const zoomAtCenter = (amount) => {
     setCamera((current) => ({ ...current, scale: clamp(current.scale + amount, MIN_SCALE, MAX_SCALE) }))
@@ -260,9 +301,13 @@ function InfiniteAlbumCanvas({
           ? { transform: `translate(calc(50vw + ${camera.x}px), calc(50vh + ${camera.y}px)) scale(${camera.scale})` }
           : undefined}
       >
-        {placements.map(({ photo, x, y }) => {
-          if (viewMode === 'grid') {
-            return (
+        {viewMode === 'grid'
+          ? monthGroups.flatMap((group) => [
+            <div className="album-grid__month-heading" id={`album-month-${group.key}`} key={`month-${group.key}`}>
+              <h2>{group.label}</h2>
+              <span>{group.photos.length}枚</span>
+            </div>,
+            ...group.photos.map((photo) => (
               <AlbumPhoto
                 key={photo.id}
                 photo={photo}
@@ -270,41 +315,57 @@ function InfiniteAlbumCanvas({
                 onOpen={handleOpenPhoto}
                 variant="grid"
               />
+            )),
+          ])
+          : placements.map(({ photo, x, y }) => {
+            const screenX = camera.x + (x + CARD_WIDTH / 2) * camera.scale
+            const screenY = camera.y + (y + CARD_HEIGHT / 2) * camera.scale
+            const radiusX = Math.max(viewport.width * 1.65, 900)
+            const radiusY = Math.max(viewport.height * 2.2, 760)
+            const angleX = clamp(screenX / radiusX, -1.15, 1.15)
+            const angleY = clamp(screenY / radiusY, -1.15, 1.15)
+            const curvedScreenX = radiusX * Math.sin(angleX)
+            const curvedScreenY = radiusY * Math.sin(angleY)
+            const curvedX = (curvedScreenX - camera.x) / camera.scale - CARD_WIDTH / 2
+            const curvedY = (curvedScreenY - camera.y) / camera.scale - CARD_HEIGHT / 2
+            const depth = (
+              radiusX * (1 - Math.cos(angleX))
+              + radiusY * (1 - Math.cos(angleY))
+            ) / camera.scale
+            const horizontalArc = CARD_WIDTH * camera.scale / radiusX
+            const verticalArc = CARD_HEIGHT * camera.scale / radiusY
+            const scaleX = Math.sin(horizontalArc / 2) / (horizontalArc / 2)
+            const scaleY = Math.sin(verticalArc / 2) / (verticalArc / 2)
+
+            return (
+              <AlbumPhoto
+                key={photo.id}
+                photo={photo}
+                familyId={familyId}
+                onOpen={handleOpenPhoto}
+                style={{
+                  transform: `translate3d(${curvedX}px, ${curvedY}px, ${depth}px) rotateY(${-angleX * RADIANS_TO_DEGREES}deg) rotateX(${angleY * RADIANS_TO_DEGREES}deg) scale(${scaleX}, ${scaleY})`,
+                }}
+              />
             )
-          }
-
-          const screenX = camera.x + (x + CARD_WIDTH / 2) * camera.scale
-          const screenY = camera.y + (y + CARD_HEIGHT / 2) * camera.scale
-          const radiusX = Math.max(viewport.width * 1.65, 900)
-          const radiusY = Math.max(viewport.height * 2.2, 760)
-          const angleX = clamp(screenX / radiusX, -1.15, 1.15)
-          const angleY = clamp(screenY / radiusY, -1.15, 1.15)
-          const curvedScreenX = radiusX * Math.sin(angleX)
-          const curvedScreenY = radiusY * Math.sin(angleY)
-          const curvedX = (curvedScreenX - camera.x) / camera.scale - CARD_WIDTH / 2
-          const curvedY = (curvedScreenY - camera.y) / camera.scale - CARD_HEIGHT / 2
-          const depth = (
-            radiusX * (1 - Math.cos(angleX))
-            + radiusY * (1 - Math.cos(angleY))
-          ) / camera.scale
-          const horizontalArc = CARD_WIDTH * camera.scale / radiusX
-          const verticalArc = CARD_HEIGHT * camera.scale / radiusY
-          const scaleX = Math.sin(horizontalArc / 2) / (horizontalArc / 2)
-          const scaleY = Math.sin(verticalArc / 2) / (verticalArc / 2)
-
-          return (
-            <AlbumPhoto
-              key={photo.id}
-              photo={photo}
-              familyId={familyId}
-              onOpen={handleOpenPhoto}
-              style={{
-                transform: `translate3d(${curvedX}px, ${curvedY}px, ${depth}px) rotateY(${-angleX * RADIANS_TO_DEGREES}deg) rotateX(${angleY * RADIANS_TO_DEGREES}deg) scale(${scaleX}, ${scaleY})`,
-              }}
-            />
-          )
-        })}
+          })}
       </div>
+
+      {viewMode === 'grid' && monthGroups.length > 1 && (
+        <nav className="album-month-index" aria-label="撮影年月へ移動">
+          {monthGroups.map((group) => (
+            <button
+              type="button"
+              key={group.key}
+              title={`${group.label}へ移動`}
+              aria-label={`${group.label}へ移動`}
+              onClick={() => jumpToMonth(group.key)}
+            >
+              {group.indexLabel}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {photoModal}
 

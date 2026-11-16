@@ -376,11 +376,83 @@
 .album-grid__photos {
   display: grid;
   min-height: 100svh;
-  padding: 150px 24px 48px;
+  padding: 150px 72px 48px 24px;
   grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
   align-content: start;
   gap: 12px;
   box-sizing: border-box;
+}
+
+.album-grid__month-heading {
+  display: flex;
+  min-height: 42px;
+  padding: 18px 4px 7px;
+  grid-column: 1 / -1;
+  align-items: baseline;
+  border-bottom: 1px solid rgb(196 111 145 / 30%);
+  color: #87566a;
+  scroll-margin-top: 136px;
+  gap: 10px;
+}
+
+.album-grid__month-heading:first-child {
+  padding-top: 2px;
+}
+
+.album-grid__month-heading h2 {
+  margin: 0;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+}
+
+.album-grid__month-heading span {
+  color: #aa8392;
+  font-size: .72rem;
+  font-weight: 700;
+}
+
+.album-month-index {
+  position: fixed;
+  z-index: 23;
+  top: 50%;
+  right: 9px;
+  display: grid;
+  max-height: calc(100svh - 210px);
+  padding: 7px 4px;
+  overflow-y: auto;
+  border: 1px solid rgb(211 136 165 / 28%);
+  border-radius: 999px;
+  background: rgb(255 250 252 / 88%);
+  box-shadow: 0 8px 24px rgb(123 71 92 / 13%);
+  scrollbar-width: none;
+  transform: translateY(-50%);
+  backdrop-filter: blur(10px);
+  gap: 1px;
+}
+
+.album-month-index::-webkit-scrollbar {
+  display: none;
+}
+
+.album-month-index button {
+  min-width: 42px;
+  min-height: 24px;
+  padding: 3px 5px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #a1627b;
+  cursor: pointer;
+  font: inherit;
+  font-size: .66rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.album-month-index button:hover,
+.album-month-index button:focus-visible {
+  outline: none;
+  background: #f3dce6;
+  color: #8e4864;
 }
 
 .album-grid .album-photo {
@@ -1362,9 +1434,28 @@
   }
 
   .album-grid__photos {
-    padding: 136px 10px 126px;
+    padding: 136px 51px 126px 10px;
     grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
     gap: 7px;
+  }
+
+  .album-grid__month-heading {
+    min-height: 36px;
+    padding: 15px 3px 6px;
+    scroll-margin-top: 124px;
+  }
+
+  .album-month-index {
+    right: 5px;
+    max-height: calc(100svh - 190px);
+    padding: 5px 3px;
+  }
+
+  .album-month-index button {
+    min-width: 38px;
+    min-height: 22px;
+    padding-inline: 3px;
+    font-size: .61rem;
   }
 
   .album-grid .album-photo {
